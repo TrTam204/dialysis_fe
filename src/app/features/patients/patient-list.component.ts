@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -33,125 +33,8 @@ import { Patient } from '../../core/models';
     DropdownModule,
     TagModule,
   ],
-  template: `
-    <div class="page-shell">
-      <p-card header="Quản lý Bệnh nhân">
-        <div class="toolbar">
-          <span class="p-input-icon-left search-box">
-            <i class="pi pi-search"></i>
-            <input
-              pInputText
-              type="text"
-              placeholder="Tìm theo tên / mã / SĐT..."
-              [ngModel]="searchText"
-              (ngModelChange)="onSearchInput($event)"
-            />
-          </span>
-
-          <p-dropdown
-            [options]="statusFilterOptions"
-            [(ngModel)]="statusFilter"
-            (ngModelChange)="onFilterChange()"
-            optionLabel="label"
-            optionValue="value"
-            [style]="{ minWidth: '160px' }"
-          ></p-dropdown>
-
-          <p-dropdown
-            [options]="genderFilterOptions"
-            [(ngModel)]="genderFilter"
-            (ngModelChange)="onFilterChange()"
-            optionLabel="label"
-            optionValue="value"
-            [style]="{ minWidth: '140px' }"
-          ></p-dropdown>
-
-          <a pButton *ngIf="canWrite" routerLink="/patients/new" icon="pi pi-plus" label="Thêm mới" class="p-button-success"></a>
-        </div>
-
-        <p-table
-          [value]="patients"
-          [lazy]="true"
-          [lazyLoadOnInit]="false"
-          (onLazyLoad)="onLazyLoad($event)"
-          [paginator]="true"
-          [rows]="rows"
-          [first]="first"
-          [totalRecords]="totalRecords"
-          [loading]="loading"
-          dataKey="patient_id"
-          responsiveLayout="scroll"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              <th pSortableColumn="patient_id">Mã BN <p-sortIcon field="patient_id"></p-sortIcon></th>
-              <th pSortableColumn="full_name">Họ và tên <p-sortIcon field="full_name"></p-sortIcon></th>
-              <th pSortableColumn="date_of_birth">Ngày sinh <p-sortIcon field="date_of_birth"></p-sortIcon></th>
-              <th pSortableColumn="gender">Giới tính <p-sortIcon field="gender"></p-sortIcon></th>
-              <th pSortableColumn="status">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
-              <th pSortableColumn="created_at">Ngày tạo <p-sortIcon field="created_at"></p-sortIcon></th>
-              <th style="width: 140px">Hành động</th>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="body" let-patient>
-            <tr>
-              <td>{{ patient.patient_id }}</td>
-              <td>{{ patient.full_name }}</td>
-              <td>{{ patient.date_of_birth | date: 'dd/MM/yyyy' }}</td>
-              <td>{{ getGenderLabel(patient.gender) }}</td>
-              <td>
-                <p-tag [value]="getStatusLabel(patient.status)" [severity]="getStatusSeverity(patient.status)"></p-tag>
-              </td>
-              <td>{{ patient.created_at | date: 'dd/MM/yyyy' }}</td>
-              <td>
-                <a
-                  pButton
-                  type="button"
-                  icon="pi pi-eye"
-                  class="p-button-text"
-                  [routerLink]="['/patients', patient.patient_id]"
-                  [attr.aria-label]="'Xem ' + patient.full_name"
-                ></a>
-                <a
-                  pButton
-                  *ngIf="canWrite"
-                  type="button"
-                  icon="pi pi-pencil"
-                  class="p-button-text"
-                  [routerLink]="['/patients', patient.patient_id, 'edit']"
-                  [attr.aria-label]="'Sửa ' + patient.full_name"
-                ></a>
-                <button
-                  pButton
-                  *ngIf="canWrite"
-                  type="button"
-                  icon="pi pi-trash"
-                  class="p-button-text p-button-danger"
-                  (click)="confirmDelete(patient)"
-                ></button>
-              </td>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="7" class="text-center">Không có dữ liệu</td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </p-card>
-
-      <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
-    </div>
-  `,
-  styles: [
-    '.page-shell { padding: 24px; }',
-    '.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }',
-    '.search-box { flex: 1; min-width: 200px; max-width: 360px; }',
-    '.search-box input { width: 100%; }',
-    '.text-center { text-align: center; }',
-  ],
+  templateUrl: './patient-list.component.html',
+  styleUrls: ['./patient-list.component.scss'],
 })
 export class PatientListComponent implements OnInit, OnDestroy {
   patients: Patient[] = [];
@@ -181,8 +64,8 @@ export class PatientListComponent implements OnInit, OnDestroy {
 
   sortField = 'patient_id';
   sortOrder = 1;
-
-  canWrite = false;
+  canEdit = false;
+  canDelete = false;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -191,12 +74,13 @@ export class PatientListComponent implements OnInit, OnDestroy {
     private patientService: PatientService,
     private authService: AuthService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {}
 
   ngOnInit() {
-    const role = this.authService.getUserRole();
-    this.canWrite = role === 'ADMIN' || role === 'DOCTOR';
+    this.canEdit = this.authService.hasRole(['ADMIN', 'DOCTOR']);
+    this.canDelete = this.authService.hasRole('ADMIN');
 
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -214,6 +98,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
 
   onSearchInput(text: string) {
+    this.searchText = text;
     this.searchSubject.next(text);
   }
 
@@ -235,16 +120,20 @@ export class PatientListComponent implements OnInit, OnDestroy {
     const params: Record<string, string | number | boolean> = {
       page: Math.floor(this.first / this.rows) + 1,
     };
+
     const search = this.searchText.trim();
     if (search) {
       params['search'] = search;
     }
+
     if (this.statusFilter !== null) {
       params['status'] = this.statusFilter;
     }
+
     if (this.genderFilter !== null) {
       params['gender'] = this.genderFilter;
     }
+
     if (this.sortField) {
       params['ordering'] = (this.sortOrder === -1 ? '-' : '') + this.sortField;
     }
@@ -262,6 +151,10 @@ export class PatientListComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
     });
+  }
+
+  navigateToPatient(patient: Patient) {
+    this.router.navigate(['/patients', patient.patient_id]);
   }
 
   getGenderLabel(gender?: string): string {
@@ -287,6 +180,27 @@ export class PatientListComponent implements OnInit, OnDestroy {
       DISCHARGED: 'danger',
     };
     return severities[status] || 'info';
+  }
+
+  getAge(dateOfBirth?: string | null): number | null {
+    if (!dateOfBirth) {
+      return null;
+    }
+
+    const birth = new Date(dateOfBirth);
+    if (Number.isNaN(birth.getTime())) {
+      return null;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age -= 1;
+    }
+
+    return age >= 0 ? age : null;
   }
 
   confirmDelete(patient: Patient) {

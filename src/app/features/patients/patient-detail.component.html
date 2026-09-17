@@ -1,0 +1,244 @@
+<div class="page-shell">
+  <div *ngIf="patientLoading" class="loading-box">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Đang tải hồ sơ bệnh nhân...</span>
+  </div>
+
+  <div *ngIf="!patientLoading && patient" class="detail-shell">
+    <div class="top-bar">
+      <button pButton type="button" icon="pi pi-arrow-left" label="Quay lại" class="p-button-text" routerLink="/patients"></button>
+
+      <div class="title-wrap">
+        <div class="title-main">
+          <h2>{{ patient.full_name }}</h2>
+          <span class="patient-code">{{ patient.patient_id }}</span>
+        </div>
+        <div class="meta-row">
+          <span>{{ patient.date_of_birth | date: 'dd/MM/yyyy' }}</span>
+          <span *ngIf="getPatientAge(patient.date_of_birth) !== null">• {{ getPatientAge(patient.date_of_birth) }} tuổi</span>
+          <span>• {{ getGenderLabel(patient.gender) }}</span>
+          <p-tag [value]="getStatusLabel(patient.status)" [severity]="getStatusSeverity(patient.status)"></p-tag>
+        </div>
+      </div>
+
+      <a
+        pButton
+        *ngIf="canEdit"
+        type="button"
+        icon="pi pi-pencil"
+        label="Sửa"
+        [routerLink]="['/patients', patient.patient_id, 'edit']"
+      ></a>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab-button" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">Tổng quan</button>
+      <button type="button" class="tab-button" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">Lịch sử điều trị</button>
+      <button type="button" class="tab-button" [class.active]="activeTab === 'labs'" (click)="activeTab = 'labs'">Xét nghiệm</button>
+    </div>
+
+    <div *ngIf="activeTab === 'overview'" class="tab-content">
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>Thông tin cá nhân</h3>
+          <div class="info-list">
+            <div class="info-item">
+              <span class="label">Mã bệnh nhân</span>
+              <span class="value">{{ patient.patient_id }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Họ và tên</span>
+              <span class="value">{{ patient.full_name }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Ngày sinh</span>
+              <span class="value">{{ patient.date_of_birth | date: 'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Tuổi</span>
+              <span class="value">{{ getPatientAge(patient.date_of_birth) !== null ? (getPatientAge(patient.date_of_birth) + ' tuổi') : '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Giới tính</span>
+              <span class="value">{{ getGenderLabel(patient.gender) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Số điện thoại</span>
+              <span class="value">{{ patient.phone_number || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Cân nặng khô</span>
+              <span class="value">{{ patient.dry_weight != null ? (patient.dry_weight + ' kg') : '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Trạng thái</span>
+              <p-tag [value]="getStatusLabel(patient.status)" [severity]="getStatusSeverity(patient.status)"></p-tag>
+            </div>
+            <div class="info-item">
+              <span class="label">Ngày tạo</span>
+              <span class="value">{{ patient.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Cập nhật lần cuối</span>
+              <span class="value">{{ patient.updated_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Thông tin điều trị</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">Tổng số phiên</span>
+              <strong>{{ sessionsCount }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Phiên gần nhất</span>
+              <strong>{{ latestSession()?.session_id || 'Không có' }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Trạng thái gần nhất</span>
+              <strong>{{ latestSession() ? getSessionStatusLabel(latestSession()!.status) : 'Không có' }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Thời gian gần nhất</span>
+              <strong>{{ latestSession() ? (latestSession()!.scheduled_start | date: 'dd/MM/yyyy HH:mm') : 'Không có' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card mt-16">
+        <h3>Tiền sử bệnh lý</h3>
+        <p class="text-muted">{{ patient.medical_history || 'Không có thông tin tiền sử bệnh lý.' }}</p>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'history'" class="tab-content">
+      <div class="info-card">
+        <div class="section-header">
+          <h3>Lịch sử điều trị</h3>
+        </div>
+
+        <div *ngIf="sessionsLoading" class="inline-loading">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Đang tải lịch sử điều trị...</span>
+        </div>
+
+        <div *ngIf="!sessionsLoading && sessionsError" class="empty-state danger-state">
+          <span>{{ sessionsError }}</span>
+        </div>
+
+        <div *ngIf="!sessionsLoading && !sessionsError && sessions.length === 0" class="empty-state">
+          <span>Bệnh nhân chưa có phiên lọc nào.</span>
+        </div>
+
+        <p-table
+          *ngIf="!sessionsLoading && sessions.length > 0"
+          [value]="sessions"
+          [paginator]="true"
+          [rows]="sessionsRows"
+          [totalRecords]="sessionsCount"
+          [lazy]="true"
+          [first]="(sessionsPage - 1) * sessionsRows"
+          (onLazyLoad)="onSessionPageChange($event)"
+          [responsiveLayout]="'scroll'"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Ngày</th>
+              <th>Mã phiên</th>
+              <th>Máy</th>
+              <th>Điều dưỡng</th>
+              <th>Giờ bắt đầu</th>
+              <th>Giờ kết thúc</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú</th>
+              <th style="width: 120px">Hành động</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-session>
+            <tr>
+              <td>{{ session.scheduled_start | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ session.session_id }}</td>
+              <td>{{ session.machine_name || session.machine }}</td>
+              <td>{{ session.nurse_name || session.assigned_nurse }}</td>
+              <td>{{ session.scheduled_start | date: 'HH:mm' }}</td>
+              <td>{{ session.scheduled_end | date: 'HH:mm' }}</td>
+              <td>
+                <p-tag [value]="getSessionStatusLabel(session.status)" [severity]="getSessionStatusSeverity(session.status)"></p-tag>
+              </td>
+              <td>{{ session.notes || '-' }}</td>
+              <td>
+                <a pButton type="button" icon="pi pi-eye" class="p-button-text" [routerLink]="['/sessions', session.session_id]"></a>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'labs'" class="tab-content">
+      <div class="info-card">
+        <div class="section-header">
+          <h3>Xét nghiệm</h3>
+        </div>
+
+        <div *ngIf="samplesLoading" class="inline-loading">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Đang tải mẫu xét nghiệm...</span>
+        </div>
+
+        <div *ngIf="!samplesLoading && samplesError" class="empty-state danger-state">
+          <span>{{ samplesError }}</span>
+        </div>
+
+        <div *ngIf="!samplesLoading && !samplesError && samples.length === 0" class="empty-state">
+          <span>Bệnh nhân chưa có mẫu xét nghiệm nào.</span>
+        </div>
+
+        <p-table
+          *ngIf="!samplesLoading && samples.length > 0"
+          [value]="samples"
+          [paginator]="true"
+          [rows]="samplesRows"
+          [totalRecords]="samplesCount"
+          [lazy]="true"
+          [first]="(samplesPage - 1) * samplesRows"
+          (onLazyLoad)="onSamplePageChange($event)"
+          [responsiveLayout]="'scroll'"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Mã mẫu</th>
+              <th>Ngày lấy</th>
+              <th>Hemoglobin</th>
+              <th>Kali</th>
+              <th>Người tạo</th>
+              <th>Ghi chú</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-sample>
+            <tr>
+              <td>{{ sample.sample_id }}</td>
+              <td>{{ sample.collection_date | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ sample.hemoglobin_level }} g/dL</td>
+              <td>{{ sample.potassium_level }} mEq/L</td>
+              <td>{{ sample.created_by_name || sample.created_by }}</td>
+              <td>{{ sample.notes || '-' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!patientLoading && !patient" class="error-box">
+    <p-card>
+      <p>Không tìm thấy bệnh nhân.</p>
+      <a pButton type="button" label="Quay lại danh sách" routerLink="/patients"></a>
+    </p-card>
+  </div>
+</div>

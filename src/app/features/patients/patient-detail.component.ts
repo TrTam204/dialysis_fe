@@ -4,12 +4,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { PanelModule } from 'primeng/panel';
-import { DividerModule } from 'primeng/divider';
+import { TableModule } from 'primeng/table';
 import { MessageService } from 'primeng/api';
+import { catchError, of } from 'rxjs';
+import { SessionService } from '../../core/services/session.service';
+import { BloodSampleService } from '../../core/services/blood-sample.service';
 import { PatientService } from '../../core/services/patient.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Patient } from '../../core/models';
+import { BloodSample, DialysisSession, Patient } from '../../core/models';
 
 @Component({
   selector: 'app-patient-detail',
@@ -20,126 +22,42 @@ import { Patient } from '../../core/models';
     CardModule,
     ButtonModule,
     TagModule,
-    PanelModule,
-    DividerModule,
+    TableModule,
   ],
-  template: `
-    <div class="page-shell">
-      <div *ngIf="loading" class="loading-box">
-        <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
-      </div>
-
-      <div *ngIf="!loading && patient">
-        <p-card [header]="'Bệnh nhân: ' + patient.full_name">
-          <div class="action-bar">
-            <a
-              pButton
-              *ngIf="canWrite"
-              type="button"
-              icon="pi pi-pencil"
-              label="Sửa"
-              [routerLink]="['/patients', patient.patient_id, 'edit']"
-            ></a>
-          </div>
-
-          <p-divider align="left">
-            <span class="divider-label">Thông tin cá nhân</span>
-          </p-divider>
-
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Mã bệnh nhân:</span>
-              <span class="info-value">{{ patient.patient_id }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Họ và tên:</span>
-              <span class="info-value">{{ patient.full_name }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Ngày sinh:</span>
-              <span class="info-value">{{ patient.date_of_birth | date: 'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Giới tính:</span>
-              <span class="info-value">{{ getGenderLabel(patient.gender) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Số điện thoại:</span>
-              <span class="info-value">{{ patient.phone_number || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Cân nặng khô:</span>
-              <span class="info-value">{{ patient.dry_weight ? (patient.dry_weight + ' kg') : '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Trạng thái:</span>
-              <p-tag [value]="getStatusLabel(patient.status)" [severity]="getStatusSeverity(patient.status)"></p-tag>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Ngày tạo:</span>
-              <span class="info-value">{{ patient.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-          </div>
-
-          <p-divider align="left">
-            <span class="divider-label">Thông tin y tế</span>
-          </p-divider>
-
-          <div class="info-grid">
-            <div class="info-item full-width">
-              <span class="info-label">Tiền sử bệnh lý:</span>
-              <span class="info-value multiline">{{ patient.medical_history || 'Không có' }}</span>
-            </div>
-          </div>
-
-          <p-divider align="left">
-            <span class="divider-label">Dịch vụ</span>
-          </p-divider>
-
-          <div class="placeholder-box">
-            <p>Mẫu xét nghiệm và Phiên lọc máu sẽ được hiển thị tại đây trong các phase tiếp theo.</p>
-          </div>
-        </p-card>
-      </div>
-
-      <div *ngIf="!loading && !patient" class="error-box">
-        <p-card>
-          <p>Không tìm thấy bệnh nhân.</p>
-          <a pButton type="button" label="Quay lại danh sách" routerLink="/patients"></a>
-        </p-card>
-      </div>
-    </div>
-  `,
-  styles: [
-    '.page-shell { padding: 24px; }',
-    '.action-bar { margin-bottom: 16px; }',
-    '.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }',
-    '.info-item { display: flex; flex-direction: column; gap: 4px; }',
-    '.info-item.full-width { grid-column: span 2; }',
-    '.info-label { font-weight: 600; color: #64748b; font-size: 0.875rem; }',
-    '.info-value { font-size: 1rem; }',
-    '.info-value.multiline { white-space: pre-wrap; }',
-    '.divider-label { font-weight: 600; color: #334155; }',
-    '.placeholder-box { padding: 24px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; }',
-    '.loading-box { padding: 48px; text-align: center; color: #64748b; }',
-    '.loading-box i { margin-right: 8px; }',
-    '.error-box { text-align: center; }',
-  ],
+  templateUrl: './patient-detail.component.html',
+  styleUrls: ['./patient-detail.component.scss'],
 })
 export class PatientDetailComponent implements OnInit {
   patient: Patient | null = null;
-  loading = false;
-  canWrite = false;
+  patientLoading = false;
+  sessions: DialysisSession[] = [];
+  samples: BloodSample[] = [];
+  sessionsLoading = false;
+  samplesLoading = false;
+  sessionsError = '';
+  samplesError = '';
+  sessionsCount = 0;
+  samplesCount = 0;
+  sessionsPage = 1;
+  samplesPage = 1;
+  sessionsRows = 10;
+  samplesRows = 10;
+  latestSessionInfo: DialysisSession | null = null;
+  activeTab: 'overview' | 'history' | 'labs' = 'overview';
+  canEdit = false;
+  canDelete = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private patientService: PatientService,
+    private sessionService: SessionService,
+    private bloodSampleService: BloodSampleService,
     private authService: AuthService,
     private messageService: MessageService
   ) {
-    const role = this.authService.getUserRole();
-    this.canWrite = role === 'ADMIN' || role === 'DOCTOR';
+    this.canEdit = this.authService.hasRole(['ADMIN', 'DOCTOR']);
+    this.canDelete = this.authService.hasRole('ADMIN');
   }
 
   ngOnInit() {
@@ -150,18 +68,98 @@ export class PatientDetailComponent implements OnInit {
   }
 
   loadPatient(patientId: string) {
-    this.loading = true;
+    this.patientLoading = true;
     this.patientService.getById(patientId).subscribe({
       next: (patient: Patient) => {
         this.patient = patient;
-        this.loading = false;
+        this.patientLoading = false;
+        this.loadRelatedData(patientId);
       },
       error: () => {
-        this.loading = false;
+        this.patientLoading = false;
         this.patient = null;
         this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không tìm thấy bệnh nhân.' });
       },
     });
+  }
+
+  loadRelatedData(patientId: string, sessionPage = 1, samplePage = 1) {
+    this.sessionsLoading = true;
+    this.samplesLoading = true;
+
+    this.sessionService
+      .getAll({ patient: patientId, ordering: '-scheduled_start', page: sessionPage })
+      .pipe(
+        catchError(() => {
+          this.sessionsError = 'Không thể tải lịch sử điều trị.';
+          return of({ results: [], count: 0 });
+        })
+      )
+      .subscribe((response: any) => {
+        const nextSessions = response?.results ?? response ?? [];
+        this.sessions = nextSessions;
+        this.sessionsCount = response?.count ?? nextSessions.length;
+        this.sessionsPage = sessionPage;
+        if (sessionPage === 1) {
+          this.latestSessionInfo = nextSessions[0] ?? null;
+        }
+        this.sessionsLoading = false;
+      });
+
+    this.bloodSampleService
+      .getAll({ patient: patientId, ordering: '-collection_date', page: samplePage })
+      .pipe(
+        catchError(() => {
+          this.samplesError = 'Không thể tải mẫu xét nghiệm.';
+          return of({ results: [], count: 0 });
+        })
+      )
+      .subscribe((response: any) => {
+        const nextSamples = response?.results ?? response ?? [];
+        this.samples = nextSamples;
+        this.samplesCount = response?.count ?? nextSamples.length;
+        this.samplesPage = samplePage;
+        this.samplesLoading = false;
+      });
+  }
+
+  onSessionPageChange(event: any) {
+    if (!this.patient) {
+      return;
+    }
+
+    const nextPage = (event.first ?? 0) / (event.rows ?? this.sessionsRows) + 1;
+    this.loadRelatedData(this.patient.patient_id, nextPage, this.samplesPage);
+  }
+
+  onSamplePageChange(event: any) {
+    if (!this.patient) {
+      return;
+    }
+
+    const nextPage = (event.first ?? 0) / (event.rows ?? this.samplesRows) + 1;
+    this.loadRelatedData(this.patient.patient_id, this.sessionsPage, nextPage);
+  }
+
+  getPatientAge(dateOfBirth?: string | null): number | null {
+    if (!dateOfBirth) {
+      return null;
+    }
+
+    const birth = new Date(dateOfBirth);
+    if (Number.isNaN(birth.getTime())) {
+      return null;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age -= 1;
+    }
+
+    return age >= 0 ? age : null;
   }
 
   getGenderLabel(gender?: string): string {
@@ -187,5 +185,29 @@ export class PatientDetailComponent implements OnInit {
       DISCHARGED: 'danger',
     };
     return severities[status] || 'info';
+  }
+
+  getSessionStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      SCHEDULED: 'Đã lên lịch',
+      IN_PROGRESS: 'Đang thực hiện',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Hủy',
+    };
+    return labels[status] || status;
+  }
+
+  getSessionStatusSeverity(status: string): 'success' | 'info' | 'warning' | 'danger' {
+    const severities: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
+      SCHEDULED: 'info',
+      IN_PROGRESS: 'warning',
+      COMPLETED: 'success',
+      CANCELLED: 'danger',
+    };
+    return severities[status] || 'info';
+  }
+
+  latestSession(): DialysisSession | null {
+    return this.latestSessionInfo ?? (this.sessions.length > 0 ? this.sessions[0] : null);
   }
 }

@@ -1,0 +1,73 @@
+.page-shell {
+  padding: 24px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.search-box input {
+  width: 100%;
+}
+
+.loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 0;
+  color: #64748b;
+}
+
+.age-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.age-cell small {
+  color: #64748b;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: #f8fafc;
+}
+
+.text-center {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .page-shell {
+    padding: 12px;
+  }
+
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .search-box {
+    max-width: none;
+    width: 100%;
+  }
+}

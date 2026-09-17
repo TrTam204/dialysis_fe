@@ -17,6 +17,13 @@ const ROUTE_TITLES: Record<string, string> = {
   '/blood-samples': 'Mẫu xét nghiệm',
 };
 
+const DYNAMIC_ROUTE_TITLES: Array<{ pattern: RegExp; title: string }> = [
+  { pattern: /^\/patients\/[^/]+$/, title: 'Hồ sơ bệnh nhân' },
+  { pattern: /^\/patients\/[^/]+\/edit$/, title: 'Chỉnh sửa bệnh nhân' },
+  { pattern: /^\/sessions\/[^/]+$/, title: 'Chi tiết phiên lọc' },
+  { pattern: /^\/sessions\/[^/]+\/edit$/, title: 'Chỉnh sửa phiên lọc' },
+];
+
 @Component({
   selector: 'app-main-layout',
   standalone: true,
@@ -55,7 +62,15 @@ export class MainLayoutComponent implements OnInit {
 
   private updateRouteTitle(url: string): void {
     const normalizedUrl = url.split('?')[0].split('#')[0];
-    this.routeTitle = ROUTE_TITLES[normalizedUrl] || ROUTE_TITLES['/dashboard'];
+
+    const directTitle = ROUTE_TITLES[normalizedUrl];
+    if (directTitle) {
+      this.routeTitle = directTitle;
+      return;
+    }
+
+    const matchedDynamicRoute = DYNAMIC_ROUTE_TITLES.find(({ pattern }) => pattern.test(normalizedUrl));
+    this.routeTitle = matchedDynamicRoute?.title || ROUTE_TITLES['/dashboard'];
   }
 
   toggleSidebar(): void {
