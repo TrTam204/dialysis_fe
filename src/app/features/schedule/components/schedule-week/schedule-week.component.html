@@ -1,0 +1,26 @@
+<div class="week-view" *ngIf="sessions.length > 0; else emptyWeek">
+  <div class="week-grid">
+    <div class="week-header-cell">Máy</div>
+    <div class="week-header-cell" *ngFor="let day of weekDays">
+      <div class="day-title">{{ formatDayLabel(day) }}</div>
+      <div class="day-subtitle">{{ formatShortDate(day) }}</div>
+    </div>
+
+    <ng-container *ngFor="let machineName of displayedMachines">
+      <div class="machine-label">{{ machineName }}</div>
+      <div class="day-cell" *ngFor="let day of weekDays">
+        <div class="session-pill" *ngFor="let session of getSessionForDayAndMachine(day, machineName)" [routerLink]="['/sessions', session.session_id]" [ngClass]="getStatusClass(session.status)">
+          <span class="pill-time">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
+          <span class="pill-patient">{{ session.patient_name || session.patient }}</span>
+          <span class="pill-nurse">{{ session.nurse_name || session.assigned_nurse }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<ng-template #emptyWeek>
+  <div class="empty-state">
+    <span>Không có phiên lọc nào trong tuần này.</span>
+  </div>
+</ng-template>

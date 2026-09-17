@@ -1,0 +1,151 @@
+.day-view {
+  width: 100%;
+  background: white;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.day-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #edf2f7;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.day-timeline {
+  display: flex;
+  min-height: 780px;
+  overflow-x: auto;
+}
+
+.time-column {
+  width: 90px;
+  border-right: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.time-header,
+.machine-header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.time-slot {
+  height: 60px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.machine-lanes {
+  display: flex;
+  flex: 1;
+  min-width: 600px;
+}
+
+.machine-lane {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.lane-body {
+  position: relative;
+  height: 720px;
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 0, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 100% 60px;
+}
+
+.lane-grid {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+.session-block {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+  color: #111827;
+  overflow: hidden;
+  border-left: 4px solid transparent;
+}
+
+.session-time {
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.session-patient {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.session-meta,
+.session-status {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+
+.status-scheduled {
+  background: rgba(59, 130, 246, 0.12);
+  border-left-color: #2563eb;
+}
+
+.status-in-progress {
+  background: rgba(245, 158, 11, 0.12);
+  border-left-color: #d97706;
+}
+
+.status-completed {
+  background: rgba(16, 185, 129, 0.12);
+  border-left-color: #059669;
+}
+
+.status-cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  border-left-color: #dc2626;
+}
+
+.status-default {
+  background: rgba(148, 163, 184, 0.12);
+  border-left-color: #64748b;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border: 1px solid #edf2f7;
+  background: white;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .day-timeline {
+    min-width: 540px;
+  }
+
+  .machine-lanes {
+    min-width: 480px;
+  }
+}

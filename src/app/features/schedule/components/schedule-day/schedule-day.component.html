@@ -1,0 +1,40 @@
+<div class="day-view" *ngIf="sessions.length > 0; else emptyDay">
+  <div class="day-header">
+    <div class="day-label">{{ formatDateHeader(selectedDate) }}</div>
+  </div>
+
+  <div class="day-timeline">
+    <div class="time-column">
+      <div class="time-header">Máy</div>
+      <div class="time-slot" *ngFor="let hour of [].constructor(dayEndHour - dayStartHour + 1); let index = index">
+        <span>{{ (dayStartHour + index) < 10 ? '0' : '' }}{{ dayStartHour + index }}:00</span>
+      </div>
+    </div>
+
+    <div class="machine-lanes">
+      <div class="machine-lane" *ngFor="let machineName of uniqueMachines">
+        <div class="machine-header">{{ machineName }}</div>
+        <div class="lane-body">
+          <div class="lane-grid"></div>
+          <a
+            *ngFor="let session of getMachineSessions(machineName)"
+            [routerLink]="['/sessions', session.session_id]"
+            class="session-block {{ getStatusClass(session.status) }}"
+            [ngStyle]="getSessionStyle(session)"
+          >
+            <div class="session-time">{{ getTimeRangeLabel(session) }}</div>
+            <div class="session-patient">{{ session.patient_name || session.patient }}</div>
+            <div class="session-meta">{{ session.machine_name || session.machine }} · {{ session.nurse_name || session.assigned_nurse }}</div>
+            <div class="session-status">{{ session.status }}</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #emptyDay>
+  <div class="empty-state">
+    <span>Không có phiên lọc nào trong ngày này.</span>
+  </div>
+</ng-template>

@@ -30,6 +30,7 @@ export class SidebarComponent {
     {
       label: 'Vận hành',
       items: [
+        { label: 'Lịch lọc', route: '/schedule', icon: 'pi pi-calendar' },
         { label: 'Bệnh nhân', route: '/patients', icon: 'pi pi-user' },
         { label: 'Phiên lọc', route: '/sessions', icon: 'pi pi-clock' },
       ],

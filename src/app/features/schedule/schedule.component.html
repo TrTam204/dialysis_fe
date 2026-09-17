@@ -1,0 +1,69 @@
+<div class="schedule-shell">
+  <div class="schedule-header">
+    <div class="title-block">
+      <h1>LỊCH LỌC MÁU</h1>
+      <div class="range-label">{{ currentRangeLabel }}</div>
+    </div>
+
+    <div class="nav-controls">
+      <button pButton type="button" icon="pi pi-chevron-left" class="p-button-secondary" (click)="previousPeriod()" aria-label="Trước"></button>
+      <button pButton type="button" label="Hôm nay" class="p-button-outlined" (click)="goToToday()"></button>
+      <button pButton type="button" icon="pi pi-chevron-right" class="p-button-secondary" (click)="nextPeriod()" aria-label="Sau"></button>
+    </div>
+
+    <div class="view-switch" role="tablist" aria-label="Chế độ xem lịch">
+      <button type="button" class="view-button" [class.active]="viewMode === 'day'" (click)="setViewMode('day')">Ngày</button>
+      <button type="button" class="view-button" [class.active]="viewMode === 'week'" (click)="setViewMode('week')">Tuần</button>
+    </div>
+  </div>
+
+  <div class="schedule-toolbar">
+    <div class="filter-group">
+      <label>
+        <span>Điều dưỡng</span>
+        <select [(ngModel)]="nurseFilter" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let option of nurseOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Máy</span>
+        <select [(ngModel)]="machineFilter" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let option of machineOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Trạng thái</span>
+        <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+    </div>
+
+    <button pButton type="button" label="Reset" class="p-button-text" (click)="resetFilters()"></button>
+  </div>
+
+  <div *ngIf="loading" class="state-block loading-state">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Đang tải lịch...</span>
+  </div>
+
+  <div *ngIf="!loading && error" class="state-block error-state">
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="!loading && !error" class="schedule-body">
+    <app-schedule-day
+      *ngIf="viewMode === 'day'"
+      [sessions]="scheduleSessions"
+      [selectedDate]="selectedDate"
+    ></app-schedule-day>
+
+    <app-schedule-week
+      *ngIf="viewMode === 'week'"
+      [sessions]="scheduleSessions"
+      [selectedDate]="selectedDate"
+    ></app-schedule-week>
+  </div>
+</div>
