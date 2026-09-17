@@ -17,6 +17,10 @@ export class ScheduleDayComponent {
   readonly dayStartHour = 6;
   readonly dayEndHour = 22;
 
+  get mobileSessions(): DialysisSession[] {
+    return [...this.sessions].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
+  }
+
   get uniqueMachines(): string[] {
     return [...new Set(this.sessions.map((session) => session.machine_name || session.machine))];
   }

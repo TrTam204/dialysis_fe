@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject, Observable, of } from 'rxjs';
+import { Subject, Observable, of, Subscription } from 'rxjs';
 import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -130,16 +130,20 @@ export class ScheduleComponent implements OnInit, OnDestroy {
     return new Observable<T[]>((observer) => {
       const collected: T[] = [];
       let currentPage = 1;
-      let cancelled = false;
+      let activeSubscription: Subscription | null = null;
 
       const loadNextPage = () => {
-        if (cancelled) {
+        if (observer.closed) {
           return;
         }
 
         const params = { ...baseParams, page: currentPage };
-        requestFactory(params).subscribe({
+        activeSubscription = requestFactory(params).subscribe({
           next: (response) => {
+            if (observer.closed) {
+              return;
+            }
+
             const pageItems = response?.results ?? response ?? [];
             collected.push(...pageItems);
 
@@ -153,7 +157,7 @@ export class ScheduleComponent implements OnInit, OnDestroy {
             observer.complete();
           },
           error: (error) => {
-            if (!cancelled) {
+            if (!observer.closed) {
               observer.error(error);
             }
           },
@@ -163,7 +167,7 @@ export class ScheduleComponent implements OnInit, OnDestroy {
       loadNextPage();
 
       return () => {
-        cancelled = true;
+        activeSubscription?.unsubscribe();
       };
     });
   }
@@ -229,13 +233,9 @@ export class ScheduleComponent implements OnInit, OnDestroy {
       ordering: 'scheduled_start',
     };
 
-    if (this.viewMode === 'day') {
-      params['date'] = this.formatLocalDate(this.selectedDate);
-    } else {
-      const range = this.getWeekRange(this.selectedDate);
-      params['date_from'] = this.formatLocalDateTime(range.start);
-      params['date_to'] = this.formatLocalDateTime(range.end);
-    }
+    const range = this.viewMode === 'day' ? this.getDayRange(this.selectedDate) : this.getWeekRange(this.selectedDate);
+    params['date_from'] = this.formatTimezoneAwareDateTime(range.start);
+    params['date_to'] = this.formatTimezoneAwareDateTime(range.end);
 
     if (this.statusFilter) {
       params['status'] = this.statusFilter;
@@ -262,14 +262,32 @@ export class ScheduleComponent implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
-  private formatLocalDateTime(date: Date): string {
+  private formatTimezoneAwareDateTime(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hour = String(date.getHours()).padStart(2, '0');
     const minute = String(date.getMinutes()).padStart(2, '0');
     const second = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+
+    const offsetMinutes = -date.getTimezoneOffset();
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    const absoluteOffset = Math.abs(offsetMinutes);
+    const offsetHours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
+    const offsetMinutePart = String(absoluteOffset % 60).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds}${sign}${offsetHours}:${offsetMinutePart}`;
+  }
+
+  private getDayRange(date: Date): { start: Date; end: Date } {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
   }
 
   private addDays(date: Date, days: number): Date {

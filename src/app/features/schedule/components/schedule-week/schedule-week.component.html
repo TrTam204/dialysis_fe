@@ -1,5 +1,5 @@
 <div class="week-view" *ngIf="sessions.length > 0; else emptyWeek">
-  <div class="week-grid">
+  <div class="week-grid desktop-only">
     <div class="week-header-cell">Máy</div>
     <div class="week-header-cell" *ngFor="let day of weekDays">
       <div class="day-title">{{ formatDayLabel(day) }}</div>
@@ -16,6 +16,32 @@
         </div>
       </div>
     </ng-container>
+  </div>
+
+  <div class="mobile-week-list mobile-only">
+    <div class="mobile-day-group" *ngFor="let day of weekDays">
+      <div class="mobile-day-header">
+        <span>{{ formatDayLabel(day) }}</span>
+        <span>{{ formatShortDate(day) }}</span>
+      </div>
+
+      <div class="mobile-day-sessions" *ngIf="hasSessionsForDay(day); else noSessionForDay">
+        <ng-container *ngFor="let session of getSessionsForDay(day)">
+          <a [routerLink]="['/sessions', session.session_id]" class="mobile-week-session {{ getStatusClass(session.status) }}">
+            <div class="mobile-week-top">
+              <span>{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
+              <span>{{ session.status }}</span>
+            </div>
+            <div class="mobile-week-patient">{{ session.patient_name || session.patient }}</div>
+            <div class="mobile-week-meta">Máy: {{ session.machine_name || session.machine }}</div>
+          </a>
+        </ng-container>
+      </div>
+
+      <ng-template #noSessionForDay>
+        <div class="mobile-no-session">Không có phiên</div>
+      </ng-template>
+    </div>
   </div>
 </div>
 

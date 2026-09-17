@@ -3,7 +3,7 @@
     <div class="day-label">{{ formatDateHeader(selectedDate) }}</div>
   </div>
 
-  <div class="day-timeline">
+  <div class="day-timeline desktop-only">
     <div class="time-column">
       <div class="time-header">Máy</div>
       <div class="time-slot" *ngFor="let hour of [].constructor(dayEndHour - dayStartHour + 1); let index = index">
@@ -30,6 +30,22 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="mobile-day-list mobile-only">
+    <a
+      *ngFor="let session of mobileSessions"
+      [routerLink]="['/sessions', session.session_id]"
+      class="mobile-session-card {{ getStatusClass(session.status) }}"
+    >
+      <div class="mobile-session-top">
+        <span class="mobile-session-time">{{ getTimeRangeLabel(session) }}</span>
+        <span class="mobile-session-status">{{ session.status }}</span>
+      </div>
+      <div class="mobile-session-patient">{{ session.patient_name || session.patient }}</div>
+      <div class="mobile-session-meta">Máy: {{ session.machine_name || session.machine }}</div>
+      <div class="mobile-session-meta">Điều dưỡng: {{ session.nurse_name || session.assigned_nurse }}</div>
+    </a>
   </div>
 </div>
 

@@ -6,6 +6,14 @@
   overflow: hidden;
 }
 
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
 .day-header {
   padding: 14px 18px;
   border-bottom: 1px solid #edf2f7;
@@ -141,11 +149,66 @@
 }
 
 @media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
   .day-timeline {
-    min-width: 540px;
+    min-width: 0;
   }
 
   .machine-lanes {
-    min-width: 480px;
+    min-width: 0;
+  }
+
+  .mobile-day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .mobile-session-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #111827;
+    border-left: 4px solid transparent;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-session-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-weight: 700;
+  }
+
+  .mobile-session-time {
+    font-size: 0.76rem;
+  }
+
+  .mobile-session-status {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+
+  .mobile-session-patient {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .mobile-session-meta {
+    font-size: 0.76rem;
+    color: #475569;
   }
 }

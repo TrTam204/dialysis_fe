@@ -14,7 +14,9 @@ export class ScheduleWeekComponent {
   @Input() sessions: DialysisSession[] = [];
   @Input() selectedDate = new Date();
 
-  readonly weekDays = Array.from({ length: 7 }, (_, index) => this.getDateForDay(index));
+  get weekDays(): Date[] {
+    return Array.from({ length: 7 }, (_, index) => this.getDateForDay(index));
+  }
 
   get displayedMachines(): string[] {
     return [...new Set(this.sessions.map((session) => session.machine_name || session.machine))];
@@ -23,15 +25,18 @@ export class ScheduleWeekComponent {
   getSessionForDayAndMachine(day: Date, machineName: string): DialysisSession[] {
     return this.sessions
       .filter((session) => (session.machine_name || session.machine) === machineName)
-      .filter((session) => {
-        const start = new Date(session.scheduled_start);
-        const dayStart = new Date(day);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(day);
-        dayEnd.setHours(23, 59, 59, 999);
-        return start >= dayStart && start <= dayEnd;
-      })
+      .filter((session) => this.matchesDay(session, day))
       .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
+  }
+
+  getSessionsForDay(day: Date): DialysisSession[] {
+    return [...this.sessions]
+      .filter((session) => this.matchesDay(session, day))
+      .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
+  }
+
+  hasSessionsForDay(day: Date): boolean {
+    return this.getSessionsForDay(day).length > 0;
   }
 
   getStatusClass(status: string): string {
@@ -56,6 +61,15 @@ export class ScheduleWeekComponent {
       day: '2-digit',
       month: '2-digit',
     }).format(date);
+  }
+
+  private matchesDay(session: DialysisSession, day: Date): boolean {
+    const start = new Date(session.scheduled_start);
+    const dayStart = new Date(day);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(23, 59, 59, 999);
+    return start >= dayStart && start <= dayEnd;
   }
 
   private getDateForDay(offset: number): Date {
