@@ -1,0 +1,34 @@
+<div class="layout-shell">
+  <div
+    class="sidebar-backdrop"
+    *ngIf="mobileSidebarOpen"
+    (click)="closeSidebar()"
+    aria-hidden="true"
+  ></div>
+
+  <app-sidebar
+    [collapsed]="sidebarCollapsed"
+    [currentUserName]="currentUserName"
+    [currentUserRole]="currentUserRole"
+    [class.mobile-open]="mobileSidebarOpen"
+    (itemSelected)="closeSidebar()"
+  ></app-sidebar>
+
+  <div class="content-panel">
+    <app-topbar
+      [title]="routeTitle"
+      [userName]="currentUserName"
+      [userRole]="currentUserRole"
+      [sidebarCollapsed]="sidebarCollapsed"
+      [mobileSidebarOpen]="mobileSidebarOpen"
+      (toggleSidebar)="toggleSidebar()"
+      (logout)="logout()"
+    ></app-topbar>
+
+    <main class="page-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<p-toast position="top-right"></p-toast>

@@ -31,7 +31,7 @@ import { LoginRequest } from '../../core/models';
         <form [formGroup]="form" (ngSubmit)="submit()">
           <div class="field">
             <label for="username">Tên đăng nhập</label>
-            <input id="username" pInputText formControlName="username" [disabled]="loading" />
+            <input id="username" pInputText formControlName="username" />
             <small class="p-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
               Tên đăng nhập không được rỗng
             </small>
@@ -39,7 +39,7 @@ import { LoginRequest } from '../../core/models';
 
           <div class="field">
             <label for="password">Mật khẩu</label>
-            <p-password formControlName="password" [feedback]="false" [toggleMask]="true" [disabled]="loading" />
+            <p-password formControlName="password" [feedback]="false" [toggleMask]="true" />
             <small class="p-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
               Mật khẩu không được rỗng
             </small>
@@ -88,6 +88,7 @@ export class LoginComponent {
     }
 
     this.loading = true;
+    this.form.disable();
     this.messages = [];
 
     const credentials: LoginRequest = {
@@ -98,10 +99,12 @@ export class LoginComponent {
     this.authService.login(credentials).subscribe({
       next: () => {
         this.loading = false;
+        this.form.enable();
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.loading = false;
+        this.form.enable();
         const detail = err?.error?.detail || err?.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
         this.messages = [{ severity: 'error', summary: 'Lỗi đăng nhập', detail }];
       },

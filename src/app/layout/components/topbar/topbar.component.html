@@ -1,0 +1,34 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <button
+      pButton
+      type="button"
+      icon="pi pi-bars"
+      class="p-button-text topbar-toggle"
+      [attr.aria-expanded]="mobileSidebarOpen"
+      (click)="toggleSidebar.emit()"
+      aria-label="Toggle sidebar"
+    ></button>
+
+    <div class="title-block">
+      <span class="eyebrow">Trung tâm lọc máu</span>
+      <h1>{{ title }}</h1>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="user-badge">
+      <span class="user-badge__name">{{ userName }}</span>
+      <span class="user-badge__role">{{ userRole }}</span>
+    </div>
+
+    <button
+      pButton
+      type="button"
+      label="Đăng xuất"
+      icon="pi pi-sign-out"
+      class="p-button-outlined p-button-danger"
+      (click)="logout.emit()"
+    ></button>
+  </div>
+</header>

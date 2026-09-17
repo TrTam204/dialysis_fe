@@ -1,118 +1,105 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
-import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardSummary, DialysisSessionStats, MachineStats } from '../../core/models';
+import { DashboardService } from '../../core/services/dashboard.service';
+import { SessionService } from '../../core/services/session.service';
+
+type TodaySummary = {
+  total: number;
+  scheduled: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+};
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, CardModule, ChartModule, ToastModule],
+  imports: [CommonModule, ButtonModule, CardModule, ChartModule, ToastModule, RouterLink],
   providers: [MessageService],
-  template: `
-    <div class="dashboard-container">
-      <p-toast></p-toast>
-
-      <div *ngIf="loading" class="loading-box">
-        <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu Dashboard...
-      </div>
-
-      <div *ngIf="error && !loading" class="error-box">
-        <p-card>
-          <p class="error-message">Không thể tải dữ liệu Dashboard.</p>
-          <button pButton type="button" label="Thử lại" icon="pi pi-refresh" (ngOnInit)="loadDashboardData()"></button>
-        </p-card>
-      </div>
-
-      <div *ngIf="!loading && !error && summary" class="dashboard-grid">
-        <p-card header="Tổng số bệnh nhân" class="stat-card">
-          <h2>{{ summary.total_patients }}</h2>
-        </p-card>
-        <p-card header="Tổng số nhân sự" class="stat-card">
-          <h2>{{ summary.total_staff }}</h2>
-        </p-card>
-        <p-card header="Tổng phiên lọc" class="stat-card">
-          <h2>{{ summary.total_sessions }}</h2>
-        </p-card>
-        <p-card header="Máy hoạt động" class="stat-card">
-          <h2>{{ summary.active_machines }}</h2>
-        </p-card>
-
-        <p-card header="Số ca lọc theo ngày (7 ngày)" class="wide-card">
-          <p-chart *ngIf="barData" type="bar" [data]="barData" [options]="barOptions"></p-chart>
-          <p *ngIf="!barData" class="no-data">Không có dữ liệu</p>
-        </p-card>
-
-        <p-card header="Trạng thái máy" class="wide-card">
-          <p-chart *ngIf="doughnutData" type="doughnut" [data]="doughnutData" [options]="doughnutOptions"></p-chart>
-          <p *ngIf="!doughnutData" class="no-data">Không có dữ liệu</p>
-        </p-card>
-      </div>
-    </div>
-  `,
-  styles: [
-    '.dashboard-container { padding: 24px; }',
-    '.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }',
-    '.stat-card h2 { margin: 12px 0 0; font-size: 2rem; }',
-    '.wide-card { grid-column: span 2; }',
-    '.loading-box { padding: 48px; text-align: center; color: #64748b; }',
-    '.loading-box i { margin-right: 8px; }',
-    '.error-box { text-align: center; padding: 48px; }',
-    '.error-message { color: #f87171; margin-bottom: 16px; }',
-    '.no-data { text-align: center; color: #94a3b8; padding: 24px; }',
-  ],
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.scss'],
 })
 export class HomeComponent implements OnInit {
   summary: DashboardSummary | null = null;
+  todaySummary: TodaySummary = {
+    total: 0,
+    scheduled: 0,
+    inProgress: 0,
+    completed: 0,
+    cancelled: 0,
+  };
+  todaySessions: any[] = [];
+  machineStats: MachineStats[] = [];
   barData: any = null;
   doughnutData: any = null;
   loading = false;
   error = false;
 
-  barOptions = {
+  readonly barOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { stepSize: 1 },
+      },
+    },
   };
 
-  doughnutOptions = {
+  readonly doughnutOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom' as const } },
   };
 
   constructor(
     private dashboardService: DashboardService,
-    private messageService: MessageService
+    private sessionService: SessionService,
+    private messageService: MessageService,
+    private router: Router,
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadDashboardData();
   }
 
-  loadDashboardData() {
+  loadDashboardData(): void {
     this.loading = true;
     this.error = false;
 
     this.dashboardService.getSummary().subscribe({
       next: (data: DashboardSummary) => {
         this.summary = data;
-        this.loading = false;
       },
       error: () => {
-        this.loading = false;
         this.error = true;
-        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải tổng quan Dashboard.' });
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi Dashboard',
+          detail: 'Không thể tải dữ liệu tổng quan.',
+        });
       },
     });
 
     this.dashboardService.getDialysisStats().subscribe({
       next: (data: DialysisSessionStats[]) => {
         this.barData = {
-          labels: data.map((d) => d.date),
-          datasets: [{ label: 'Ca lọc', data: data.map((d) => d.count), backgroundColor: '#60a5fa' }],
+          labels: data.map((item) => item.date),
+          datasets: [
+            {
+              label: 'Ca lọc',
+              data: data.map((item) => item.count),
+              backgroundColor: '#60a5fa',
+            },
+          ],
         };
       },
       error: () => {
@@ -122,6 +109,7 @@ export class HomeComponent implements OnInit {
 
     this.dashboardService.getMachineStats().subscribe({
       next: (data: MachineStats[]) => {
+        this.machineStats = data;
         const statusLabels: Record<string, string> = {
           AVAILABLE: 'Sẵn sàng',
           IN_USE: 'Đang sử dụng',
@@ -134,17 +122,87 @@ export class HomeComponent implements OnInit {
           MAINTENANCE: '#f59e0b',
           BROKEN: '#ef4444',
         };
+
         this.doughnutData = {
-          labels: data.map((d) => statusLabels[d.status] || d.status),
-          datasets: [{
-            data: data.map((d) => d.count),
-            backgroundColor: data.map((d) => statusColors[d.status] || '#94a3b8'),
-          }],
+          labels: data.map((item) => statusLabels[item.status] || item.status),
+          datasets: [
+            {
+              data: data.map((item) => item.count),
+              backgroundColor: data.map((item) => statusColors[item.status] || '#94a3b8'),
+            },
+          ],
         };
       },
       error: () => {
+        this.machineStats = [];
         this.doughnutData = null;
       },
     });
+
+    const today = this.getTodayIsoDate();
+    this.sessionService.getAll({ date: today }).subscribe({
+      next: (response: any) => {
+        const sessions = Array.isArray(response) ? response : response?.results ?? [];
+        this.todaySessions = [...sessions].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
+        this.todaySummary = {
+          total: this.todaySessions.length,
+          scheduled: this.todaySessions.filter((session) => session.status === 'SCHEDULED').length,
+          inProgress: this.todaySessions.filter((session) => session.status === 'IN_PROGRESS').length,
+          completed: this.todaySessions.filter((session) => session.status === 'COMPLETED').length,
+          cancelled: this.todaySessions.filter((session) => session.status === 'CANCELLED').length,
+        };
+        this.loading = false;
+      },
+      error: () => {
+        this.todaySessions = [];
+        this.todaySummary = { total: 0, scheduled: 0, inProgress: 0, completed: 0, cancelled: 0 };
+        this.loading = false;
+        this.error = true;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi phiên hôm nay',
+          detail: 'Không thể tải danh sách phiên lọc hôm nay.',
+        });
+      },
+    });
+  }
+
+  openSessionDetail(sessionId?: string): void {
+    if (!sessionId) {
+      return;
+    }
+    this.router.navigate(['/sessions', sessionId]);
+  }
+
+  getMachineCount(status: string): number {
+    return this.machineStats.find((item) => item.status === status)?.count ?? 0;
+  }
+
+  getSessionStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      SCHEDULED: 'Chờ thực hiện',
+      IN_PROGRESS: 'Đang thực hiện',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    return labels[status] || status;
+  }
+
+  getSessionStatusClass(status: string): string {
+    const classes: Record<string, string> = {
+      SCHEDULED: 'status-scheduled',
+      IN_PROGRESS: 'status-in-progress',
+      COMPLETED: 'status-completed',
+      CANCELLED: 'status-cancelled',
+    };
+    return classes[status] || 'status-default';
+  }
+
+  private getTodayIsoDate(): string {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - offset * 60 * 1000);
+    return local.toISOString().slice(0, 10);
   }
 }
+

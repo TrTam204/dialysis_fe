@@ -1,0 +1,38 @@
+<aside class="sidebar" [class.collapsed]="collapsed">
+  <div class="brand-block">
+    <div class="brand-mark">
+      <span class="brand-mark__icon pi pi-heart-fill"></span>
+    </div>
+    <div class="brand-copy" *ngIf="!collapsed">
+      <span class="brand-name">LocMau</span>
+      <span class="brand-subtitle">Dialysis Center</span>
+    </div>
+  </div>
+
+  <div class="user-card" *ngIf="!collapsed">
+    <div class="user-avatar">{{ currentUserName.charAt(0).toUpperCase() || 'U' }}</div>
+    <div class="user-meta">
+      <span class="user-name">{{ currentUserName }}</span>
+      <span class="user-role">{{ currentUserRole }}</span>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="Sidebar navigation">
+    <div class="nav-group" *ngFor="let group of navGroups">
+      <div class="nav-group__label" *ngIf="!collapsed">{{ group.label }}</div>
+
+      <a
+        *ngFor="let item of group.items"
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        [attr.title]="item.label"
+        (click)="onNavigate()"
+      >
+        <span class="nav-item__icon" [class]="item.icon"></span>
+        <span class="nav-item__label" *ngIf="!collapsed">{{ item.label }}</span>
+      </a>
+    </div>
+  </nav>
+</aside>

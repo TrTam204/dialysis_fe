@@ -1,0 +1,111 @@
+<div class="dashboard-container">
+  <p-toast></p-toast>
+
+  <div *ngIf="loading" class="loading-box">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Đang tải dữ liệu Dashboard...</span>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-box">
+    <p-card>
+      <div class="error-panel">
+        <p>Không thể tải dữ liệu Dashboard.</p>
+        <button type="button" class="p-button p-component" (click)="loadDashboardData()">
+          <i class="pi pi-refresh"></i>
+          <span>Thử lại</span>
+        </button>
+      </div>
+    </p-card>
+  </div>
+
+  <div *ngIf="!loading && !error" class="dashboard-grid">
+    <p-card header="Tổng bệnh nhân" class="stat-card">
+      <div class="stat-value">{{ summary?.total_patients ?? 0 }}</div>
+    </p-card>
+
+    <p-card header="Nhân sự" class="stat-card">
+      <div class="stat-value">{{ summary?.total_staff ?? 0 }}</div>
+    </p-card>
+
+    <p-card header="Tổng phiên lọc" class="stat-card">
+      <div class="stat-value">{{ summary?.total_sessions ?? 0 }}</div>
+    </p-card>
+
+    <p-card header="Máy hoạt động" class="stat-card">
+      <div class="stat-value">{{ summary?.active_machines ?? 0 }}</div>
+    </p-card>
+
+    <p-card header="Phiên hôm nay" class="wide-card">
+      <div class="today-kpis">
+        <div class="mini-kpi">
+          <span class="label">Tổng</span>
+          <strong>{{ todaySummary.total }}</strong>
+        </div>
+        <div class="mini-kpi">
+          <span class="label">Chờ</span>
+          <strong>{{ todaySummary.scheduled }}</strong>
+        </div>
+        <div class="mini-kpi">
+          <span class="label">Đang chạy</span>
+          <strong>{{ todaySummary.inProgress }}</strong>
+        </div>
+        <div class="mini-kpi">
+          <span class="label">Hoàn thành</span>
+          <strong>{{ todaySummary.completed }}</strong>
+        </div>
+        <div class="mini-kpi">
+          <span class="label">Đã hủy</span>
+          <strong>{{ todaySummary.cancelled }}</strong>
+        </div>
+      </div>
+
+      <div class="session-list" *ngIf="todaySessions.length; else emptySessions">
+        <div class="session-row" *ngFor="let session of todaySessions | slice:0:6" (click)="openSessionDetail(session.session_id)" [class.clickable-row]="session.session_id">
+          <div>
+            <div class="session-patient">{{ session.patient_name || session.patient?.full_name || session.patient || 'Bệnh nhân' }}</div>
+            <div class="session-time">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</div>
+          </div>
+          <div class="session-actions">
+            <span class="session-status" [ngClass]="getSessionStatusClass(session.status)">
+              {{ getSessionStatusLabel(session.status) }}
+            </span>
+            <button
+              type="button"
+              pButton
+              class="p-button-text p-button-sm"
+              icon="pi pi-external-link"
+              label="Chi tiết"
+              [routerLink]="['/sessions', session.session_id]"
+              (click)="$event.stopPropagation()"
+            ></button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptySessions>
+        <div class="empty-state">Không có phiên lọc nào trong ngày hôm nay.</div>
+      </ng-template>
+    </p-card>
+
+    <p-card header="Ca lọc theo 7 ngày" class="wide-card">
+      <div class="chart-panel">
+        <p-chart *ngIf="barData" type="bar" [data]="barData" [options]="barOptions"></p-chart>
+        <p *ngIf="!barData" class="no-data">Không có dữ liệu</p>
+      </div>
+    </p-card>
+
+    <p-card header="Trạng thái máy" class="wide-card">
+      <div class="chart-panel">
+        <p-chart *ngIf="doughnutData" type="doughnut" [data]="doughnutData" [options]="doughnutOptions"></p-chart>
+        <div *ngIf="doughnutData" class="legend-list">
+          <div class="legend-item" *ngFor="let item of machineStats">
+            <span class="legend-dot" [style.background]="item.status === 'AVAILABLE' ? '#22c55e' : item.status === 'IN_USE' ? '#3b82f6' : item.status === 'MAINTENANCE' ? '#f59e0b' : '#ef4444'"></span>
+            <span>{{ item.status === 'AVAILABLE' ? 'Sẵn sàng' : item.status === 'IN_USE' ? 'Đang sử dụng' : item.status === 'MAINTENANCE' ? 'Bảo trì' : 'Hỏng' }}</span>
+            <strong>{{ item.count }}</strong>
+          </div>
+        </div>
+        <p *ngIf="!doughnutData" class="no-data">Không có dữ liệu</p>
+      </div>
+    </p-card>
+  </div>
+</div>

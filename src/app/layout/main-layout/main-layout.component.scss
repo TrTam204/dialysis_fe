@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  height: 100vh;
+  width: 100%;
+}
+
+.layout-shell {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: #f8fafc;
+  overflow-x: hidden;
+}
+
+.content-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+}
+
+.page-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #f8fafc;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 90;
+}
+
+@media (max-width: 960px) {
+  .layout-shell {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .content-panel {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+}
