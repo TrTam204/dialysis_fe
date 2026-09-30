@@ -70,12 +70,21 @@ export interface DialysisSession {
   assigned_nurse: number; // user ID
   scheduled_start: string; // ISO 8601
   scheduled_end: string; // ISO 8601
+  actual_start?: string | null;
+  actual_end?: string | null;
+  pre_weight?: number | null;
+  post_weight?: number | null;
+  uf_target?: number | null;
+  uf_actual?: number | null;
+  clinical_notes?: string;
   pre_dialysis_bp?: string;
   during_dialysis_bp?: string;
   post_dialysis_bp?: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
   patient_name?: string;
+  patient_code?: string;
+  patient_dry_weight?: number | null;
   machine_name?: string;
   nurse_name?: string;
   created_at?: string;
@@ -84,7 +93,7 @@ export interface DialysisSession {
 
 export interface VitalSign {
   id?: number;
-  session: number; // session ID (not used in create, set by nested route)
+  session: string | number; // session ID
   recorded_by: number; // user ID (auto-set by backend)
   recorded_at: string; // ISO 8601
   systolic_bp?: number | null;

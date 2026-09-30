@@ -1,0 +1,563 @@
+<div class="page-shell">
+  <p-toast></p-toast>
+  <p-confirmDialog header="Xác nhận" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-box">
+    <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu phiếu lọc máu...
+  </div>
+
+  <!-- Session content -->
+  <div *ngIf="!loading && session" class="record-container">
+    <!-- Header Card -->
+    <div class="header-card">
+      <div class="header-left">
+        <a pButton icon="pi pi-arrow-left" label="Quay lại danh sách" class="p-button-text p-button-sm back-btn" routerLink="/sessions"></a>
+        <div class="title-row">
+          <h1 class="record-title">Phiếu lọc máu điện tử: {{ session.session_id }}</h1>
+          <p-tag [value]="getStatusLabel(session.status)" [severity]="getStatusSeverity(session.status)" class="status-tag"></p-tag>
+        </div>
+        <p class="record-subtitle">
+          Bệnh nhân: <strong>{{ session.patient_name || session.patient }}</strong> (Mã: {{ session.patient_code || session.patient }})
+          &bull; Máy: <strong>{{ session.machine_name || session.machine }}</strong>
+          &bull; Điều dưỡng: <strong>{{ session.nurse_name || session.assigned_nurse }}</strong>
+        </p>
+      </div>
+
+      <!-- Workflow Action Bar -->
+      <div class="header-actions">
+        <!-- Start session button -->
+        <button
+          pButton
+          *ngIf="canManageWorkflow && session.status === 'SCHEDULED'"
+          type="button"
+          icon="pi pi-play"
+          label="Bắt đầu phiên lọc"
+          class="p-button-success"
+          (click)="openStartSessionDialog()"
+        ></button>
+
+        <!-- End session button -->
+        <button
+          pButton
+          *ngIf="canManageWorkflow && session.status === 'IN_PROGRESS'"
+          type="button"
+          icon="pi pi-check-circle"
+          label="Kết thúc phiên lọc"
+          class="p-button-warning"
+          (click)="openEndSessionDialog()"
+        ></button>
+
+        <!-- Quick update clinical params -->
+        <button
+          pButton
+          *ngIf="canManageWorkflow && session.status !== 'CANCELLED'"
+          type="button"
+          icon="pi pi-sliders-h"
+          label="Cập nhật thông số"
+          class="p-button-outlined p-button-secondary"
+          (click)="openClinicalParamsDialog()"
+        ></button>
+
+        <!-- Edit full session for Admin/Doctor -->
+        <a
+          pButton
+          *ngIf="canEditFull"
+          type="button"
+          icon="pi pi-pencil"
+          label="Sửa thông tin"
+          class="p-button-outlined"
+          [routerLink]="['/sessions', session.session_id, 'edit']"
+        ></a>
+
+        <!-- Cancel session button for Admin/Doctor -->
+        <button
+          pButton
+          *ngIf="canCancel && (session.status === 'SCHEDULED' || session.status === 'IN_PROGRESS')"
+          type="button"
+          icon="pi pi-times-circle"
+          label="Hủy ca lọc"
+          class="p-button-danger p-button-outlined"
+          (click)="confirmCancelSession()"
+        ></button>
+      </div>
+    </div>
+
+    <!-- Clinical Overview Grid -->
+    <div class="overview-grid">
+      <!-- Card 1: Bệnh nhân & Máy -->
+      <div class="info-card">
+        <div class="card-header">
+          <i class="pi pi-user text-primary"></i>
+          <h3>Thông tin ca điều trị</h3>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="label">Bệnh nhân:</span>
+            <span class="value font-medium">{{ session.patient_name || session.patient }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Mã bệnh nhân:</span>
+            <span class="value">{{ session.patient_code || session.patient }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Cân nặng khô:</span>
+            <span class="value text-primary font-bold">
+              {{ session.patient_dry_weight ? (session.patient_dry_weight + ' kg') : 'Chưa thiết lập' }}
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="label">Máy lọc máu:</span>
+            <span class="value font-medium">{{ session.machine_name || session.machine }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Điều dưỡng phụ trách:</span>
+            <span class="value">{{ session.nurse_name || session.assigned_nurse }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Thời gian vận hành -->
+      <div class="info-card">
+        <div class="card-header">
+          <i class="pi pi-clock text-info"></i>
+          <h3>Thời gian vận hành</h3>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="label">Kế hoạch bắt đầu:</span>
+            <span class="value">{{ session.scheduled_start | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Kế hoạch kết thúc:</span>
+            <span class="value">{{ session.scheduled_end | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Thực tế bắt đầu:</span>
+            <span class="value" [class.text-muted]="!session.actual_start">
+              {{ session.actual_start ? (session.actual_start | date: 'dd/MM/yyyy HH:mm') : 'Chưa bắt đầu' }}
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="label">Thực tế kết thúc:</span>
+            <span class="value" [class.text-muted]="!session.actual_end">
+              {{ session.actual_end ? (session.actual_end | date: 'dd/MM/yyyy HH:mm') : 'Chưa kết thúc' }}
+            </span>
+          </div>
+          <div class="info-row" *ngIf="actualDuration">
+            <span class="label">Thời lượng thực tế:</span>
+            <span class="value font-medium text-success">{{ actualDuration }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Thông số thể trọng & Siêu lọc UF (Lít) -->
+      <div class="info-card highlight-card">
+        <div class="card-header">
+          <i class="pi pi-chart-line text-success"></i>
+          <h3>Thông số thể trọng & Siêu lọc (UF)</h3>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <span class="metric-title">Cân trước lọc</span>
+            <span class="metric-val" [class.empty]="!session.pre_weight">
+              {{ session.pre_weight ? (session.pre_weight + ' kg') : '--' }}
+            </span>
+            <small *ngIf="weightGain !== null" class="metric-sub" [class.text-danger]="weightGain > 3">
+              Tăng: +{{ weightGain.toFixed(1) }} kg
+            </small>
+          </div>
+
+          <div class="metric-box">
+            <span class="metric-title">Cân sau lọc</span>
+            <span class="metric-val" [class.empty]="!session.post_weight">
+              {{ session.post_weight ? (session.post_weight + ' kg') : '--' }}
+            </span>
+            <small *ngIf="session.post_weight && session.patient_dry_weight" class="metric-sub">
+              So cân khô: {{ (session.post_weight - session.patient_dry_weight > 0 ? '+' : '') + (session.post_weight - session.patient_dry_weight).toFixed(1) }} kg
+            </small>
+          </div>
+
+          <div class="metric-box">
+            <span class="metric-title">Mục tiêu UF</span>
+            <span class="metric-val text-primary" [class.empty]="session.uf_target === null || session.uf_target === undefined">
+              {{ session.uf_target !== null && session.uf_target !== undefined ? (session.uf_target + ' L') : '--' }}
+            </span>
+            <small class="metric-sub">Thể tích chỉ định</small>
+          </div>
+
+          <div class="metric-box">
+            <span class="metric-title">UF thực tế</span>
+            <span class="metric-val text-success" [class.empty]="session.uf_actual === null || session.uf_actual === undefined">
+              {{ session.uf_actual !== null && session.uf_actual !== undefined ? (session.uf_actual + ' L') : '--' }}
+            </span>
+            <small class="metric-sub">Lượng dịch đã rút</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clinical Notes / Diễn biến lâm sàng -->
+    <div class="notes-panel" *ngIf="session.clinical_notes || session.notes">
+      <div class="panel-header">
+        <i class="pi pi-file-edit"></i>
+        <h3>Diễn biến lâm sàng & Ghi chú phiên lọc</h3>
+      </div>
+      <div class="panel-content">
+        <div *ngIf="session.clinical_notes" class="clinical-note-box">
+          <span class="note-label"><i class="pi pi-check-square"></i> Diễn biến lâm sàng trong ca:</span>
+          <p class="note-text">{{ session.clinical_notes }}</p>
+        </div>
+        <div *ngIf="session.notes" class="general-note-box">
+          <span class="note-label"><i class="pi pi-info-circle"></i> Ghi chú lập lịch:</span>
+          <p class="note-text">{{ session.notes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vital Signs Flowsheet (Electronic Chart) -->
+    <div class="vitals-panel">
+      <div class="vitals-header">
+        <div class="vitals-title">
+          <i class="pi pi-heart text-danger"></i>
+          <div>
+            <h3>Diễn biến sinh hiệu trong ca lọc</h3>
+            <p class="vitals-subtitle">Theo dõi định kỳ huyết áp, mạch, SpO2 và thân nhiệt bệnh nhân</p>
+          </div>
+        </div>
+        <button
+          pButton
+          *ngIf="canWriteVitals && session.status !== 'CANCELLED'"
+          type="button"
+          icon="pi pi-plus"
+          label="Thêm lần đo sinh hiệu"
+          class="p-button-success p-button-sm"
+          (click)="openAddVitalSign()"
+        ></button>
+      </div>
+
+      <div *ngIf="vitalSignsLoading" class="vitals-loading">
+        <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu sinh hiệu...
+      </div>
+
+      <p-table
+        *ngIf="!vitalSignsLoading"
+        [value]="vitalSigns"
+        [responsiveLayout]="'scroll'"
+        styleClass="p-datatable-sm vitals-table"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 140px">Thời điểm</th>
+            <th style="width: 130px">Huyết áp (mmHg)</th>
+            <th style="width: 110px">Mạch (bpm)</th>
+            <th style="width: 100px">SpO2 (%)</th>
+            <th style="width: 110px">Nhiệt độ (°C)</th>
+            <th>Người ghi nhận</th>
+            <th>Ghi chú diễn biến</th>
+            <th *ngIf="canWriteVitals" style="width: 90px; text-align: center">Thao tác</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-vital let-i="rowIndex">
+          <tr [class.pre-dialysis-row]="i === 0" [class.post-dialysis-row]="i === vitalSigns.length - 1 && session.status === 'COMPLETED'">
+            <td>
+              <span class="time-stamp">{{ vital.recorded_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="i === 0" class="badge-tag pre-tag">Trước lọc</span>
+              <span *ngIf="i === vitalSigns.length - 1 && session.status === 'COMPLETED' && vitalSigns.length > 1" class="badge-tag post-tag">Sau lọc</span>
+            </td>
+            <td>
+              <span class="bp-val font-medium" [class.text-danger]="isBpAbnormal(vital.systolic_bp, vital.diastolic_bp)">
+                {{ (vital.systolic_bp || '-') + ' / ' + (vital.diastolic_bp || '-') }}
+              </span>
+            </td>
+            <td>
+              <span class="metric-cell" [class.text-danger]="vital.heart_rate && (vital.heart_rate < 50 || vital.heart_rate > 110)">
+                {{ vital.heart_rate || '-' }}
+              </span>
+            </td>
+            <td>
+              <span class="metric-cell" [class.text-danger]="vital.spo2 && vital.spo2 < 95">
+                {{ vital.spo2 ? (vital.spo2 + '%') : '-' }}
+              </span>
+            </td>
+            <td>
+              <span class="metric-cell" [class.text-danger]="vital.temperature && vital.temperature >= 37.5">
+                {{ vital.temperature ? (vital.temperature + '°C') : '-' }}
+              </span>
+            </td>
+            <td>
+              <span class="nurse-cell">{{ vital.recorded_by_name || vital.recorded_by }}</span>
+            </td>
+            <td>
+              <span class="note-cell">{{ vital.notes || '-' }}</span>
+            </td>
+            <td *ngIf="canWriteVitals" style="text-align: center">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-sm p-button-rounded"
+                pTooltip="Sửa sinh hiệu"
+                (click)="openEditVitalSign(vital)"
+              ></button>
+              <button
+                pButton
+                *ngIf="canDeleteVitals"
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-danger p-button-sm p-button-rounded"
+                pTooltip="Xóa sinh hiệu (Admin)"
+                (click)="confirmDeleteVitalSign(vital)"
+              ></button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td [attr.colspan]="canWriteVitals ? 8 : 7" class="text-center empty-cell">
+              <i class="pi pi-info-circle text-muted"></i>
+              <span>Chưa có bản ghi sinh hiệu nào trong phiên lọc này.</span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Session not found -->
+  <div *ngIf="!loading && !session" class="error-box">
+    <p-card>
+      <div class="empty-state">
+        <i class="pi pi-exclamation-circle text-warning text-4xl mb-3"></i>
+        <h3>Không tìm thấy phiên lọc máu</h3>
+        <p class="text-muted mb-4">Phiên lọc không tồn tại hoặc đã bị xóa.</p>
+        <a pButton type="button" label="Quay lại danh sách phiên" icon="pi pi-arrow-left" routerLink="/sessions"></a>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- DIALOG 1: Bắt đầu phiên lọc (SCHEDULED -> IN_PROGRESS) -->
+  <p-dialog
+    [(visible)]="startSessionDialog"
+    header="Bắt đầu phiên lọc máu"
+    [modal]="true"
+    [style]="{ width: '480px' }"
+  >
+    <form [formGroup]="startForm" (ngSubmit)="submitStartSession()">
+      <p class="dialog-desc">
+        Xác nhận bắt đầu phiên lọc cho bệnh nhân <strong>{{ session?.patient_name }}</strong>. Vui lòng ghi nhận cân trước lọc và mục tiêu siêu lọc.
+      </p>
+
+      <div class="field">
+        <label for="start_pre_weight">Cân nặng trước lọc (kg) <span class="required">*</span></label>
+        <p-inputNumber
+          id="start_pre_weight"
+          formControlName="pre_weight"
+          [min]="1"
+          [max]="300"
+          [maxFractionDigits]="2"
+          placeholder="Nhập cân nặng đo trước khi lên máy..."
+          class="w-full"
+        ></p-inputNumber>
+        <small class="p-error" *ngIf="startForm.get('pre_weight')?.invalid && startForm.get('pre_weight')?.touched">
+          Cân trước lọc là bắt buộc và phải lớn hơn 0.
+        </small>
+        <small *ngIf="session?.patient_dry_weight" class="text-muted block mt-1">
+          Cân khô mục tiêu: {{ session?.patient_dry_weight }} kg
+        </small>
+      </div>
+
+      <div class="field">
+        <label for="start_uf_target">Mục tiêu siêu lọc UF (Lít) <span class="required">*</span></label>
+        <p-inputNumber
+          id="start_uf_target"
+          formControlName="uf_target"
+          [min]="0"
+          [max]="10"
+          [maxFractionDigits]="2"
+          placeholder="Lượng dịch cần rút (Lít)..."
+          class="w-full"
+        ></p-inputNumber>
+        <small class="p-error" *ngIf="startForm.get('uf_target')?.invalid && startForm.get('uf_target')?.touched">
+          Mục tiêu UF phải từ 0 đến 10 Lít.
+        </small>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" (click)="startSessionDialog = false" class="p-button-text"></button>
+        <button pButton type="submit" label="Bắt đầu ca lọc" icon="pi pi-play" class="p-button-success" [disabled]="startForm.invalid || actionSaving" [loading]="actionSaving"></button>
+      </div>
+    </form>
+  </p-dialog>
+
+  <!-- DIALOG 2: Kết thúc phiên lọc (IN_PROGRESS -> COMPLETED) -->
+  <p-dialog
+    [(visible)]="endSessionDialog"
+    header="Kết thúc phiên lọc máu"
+    [modal]="true"
+    [style]="{ width: '520px' }"
+  >
+    <form [formGroup]="endForm" (ngSubmit)="submitEndSession()">
+      <p class="dialog-desc">
+        Xác nhận hoàn thành ca lọc máu cho bệnh nhân <strong>{{ session?.patient_name }}</strong>. Vui lòng ghi nhận các chỉ số tổng kết ca.
+      </p>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="end_post_weight">Cân nặng sau lọc (kg) <span class="required">*</span></label>
+          <p-inputNumber
+            id="end_post_weight"
+            formControlName="post_weight"
+            [min]="1"
+            [max]="300"
+            [maxFractionDigits]="2"
+            placeholder="Cân nặng sau lọc..."
+            class="w-full"
+          ></p-inputNumber>
+          <small class="p-error" *ngIf="endForm.get('post_weight')?.invalid && endForm.get('post_weight')?.touched">
+            Cân sau lọc là bắt buộc và > 0.
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="end_uf_actual">UF thực tế đã rút (Lít) <span class="required">*</span></label>
+          <p-inputNumber
+            id="end_uf_actual"
+            formControlName="uf_actual"
+            [min]="0"
+            [max]="10"
+            [maxFractionDigits]="2"
+            placeholder="Dịch thực tế rút..."
+            class="w-full"
+          ></p-inputNumber>
+          <small class="p-error" *ngIf="endForm.get('uf_actual')?.invalid && endForm.get('uf_actual')?.touched">
+            UF thực tế phải từ 0 đến 10 Lít.
+          </small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="end_clinical_notes">Ghi chú diễn biến & Tình trạng kết thúc</label>
+        <textarea
+          id="end_clinical_notes"
+          pInputTextarea
+          formControlName="clinical_notes"
+          rows="3"
+          placeholder="Ghi chép các diễn biến trong ca lọc (chuột rút, tụt HA, can thiệp y tế...) và tình trạng người bệnh lúc kết thúc..."
+          class="w-full"
+        ></textarea>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" (click)="endSessionDialog = false" class="p-button-text"></button>
+        <button pButton type="submit" label="Hoàn thành phiên" icon="pi pi-check" class="p-button-warning" [disabled]="endForm.invalid || actionSaving" [loading]="actionSaving"></button>
+      </div>
+    </form>
+  </p-dialog>
+
+  <!-- DIALOG 3: Cập nhật thông số điều trị lâm sàng -->
+  <p-dialog
+    [(visible)]="clinicalParamsDialog"
+    header="Cập nhật thông số điều trị"
+    [modal]="true"
+    [style]="{ width: '520px' }"
+  >
+    <form [formGroup]="clinicalParamsForm" (ngSubmit)="submitClinicalParams()">
+      <div class="form-row">
+        <div class="field">
+          <label for="cp_pre_weight">Cân trước lọc (kg)</label>
+          <p-inputNumber id="cp_pre_weight" formControlName="pre_weight" [min]="1" [max]="300" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
+        </div>
+        <div class="field">
+          <label for="cp_post_weight">Cân sau lọc (kg)</label>
+          <p-inputNumber id="cp_post_weight" formControlName="post_weight" [min]="1" [max]="300" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="cp_uf_target">Mục tiêu UF (Lít)</label>
+          <p-inputNumber id="cp_uf_target" formControlName="uf_target" [min]="0" [max]="10" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
+        </div>
+        <div class="field">
+          <label for="cp_uf_actual">UF thực tế đã rút (Lít)</label>
+          <p-inputNumber id="cp_uf_actual" formControlName="uf_actual" [min]="0" [max]="10" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cp_clinical_notes">Ghi chép lâm sàng</label>
+        <textarea id="cp_clinical_notes" pInputTextarea formControlName="clinical_notes" rows="3" class="w-full"></textarea>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" (click)="clinicalParamsDialog = false" class="p-button-text"></button>
+        <button pButton type="submit" label="Lưu thông số" icon="pi pi-save" class="p-button-primary" [disabled]="clinicalParamsForm.invalid || actionSaving" [loading]="actionSaving"></button>
+      </div>
+    </form>
+  </p-dialog>
+
+  <!-- DIALOG 4: Thêm / Sửa Sinh hiệu (Vital Signs) -->
+  <p-dialog
+    [(visible)]="vitalSignDialog"
+    [header]="editingVitalSign ? 'Sửa lần đo sinh hiệu' : 'Thêm lần đo sinh hiệu'"
+    [modal]="true"
+    [style]="{ width: '480px' }"
+  >
+    <form [formGroup]="vitalSignForm" (ngSubmit)="saveVitalSign()">
+      <div class="field">
+        <label for="vs_recorded_at">Thời điểm ghi nhận <span class="required">*</span></label>
+        <p-calendar
+          id="vs_recorded_at"
+          formControlName="recorded_at"
+          [showTime]="true"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          appendTo="body"
+        ></p-calendar>
+        <small class="p-error" *ngIf="vitalSignForm.get('recorded_at')?.invalid && vitalSignForm.get('recorded_at')?.touched">
+          Thời điểm ghi nhận không được để trống.
+        </small>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="vs_systolic_bp">Huyết áp tâm thu (mmHg)</label>
+          <p-inputNumber id="vs_systolic_bp" formControlName="systolic_bp" [min]="1" [max]="300" placeholder="120" class="w-full"></p-inputNumber>
+        </div>
+        <div class="field">
+          <label for="vs_diastolic_bp">Huyết áp tâm trương (mmHg)</label>
+          <p-inputNumber id="vs_diastolic_bp" formControlName="diastolic_bp" [min]="1" [max]="200" placeholder="80" class="w-full"></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="vs_heart_rate">Nhịp tim (bpm)</label>
+          <p-inputNumber id="vs_heart_rate" formControlName="heart_rate" [min]="1" [max]="299" placeholder="75" class="w-full"></p-inputNumber>
+        </div>
+        <div class="field">
+          <label for="vs_spo2">SpO2 (%)</label>
+          <p-inputNumber id="vs_spo2" formControlName="spo2" [min]="0" [max]="100" placeholder="98" class="w-full"></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="vs_temperature">Thân nhiệt (°C)</label>
+        <p-inputNumber id="vs_temperature" formControlName="temperature" [min]="30" [max]="45" [maxFractionDigits]="1" placeholder="36.5" class="w-full"></p-inputNumber>
+      </div>
+
+      <div class="field">
+        <label for="vs_notes">Ghi chú triệu chứng / diễn biến</label>
+        <textarea id="vs_notes" pInputTextarea formControlName="notes" rows="2" placeholder="Ví dụ: Bệnh nhân hơi mệt, HA ổn định..." class="w-full"></textarea>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" (click)="vitalSignDialog = false" class="p-button-text"></button>
+        <button pButton type="submit" [label]="editingVitalSign ? 'Cập nhật' : 'Lưu sinh hiệu'" icon="pi pi-save" class="p-button-success" [disabled]="vitalSignForm.invalid || vitalSignSaving" [loading]="vitalSignSaving"></button>
+      </div>
+    </form>
+  </p-dialog>
+</div>

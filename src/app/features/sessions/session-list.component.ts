@@ -14,6 +14,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { CalendarModule } from 'primeng/calendar';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { SessionService } from '../../core/services/session.service';
 import { PatientService } from '../../core/services/patient.service';
 import { MachineService } from '../../core/services/machine.service';
@@ -37,6 +38,7 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
     DropdownModule,
     CalendarModule,
     TagModule,
+    TooltipModule,
   ],
   template: `
     <div class="page-shell">
@@ -105,14 +107,14 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
               <th pSortableColumn="scheduled_start">Bắt đầu <p-sortIcon field="scheduled_start"></p-sortIcon></th>
               <th pSortableColumn="scheduled_end">Kết thúc <p-sortIcon field="scheduled_end"></p-sortIcon></th>
               <th pSortableColumn="status">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
-              <th *ngIf="canWrite" style="width: 120px">Hành động</th>
+              <th style="width: 130px; text-align: center">Hành động</th>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="body" let-session>
             <tr>
-              <td><p-tag [value]="session.session_id"></p-tag></td>
-              <td>{{ session.patient_name || session.patient }}</td>
+              <td><a [routerLink]="['/sessions', session.session_id]" class="font-bold text-primary cursor-pointer"><p-tag [value]="session.session_id"></p-tag></a></td>
+              <td><a [routerLink]="['/sessions', session.session_id]" class="text-primary font-medium hover:underline">{{ session.patient_name || session.patient }}</a></td>
               <td>{{ session.machine_name || session.machine }}</td>
               <td>{{ session.nurse_name || session.assigned_nurse }}</td>
               <td>{{ session.scheduled_start | date: 'dd/MM/yyyy HH:mm' }}</td>
@@ -120,29 +122,34 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
               <td>
                 <p-tag [value]="getStatusLabel(session.status)" [severity]="getStatusSeverity(session.status)"></p-tag>
               </td>
-              <td *ngIf="canWrite">
+              <td style="text-align: center">
                 <a
                   pButton
                   type="button"
                   icon="pi pi-eye"
-                  class="p-button-text"
+                  class="p-button-text p-button-sm"
                   [routerLink]="['/sessions', session.session_id]"
                   [attr.aria-label]="'Xem ' + session.session_id"
+                  pTooltip="Xem phiếu lọc"
                 ></a>
                 <a
                   pButton
+                  *ngIf="canWrite"
                   type="button"
                   icon="pi pi-pencil"
-                  class="p-button-text"
+                  class="p-button-text p-button-sm"
                   [routerLink]="['/sessions', session.session_id, 'edit']"
                   [attr.aria-label]="'Sửa ' + session.session_id"
+                  pTooltip="Sửa ca lọc"
                 ></a>
                 <button
                   pButton
+                  *ngIf="canWrite"
                   type="button"
                   icon="pi pi-trash"
-                  class="p-button-text p-button-danger"
+                  class="p-button-text p-button-danger p-button-sm"
                   (click)="confirmDelete(session)"
+                  pTooltip="Xóa ca lọc"
                 ></button>
               </td>
             </tr>
