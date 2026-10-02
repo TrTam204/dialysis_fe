@@ -64,3 +64,12 @@ img {
   background: rgba(148, 163, 184, 0.6);
   border-radius: 999px;
 }
+
+/* Shared form & dialog utilities */
+.dialog-desc { font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
+.field label { font-size: 0.8rem; font-weight: 600; color: #334155; }
+.required { color: #ef4444; }
+.form-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.empty-cell { padding: 1.5rem; color: #64748b; font-size: 0.85rem; }

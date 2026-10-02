@@ -222,26 +222,142 @@
           <i class="pi pi-heart text-danger"></i>
           <div>
             <h3>Diễn biến sinh hiệu trong ca lọc</h3>
-            <p class="vitals-subtitle">Theo dõi định kỳ huyết áp, mạch, SpO2 và thân nhiệt bệnh nhân</p>
+            <p class="vitals-subtitle">
+              Theo dõi định kỳ huyết áp, mạch, SpO2 và thân nhiệt bệnh nhân
+              <span *ngIf="lastUpdated" class="last-updated-text">
+                · Cập nhật: {{ lastUpdated | date: 'HH:mm:ss' }}
+              </span>
+            </p>
           </div>
         </div>
+        <div class="vitals-header-actions">
+          <button
+            pButton
+            type="button"
+            icon="pi pi-refresh"
+            label="Làm mới"
+            class="p-button-outlined p-button-sm p-button-secondary"
+            [loading]="vitalSignsLoading"
+            (click)="manualRefreshVitalSigns()"
+            pTooltip="Tải lại dữ liệu sinh hiệu mới nhất"
+          ></button>
+
+          <button
+            pButton
+            *ngIf="session.status === 'IN_PROGRESS'"
+            type="button"
+            [icon]="autoRefreshEnabled ? 'pi pi-spin pi-sync' : 'pi pi-sync'"
+            [label]="autoRefreshEnabled ? 'Tự động 30s: Bật' : 'Tự động 30s: Tắt'"
+            class="p-button-sm"
+            [class.p-button-outlined]="!autoRefreshEnabled"
+            [class.p-button-info]="autoRefreshEnabled"
+            [class.p-button-secondary]="!autoRefreshEnabled"
+            (click)="toggleAutoRefresh()"
+            pTooltip="Tự động cập nhật mỗi 30 giây khi phiên đang diễn ra"
+          ></button>
+
+          <button
+            pButton
+            *ngIf="canWriteVitals && session.status !== 'CANCELLED'"
+            type="button"
+            icon="pi pi-plus"
+            label="Thêm lần đo sinh hiệu"
+            class="p-button-success p-button-sm"
+            (click)="openAddVitalSign()"
+          ></button>
+        </div>
+      </div>
+
+      <!-- Vital Signs Charts (Step 2: >= 2 records) -->
+      <div *ngIf="!vitalSignsLoading && !vitalSignsError && vitalSigns.length >= 2" class="vitals-chart-card">
+        <div class="chart-toolbar">
+          <div class="chart-tabs">
+            <button
+              pButton
+              type="button"
+              label="Huyết áp"
+              icon="pi pi-chart-line"
+              class="p-button-sm"
+              [class.p-button-outlined]="activeChartTab !== 'bp'"
+              (click)="activeChartTab = 'bp'"
+            ></button>
+            <button
+              pButton
+              type="button"
+              label="Mạch, SpO2 & Thân nhiệt"
+              icon="pi pi-chart-bar"
+              class="p-button-sm"
+              [class.p-button-outlined]="activeChartTab !== 'vitals'"
+              (click)="activeChartTab = 'vitals'"
+            ></button>
+          </div>
+          <span class="chart-data-note">Dữ liệu từ {{ vitalSigns.length }} lần đo</span>
+        </div>
+
+        <div class="chart-container">
+          <p-chart
+            *ngIf="activeChartTab === 'bp'"
+            type="line"
+            [data]="bpChartData"
+            [options]="bpChartOptions"
+            height="230px"
+          ></p-chart>
+          <p-chart
+            *ngIf="activeChartTab === 'vitals'"
+            type="line"
+            [data]="multiChartData"
+            [options]="multiChartOptions"
+            height="230px"
+          ></p-chart>
+        </div>
+      </div>
+
+      <!-- Insufficient Data State (Step 3: exactly 1 record) -->
+      <div *ngIf="!vitalSignsLoading && !vitalSignsError && vitalSigns.length === 1" class="vitals-insufficient-box">
+        <i class="pi pi-info-circle"></i>
+        <span>Đã ghi nhận 1 lần đo sinh hiệu. Cần từ 2 lần đo trở lên để vẽ biểu đồ diễn biến xu hướng.</span>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="vitalSignsLoading" class="vitals-state-box">
+        <i class="pi pi-spin pi-spinner text-primary" style="font-size: 1.5rem"></i>
+        <p class="mt-2">Đang tải dữ liệu diễn biến sinh hiệu...</p>
+      </div>
+
+      <!-- Error State with Retry -->
+      <div *ngIf="!vitalSignsLoading && vitalSignsError" class="vitals-state-box">
+        <i class="pi pi-exclamation-triangle text-danger" style="font-size: 1.75rem"></i>
+        <h4 class="mt-2 text-danger">Không thể tải dữ liệu sinh hiệu</h4>
+        <p>Đã xảy ra lỗi khi kết nối máy chủ để lấy thông tin sinh hiệu.</p>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          label="Thử lại"
+          class="p-button-outlined p-button-sm mt-3"
+          (click)="retryLoadVitalSigns()"
+        ></button>
+      </div>
+
+      <!-- Empty State (0 records) -->
+      <div *ngIf="!vitalSignsLoading && !vitalSignsError && vitalSigns.length === 0" class="vitals-state-box">
+        <i class="pi pi-inbox text-muted" style="font-size: 2rem"></i>
+        <h4 class="mt-2">Chưa có dữ liệu sinh hiệu</h4>
+        <p class="text-muted">Chưa có lần đo sinh hiệu nào được ghi nhận cho ca lọc này.</p>
         <button
           pButton
           *ngIf="canWriteVitals && session.status !== 'CANCELLED'"
           type="button"
           icon="pi pi-plus"
-          label="Thêm lần đo sinh hiệu"
-          class="p-button-success p-button-sm"
+          label="Ghi nhận lần đo đầu tiên"
+          class="p-button-sm p-button-success mt-3"
           (click)="openAddVitalSign()"
         ></button>
       </div>
 
-      <div *ngIf="vitalSignsLoading" class="vitals-loading">
-        <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu sinh hiệu...
-      </div>
-
+      <!-- Flowsheet Table (When >= 1 record) -->
       <p-table
-        *ngIf="!vitalSignsLoading"
+        *ngIf="!vitalSignsLoading && !vitalSignsError && vitalSigns.length > 0"
         [value]="vitalSigns"
         [responsiveLayout]="'scroll'"
         styleClass="p-datatable-sm vitals-table"
@@ -259,30 +375,33 @@
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-vital let-i="rowIndex">
-          <tr [class.pre-dialysis-row]="i === 0" [class.post-dialysis-row]="i === vitalSigns.length - 1 && session.status === 'COMPLETED'">
+        <ng-template pTemplate="body" let-vital>
+          <tr [class.pre-dialysis-row]="getVitalPhase(vital) === 'PRE'" [class.post-dialysis-row]="getVitalPhase(vital) === 'POST'">
             <td>
               <span class="time-stamp">{{ vital.recorded_at | date: 'dd/MM/yyyy HH:mm' }}</span>
-              <span *ngIf="i === 0" class="badge-tag pre-tag">Trước lọc</span>
-              <span *ngIf="i === vitalSigns.length - 1 && session.status === 'COMPLETED' && vitalSigns.length > 1" class="badge-tag post-tag">Sau lọc</span>
+              <p-tag
+                [value]="getPhaseLabel(getVitalPhase(vital))"
+                [severity]="getPhaseSeverity(getVitalPhase(vital))"
+                styleClass="badge-tag ml-1"
+              ></p-tag>
             </td>
             <td>
-              <span class="bp-val font-medium" [class.text-danger]="isBpAbnormal(vital.systolic_bp, vital.diastolic_bp)">
+              <span class="bp-val font-medium">
                 {{ (vital.systolic_bp || '-') + ' / ' + (vital.diastolic_bp || '-') }}
               </span>
             </td>
             <td>
-              <span class="metric-cell" [class.text-danger]="vital.heart_rate && (vital.heart_rate < 50 || vital.heart_rate > 110)">
+              <span class="metric-cell">
                 {{ vital.heart_rate || '-' }}
               </span>
             </td>
             <td>
-              <span class="metric-cell" [class.text-danger]="vital.spo2 && vital.spo2 < 95">
+              <span class="metric-cell">
                 {{ vital.spo2 ? (vital.spo2 + '%') : '-' }}
               </span>
             </td>
             <td>
-              <span class="metric-cell" [class.text-danger]="vital.temperature && vital.temperature >= 37.5">
+              <span class="metric-cell">
                 {{ vital.temperature ? (vital.temperature + '°C') : '-' }}
               </span>
             </td>

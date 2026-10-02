@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,6 +16,9 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
+import { ChartModule } from 'primeng/chart';
+import { Subject, Subscription, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { SessionService } from '../../core/services/session.service';
 import { VitalSignService } from '../../core/services/vital-sign.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -42,16 +45,24 @@ import { DialysisSession, VitalSign } from '../../core/models';
     ToastModule,
     ConfirmDialogModule,
     TooltipModule,
+    ChartModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './session-detail.component.html',
   styleUrl: './session-detail.component.scss',
 })
-export class SessionDetailComponent implements OnInit {
+export class SessionDetailComponent implements OnInit, OnDestroy {
   session: DialysisSession | null = null;
   vitalSigns: VitalSign[] = [];
   loading = false;
   vitalSignsLoading = false;
+  vitalSignsError = false;
+
+  // Step 4: Quick Refresh & Safe Polling
+  lastUpdated: Date = new Date();
+  autoRefreshEnabled = false;
+  private destroy$ = new Subject<void>();
+  private pollingSub?: Subscription;
 
   // Permissions
   canEditFull = false;      // ADMIN, DOCTOR
@@ -59,6 +70,72 @@ export class SessionDetailComponent implements OnInit {
   canCancel = false;        // ADMIN, DOCTOR
   canWriteVitals = false;   // ADMIN, DOCTOR, or ASSIGNED NURSE
   canDeleteVitals = false;  // ADMIN only (Rule 3: Nurse cannot delete vitals)
+
+  // Chart properties (Step 2)
+  activeChartTab: 'bp' | 'vitals' = 'bp';
+  bpChartData: any = null;
+  multiChartData: any = null;
+
+  readonly bpChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: { boxWidth: 12, font: { size: 11 } },
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Thời gian', font: { size: 11 } },
+        ticks: { font: { size: 11 } },
+      },
+      y: {
+        title: { display: true, text: 'Huyết áp (mmHg)', font: { size: 11 } },
+        ticks: { font: { size: 11 } },
+      },
+    },
+  };
+
+  readonly multiChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: { boxWidth: 12, font: { size: 11 } },
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+      },
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Thời gian', font: { size: 11 } },
+        ticks: { font: { size: 11 } },
+      },
+      y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        title: { display: true, text: 'Mạch (bpm)', font: { size: 11 } },
+        ticks: { font: { size: 11 } },
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'SpO2 (%) & Thân nhiệt (°C)', font: { size: 11 } },
+        ticks: { font: { size: 11 } },
+      },
+    },
+  };
 
   // Dialogs & saving states
   startSessionDialog = false;
@@ -128,6 +205,12 @@ export class SessionDetailComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.stopPolling();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   loadSession(sessionId: string): void {
     this.loading = true;
     this.sessionService.getById(sessionId).subscribe({
@@ -135,6 +218,11 @@ export class SessionDetailComponent implements OnInit {
         this.session = session;
         this.loading = false;
         this.calculatePermissions();
+        if (session.status !== 'IN_PROGRESS' && this.autoRefreshEnabled) {
+          this.autoRefreshEnabled = false;
+          this.stopPolling();
+        }
+        this.updateCharts();
       },
       error: () => {
         this.loading = false;
@@ -148,22 +236,100 @@ export class SessionDetailComponent implements OnInit {
     });
   }
 
-  loadVitalSigns(sessionId: string): void {
-    this.vitalSignsLoading = true;
+  loadVitalSigns(sessionId: string, silent = false): void {
+    if (!silent) {
+      this.vitalSignsLoading = true;
+    }
+    this.vitalSignsError = false;
     this.vitalSignService.getBySession(sessionId).subscribe({
       next: (vitals: VitalSign[]) => {
         this.vitalSigns = vitals;
         this.vitalSignsLoading = false;
+        this.vitalSignsError = false;
+        this.lastUpdated = new Date();
+        this.updateCharts();
       },
       error: () => {
         this.vitalSignsLoading = false;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Lỗi',
-          detail: 'Không thể tải dữ liệu sinh hiệu.',
-        });
+        if (!silent) {
+          this.vitalSignsError = true;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Lỗi',
+            detail: 'Không thể tải dữ liệu sinh hiệu.',
+          });
+        }
       },
     });
+  }
+
+  manualRefreshVitalSigns(): void {
+    if (this.session && !this.vitalSignsLoading) {
+      this.loadVitalSigns(this.session.session_id);
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Đã làm mới',
+        detail: 'Dữ liệu diễn biến sinh hiệu đã được cập nhật.',
+        life: 2000,
+      });
+    }
+  }
+
+  toggleAutoRefresh(): void {
+    if (this.session?.status !== 'IN_PROGRESS') {
+      this.autoRefreshEnabled = false;
+      this.stopPolling();
+      return;
+    }
+
+    this.autoRefreshEnabled = !this.autoRefreshEnabled;
+    if (this.autoRefreshEnabled) {
+      this.startPolling();
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Tự động làm mới',
+        detail: 'Đã bật tự động cập nhật mỗi 30 giây.',
+        life: 2500,
+      });
+    } else {
+      this.stopPolling();
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Tự động làm mới',
+        detail: 'Đã tắt tự động cập nhật.',
+        life: 2000,
+      });
+    }
+  }
+
+  startPolling(): void {
+    this.stopPolling();
+    if (!this.session || this.session.status !== 'IN_PROGRESS') return;
+
+    this.pollingSub = interval(30000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        const isDialogOpen = this.vitalSignDialog || this.startSessionDialog || this.endSessionDialog || this.clinicalParamsDialog;
+        if (this.session?.status === 'IN_PROGRESS' && !isDialogOpen && !this.vitalSignsLoading) {
+          this.loadVitalSigns(this.session.session_id, true);
+        } else if (this.session?.status !== 'IN_PROGRESS') {
+          this.autoRefreshEnabled = false;
+          this.stopPolling();
+        }
+      });
+  }
+
+  stopPolling(): void {
+    if (this.pollingSub) {
+      this.pollingSub.unsubscribe();
+      this.pollingSub = undefined;
+    }
+  }
+
+  retryLoadVitalSigns(): void {
+    if (this.session) {
+      this.loadVitalSigns(this.session.session_id);
+    }
   }
 
   calculatePermissions(): void {
@@ -202,11 +368,134 @@ export class SessionDetailComponent implements OnInit {
     return null;
   }
 
-  isBpAbnormal(sys?: number | null, dia?: number | null): boolean {
-    if (!sys && !dia) return false;
-    if (sys && (sys < 90 || sys >= 140)) return true;
-    if (dia && (dia < 60 || dia >= 90)) return true;
-    return false;
+  get chronologicalVitals(): VitalSign[] {
+    return [...this.vitalSigns].sort((a, b) => {
+      const tA = a.recorded_at ? new Date(a.recorded_at).getTime() : 0;
+      const tB = b.recorded_at ? new Date(b.recorded_at).getTime() : 0;
+      return tA - tB;
+    });
+  }
+
+  formatTime(dateStr?: string): string {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const hours = d.getHours().toString().padStart(2, '0');
+    const mins = d.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${mins}`;
+  }
+
+  updateCharts(): void {
+    const vitals = this.chronologicalVitals;
+    if (vitals.length < 2) {
+      this.bpChartData = null;
+      this.multiChartData = null;
+      return;
+    }
+
+    const labels = vitals.map((v) => this.formatTime(v.recorded_at));
+
+    this.bpChartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Huyết áp tâm thu (Systolic)',
+          data: vitals.map((v) => v.systolic_bp ?? null),
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Huyết áp tâm trương (Diastolic)',
+          data: vitals.map((v) => v.diastolic_bp ?? null),
+          borderColor: '#60a5fa',
+          backgroundColor: 'rgba(96, 165, 250, 0.08)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+
+    this.multiChartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Nhịp tim (bpm)',
+          data: vitals.map((v) => v.heart_rate ?? null),
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+          yAxisID: 'y',
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'SpO2 (%)',
+          data: vitals.map((v) => v.spo2 ?? null),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.08)',
+          yAxisID: 'y1',
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Thân nhiệt (°C)',
+          data: vitals.map((v) => v.temperature ?? null),
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.08)',
+          yAxisID: 'y1',
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  }
+
+  getVitalPhase(vital: VitalSign): 'PRE' | 'INTRA' | 'POST' {
+    if (!vital?.recorded_at) return 'INTRA';
+    const vTime = new Date(vital.recorded_at).getTime();
+
+    const startTime = this.session?.actual_start
+      ? new Date(this.session.actual_start).getTime()
+      : (this.session?.scheduled_start ? new Date(this.session.scheduled_start).getTime() : null);
+
+    const endTime = this.session?.actual_end
+      ? new Date(this.session.actual_end).getTime()
+      : null;
+
+    if (startTime !== null && vTime < startTime) {
+      return 'PRE';
+    }
+
+    if (endTime !== null && vTime > endTime) {
+      return 'POST';
+    }
+
+    return 'INTRA';
+  }
+
+  getPhaseLabel(phase: 'PRE' | 'INTRA' | 'POST'): string {
+    switch (phase) {
+      case 'PRE': return 'Trước lọc';
+      case 'INTRA': return 'Trong lọc';
+      case 'POST': return 'Sau lọc';
+      default: return 'Trong lọc';
+    }
+  }
+
+  getPhaseSeverity(phase: 'PRE' | 'INTRA' | 'POST'): 'info' | 'warning' | 'success' {
+    switch (phase) {
+      case 'PRE': return 'info';
+      case 'INTRA': return 'warning';
+      case 'POST': return 'success';
+      default: return 'info';
+    }
   }
 
   getStatusLabel(status?: string): string {
