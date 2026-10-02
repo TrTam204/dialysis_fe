@@ -255,7 +255,7 @@
 
       <!-- Status Breakdown Doughnut -->
       <p-card header="Phân bố trạng thái ca lọc" class="chart-card status-chart-card">
-        <div class="chart-wrapper doughnut-wrapper" *ngIf="statusDoughnutData; else emptyStatus">
+        <div class="doughnut-container" *ngIf="statusDoughnutData; else emptyStatus">
           <p-chart type="doughnut" [data]="statusDoughnutData" [options]="statusDoughnutOptions"></p-chart>
         </div>
         <ng-template #emptyStatus>

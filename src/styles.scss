@@ -180,41 +180,110 @@ img {
 
   .kpi-grid {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 8px !important;
-    margin-bottom: 14px !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .kpi-card {
-    padding: 8px 10px !important;
-    box-shadow: none !important;
+    padding: 6px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1px !important;
     border: 1px solid #cbd5e1 !important;
-    .kpi-icon-wrap { width: 32px !important; height: 32px !important; font-size: 0.9rem !important; }
-    .kpi-val { font-size: 1.2rem !important; }
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+
+    .kpi-icon-wrap {
+      display: none !important;
+    }
+
+    .kpi-info {
+      width: 100% !important;
+    }
+
+    .kpi-label {
+      font-size: 0.7rem !important;
+      font-weight: 700 !important;
+      color: #475569 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .kpi-val {
+      font-size: 1.25rem !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      line-height: 1.2 !important;
+      margin: 1px 0 !important;
+    }
+
+    .kpi-sub {
+      font-size: 0.65rem !important;
+      color: #64748b !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
   }
 
   .charts-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    gap: 10px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .chart-card {
     min-height: auto !important;
+    height: auto !important;
     border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .chart-wrapper {
-    height: 220px !important;
+    height: 180px !important;
+    max-height: 180px !important;
   }
 
-  .doughnut-wrapper {
-    max-width: 220px !important;
+  .doughnut-container {
+    width: 150px !important;
+    height: 150px !important;
+    max-width: 150px !important;
+    max-height: 150px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: hidden !important;
+  }
+
+  .status-chart-card {
+    p-chart {
+      width: 150px !important;
+      height: 150px !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    canvas {
+      width: 150px !important;
+      height: 150px !important;
+      max-width: 150px !important;
+      max-height: 150px !important;
+      aspect-ratio: 1 / 1 !important;
+      object-fit: contain !important;
+      margin: 0 auto !important;
+    }
   }
 
   .limitation-banner {

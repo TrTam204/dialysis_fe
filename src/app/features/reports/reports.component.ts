@@ -71,6 +71,7 @@ export class ReportsComponent implements OnInit {
     this.trendChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       plugins: {
         legend: {
           position: 'top' as const,
@@ -94,7 +95,8 @@ export class ReportsComponent implements OnInit {
     this.statusDoughnutOptions = {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: 1.15,
+      aspectRatio: 1,
+      animation: false,
       plugins: {
         legend: {
           position: 'bottom' as const,
@@ -107,6 +109,7 @@ export class ReportsComponent implements OnInit {
     this.machineBarOptions = {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       plugins: {
         legend: {
           position: 'top' as const,

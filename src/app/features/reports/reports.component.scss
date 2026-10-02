@@ -221,19 +221,32 @@
   width: 100%;
 }
 
-.doughnut-wrapper {
+.doughnut-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 320px;
+  max-width: 280px;
+  height: 280px;
   margin: 0 auto;
   padding: 8px;
 }
 
 :host ::ng-deep .status-chart-card {
   .p-card { height: 100%; overflow: hidden; }
-  .p-chart { width: 100%; display: flex; justify-content: center; align-items: center; }
-  canvas { max-width: 100% !important; margin: 0 auto !important; }
+  .p-chart {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: contain !important;
+    margin: 0 auto !important;
+  }
 }
 
 .empty-chart {
