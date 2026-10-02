@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { PatientService } from '../../core/services/patient.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Patient } from '../../core/models';
@@ -32,6 +33,7 @@ import { Patient } from '../../core/models';
     ConfirmDialogModule,
     DropdownModule,
     TagModule,
+    TooltipModule,
   ],
   templateUrl: './patient-list.component.html',
   styleUrls: ['./patient-list.component.scss'],
@@ -105,6 +107,24 @@ export class PatientListComponent implements OnInit, OnDestroy {
   onFilterChange() {
     this.first = 0;
     this.loadPatients();
+  }
+
+  clearFilters() {
+    this.searchText = '';
+    this.statusFilter = null;
+    this.genderFilter = null;
+    this.first = 0;
+    this.loadPatients();
+  }
+
+  formatIndex(idx: number): string {
+    return idx < 10 ? `0${idx}` : `${idx}`;
+  }
+
+  getBirthYear(dateOfBirth?: string | null): string {
+    if (!dateOfBirth) return '-';
+    const birth = new Date(dateOfBirth);
+    return Number.isNaN(birth.getTime()) ? '-' : birth.getFullYear().toString();
   }
 
   onLazyLoad(event: TableLazyLoadEvent) {

@@ -9,6 +9,7 @@ import { TopbarComponent } from '../components/topbar/topbar.component';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
+  '/reports': 'Báo cáo vận hành',
   '/schedule': 'Lịch lọc máu',
   '/patients': 'Bệnh nhân',
   '/sessions': 'Phiên lọc',

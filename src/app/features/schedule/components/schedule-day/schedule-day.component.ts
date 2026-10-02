@@ -14,8 +14,8 @@ export class ScheduleDayComponent {
   @Input() sessions: DialysisSession[] = [];
   @Input() selectedDate = new Date();
 
-  readonly dayStartHour = 6;
-  readonly dayEndHour = 22;
+  readonly dayStartHour = 0;
+  readonly dayEndHour = 24;
 
   get mobileSessions(): DialysisSession[] {
     return [...this.sessions].sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());

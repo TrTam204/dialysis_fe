@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -42,14 +42,28 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
   ],
   template: `
     <div class="page-shell">
-      <p-card header="Quản lý Phiên lọc máu">
+      <div class="header-section">
+        <div>
+          <h2 class="page-title">Quản lý Phiên lọc máu</h2>
+          <p class="page-subtitle">Sổ theo dõi và phân công ca lọc máu tại buồng lọc</p>
+        </div>
+        <div class="header-stats">
+          <span class="record-badge">
+            <i class="pi pi-calendar-plus text-primary"></i>
+            <span>Tổng cộng: <strong>{{ totalRecords }}</strong> ca lọc</span>
+          </span>
+          <a pButton *ngIf="canWrite" routerLink="/sessions/new" icon="pi pi-plus" label="Thêm mới" class="p-button-primary p-button-sm add-btn"></a>
+        </div>
+      </div>
+
+      <div class="sheet-card">
         <div class="toolbar">
           <span class="p-input-icon-left search-box">
             <i class="pi pi-search"></i>
             <input
               pInputText
               type="text"
-              placeholder="Tìm theo mã phiên / tên bệnh nhân..."
+              placeholder="Tìm theo mã ca / tên bệnh nhân..."
               [ngModel]="searchText"
               (ngModelChange)="onSearchInput($event)"
             />
@@ -61,6 +75,7 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
+            placeholder="Trạng thái"
             [style]="{ minWidth: '150px' }"
           ></p-dropdown>
 
@@ -70,7 +85,10 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
-            [style]="{ minWidth: '180px' }"
+            placeholder="Bệnh nhân"
+            [style]="{ minWidth: '170px' }"
+            [filter]="true"
+            filterPlaceholder="Tìm bệnh nhân..."
           ></p-dropdown>
 
           <p-dropdown
@@ -79,13 +97,28 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
-            [style]="{ minWidth: '150px' }"
+            placeholder="Máy lọc"
+            [style]="{ minWidth: '140px' }"
           ></p-dropdown>
 
-          <a pButton *ngIf="canWrite" routerLink="/sessions/new" icon="pi pi-plus" label="Thêm mới" class="p-button-success"></a>
+          <button
+            *ngIf="searchText || statusFilter !== null || patientFilter !== null || machineFilter !== null"
+            pButton
+            type="button"
+            icon="pi pi-filter-slash"
+            label="Xóa lọc"
+            class="p-button-outlined p-button-secondary p-button-sm"
+            (click)="clearFilters()"
+          ></button>
+        </div>
+
+        <div *ngIf="loading" class="loading-box">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Đang tải danh sách ca lọc máu...</span>
         </div>
 
         <p-table
+          *ngIf="!loading"
           [value]="sessions"
           [lazy]="true"
           [lazyLoadOnInit]="false"
@@ -94,84 +127,407 @@ import { DialysisSession, Patient, DialysisMachine, CustomUser } from '../../cor
           [rows]="rows"
           [first]="first"
           [totalRecords]="totalRecords"
-          [loading]="loading"
           dataKey="session_id"
           responsiveLayout="scroll"
+          styleClass="p-datatable-gridlines sheet-table"
         >
           <ng-template pTemplate="header">
             <tr>
-              <th pSortableColumn="session_id">Mã phiên <p-sortIcon field="session_id"></p-sortIcon></th>
+              <th style="width: 50px" class="text-center">STT</th>
+              <th pSortableColumn="session_id" style="width: 115px">Mã phiên <p-sortIcon field="session_id"></p-sortIcon></th>
               <th pSortableColumn="patient__full_name">Bệnh nhân <p-sortIcon field="patient__full_name"></p-sortIcon></th>
-              <th pSortableColumn="machine__name">Máy lọc <p-sortIcon field="machine__name"></p-sortIcon></th>
-              <th pSortableColumn="assigned_nurse__first_name">Điều dưỡng <p-sortIcon field="assigned_nurse__first_name"></p-sortIcon></th>
-              <th pSortableColumn="scheduled_start">Bắt đầu <p-sortIcon field="scheduled_start"></p-sortIcon></th>
-              <th pSortableColumn="scheduled_end">Kết thúc <p-sortIcon field="scheduled_end"></p-sortIcon></th>
-              <th pSortableColumn="status">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
-              <th style="width: 130px; text-align: center">Hành động</th>
+              <th pSortableColumn="machine__name" style="width: 125px">Máy lọc <p-sortIcon field="machine__name"></p-sortIcon></th>
+              <th pSortableColumn="assigned_nurse__first_name" style="width: 155px">Điều dưỡng <p-sortIcon field="assigned_nurse__first_name"></p-sortIcon></th>
+              <th pSortableColumn="scheduled_start" style="width: 155px">Thời gian ca <p-sortIcon field="scheduled_start"></p-sortIcon></th>
+              <th style="width: 110px" class="text-right">UF Mục tiêu</th>
+              <th pSortableColumn="status" style="width: 140px" class="text-center">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
+              <th style="width: 115px" class="text-center">Thao tác</th>
             </tr>
           </ng-template>
 
-          <ng-template pTemplate="body" let-session>
-            <tr>
-              <td><a [routerLink]="['/sessions', session.session_id]" class="font-bold text-primary cursor-pointer"><p-tag [value]="session.session_id"></p-tag></a></td>
-              <td><a [routerLink]="['/sessions', session.session_id]" class="text-primary font-medium hover:underline">{{ session.patient_name || session.patient }}</a></td>
-              <td>{{ session.machine_name || session.machine }}</td>
-              <td>{{ session.nurse_name || session.assigned_nurse }}</td>
-              <td>{{ session.scheduled_start | date: 'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ session.scheduled_end | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <ng-template pTemplate="body" let-session let-rowIndex="rowIndex">
+            <tr (click)="navigateToSession(session)" class="clickable-row">
+              <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
               <td>
-                <p-tag [value]="getStatusLabel(session.status)" [severity]="getStatusSeverity(session.status)"></p-tag>
+                <span class="code-badge">{{ session.session_id }}</span>
               </td>
-              <td style="text-align: center">
-                <a
-                  pButton
-                  type="button"
-                  icon="pi pi-eye"
-                  class="p-button-text p-button-sm"
-                  [routerLink]="['/sessions', session.session_id]"
-                  [attr.aria-label]="'Xem ' + session.session_id"
-                  pTooltip="Xem phiếu lọc"
-                ></a>
-                <a
-                  pButton
-                  *ngIf="canWrite"
-                  type="button"
-                  icon="pi pi-pencil"
-                  class="p-button-text p-button-sm"
-                  [routerLink]="['/sessions', session.session_id, 'edit']"
-                  [attr.aria-label]="'Sửa ' + session.session_id"
-                  pTooltip="Sửa ca lọc"
-                ></a>
-                <button
-                  pButton
-                  *ngIf="canWrite"
-                  type="button"
-                  icon="pi pi-trash"
-                  class="p-button-text p-button-danger p-button-sm"
-                  (click)="confirmDelete(session)"
-                  pTooltip="Xóa ca lọc"
-                ></button>
+              <td>
+                <span class="patient-name">{{ session.patient_name || session.patient }}</span>
+              </td>
+              <td>
+                <span class="machine-badge">
+                  <i class="pi pi-server text-xs"></i>
+                  {{ session.machine_name || session.machine }}
+                </span>
+              </td>
+              <td>
+                <span class="nurse-cell">
+                  <i class="pi pi-user text-xs"></i>
+                  {{ session.nurse_name || session.assigned_nurse }}
+                </span>
+              </td>
+              <td>
+                <div class="time-cell">
+                  <span class="date-str">{{ session.scheduled_start | date: 'dd/MM/yyyy' }}</span>
+                  <span class="hours-str">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
+                </div>
+              </td>
+              <td class="text-right">
+                <span *ngIf="session.uf_target != null" class="uf-val font-semibold">{{ session.uf_target }} L</span>
+                <span *ngIf="session.uf_target == null" class="text-slate-400">-</span>
+              </td>
+              <td class="text-center">
+                <span [class]="'status-pill status-' + (session.status || '').toLowerCase().replace('_', '-')">
+                  <span class="dot"></span>
+                  {{ getStatusLabel(session.status) }}
+                </span>
+              </td>
+              <td class="text-center" (click)="$event.stopPropagation()">
+                <div class="action-cell">
+                  <a
+                    pButton
+                    type="button"
+                    icon="pi pi-eye"
+                    class="p-button-text p-button-rounded p-button-sm"
+                    [routerLink]="['/sessions', session.session_id]"
+                    [attr.aria-label]="'Xem ' + session.session_id"
+                    pTooltip="Xem ca lọc"
+                    tooltipPosition="top"
+                  ></a>
+                  <a
+                    pButton
+                    *ngIf="canWrite"
+                    type="button"
+                    icon="pi pi-pencil"
+                    class="p-button-text p-button-rounded p-button-sm p-button-info"
+                    [routerLink]="['/sessions', session.session_id, 'edit']"
+                    [attr.aria-label]="'Sửa ' + session.session_id"
+                    pTooltip="Sửa ca lọc"
+                    tooltipPosition="top"
+                  ></a>
+                  <button
+                    pButton
+                    *ngIf="canWrite"
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                    (click)="confirmDelete(session)"
+                    pTooltip="Xóa ca lọc"
+                    tooltipPosition="top"
+                  ></button>
+                </div>
               </td>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td [attr.colspan]="canWrite ? 8 : 7" class="text-center">Không có dữ liệu</td>
+              <td colspan="9" class="text-center empty-cell">
+                <i class="pi pi-inbox empty-icon"></i>
+                <div>Không tìm thấy ca lọc máu nào</div>
+              </td>
             </tr>
           </ng-template>
         </p-table>
-      </p-card>
+      </div>
 
       <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
     </div>
   `,
   styles: [
-    '.page-shell { padding: 24px; }',
-    '.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }',
-    '.search-box { flex: 1; min-width: 200px; max-width: 360px; }',
-    '.search-box input { width: 100%; }',
-    '.text-center { text-align: center; }',
+    `
+      .page-shell {
+        padding: 20px 24px;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .page-title {
+          margin: 0 0 4px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #0f172a;
+          letter-spacing: -0.3px;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          font-size: 13px;
+          color: #64748b;
+        }
+
+        .header-stats {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .record-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #334155;
+        }
+      }
+
+      .sheet-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+
+        .search-box {
+          flex: 1;
+          min-width: 220px;
+          max-width: 320px;
+
+          input {
+            width: 100%;
+          }
+        }
+      }
+
+      .loading-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 40px 0;
+        color: #64748b;
+      }
+
+      :host ::ng-deep .sheet-table {
+        .p-datatable-thead > tr > th {
+          background: #f8fafc;
+          color: #334155;
+          font-size: 11.5px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          padding: 8px 10px;
+          border: 1px solid #e2e8f0;
+          border-bottom: 2px solid #cbd5e1;
+          white-space: nowrap;
+        }
+
+        .p-datatable-tbody > tr {
+          transition: background-color 0.15s ease;
+
+          &:nth-child(even) {
+            background-color: #fafbfc;
+          }
+          &:nth-child(odd) {
+            background-color: #ffffff;
+          }
+
+          &:hover {
+            background-color: #f1f5f9 !important;
+          }
+
+          > td {
+            padding: 7px 10px;
+            font-size: 13px;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+          }
+        }
+
+        .p-paginator {
+          padding: 8px 12px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+        }
+      }
+
+      .clickable-row {
+        cursor: pointer;
+      }
+
+      .col-stt {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .code-badge {
+        display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 2px 6px;
+        background: #f1f5f9;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        border-radius: 4px;
+      }
+
+      .patient-name {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 13.5px;
+      }
+
+      .machine-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 7px;
+        background: #f0fdfa;
+        color: #0f766e;
+        border: 1px solid #ccfbf1;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .nurse-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #334155;
+
+        i {
+          color: #94a3b8;
+        }
+      }
+
+      .time-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+
+        .date-str {
+          font-weight: 600;
+          color: #1e293b;
+          font-size: 12.5px;
+        }
+
+        .hours-str {
+          font-size: 11.5px;
+          color: #64748b;
+          font-family: ui-monospace, monospace;
+        }
+      }
+
+      .uf-val {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #0f766e;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+
+        &.status-in-progress {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+          .dot {
+            background: #10b981;
+          }
+        }
+
+        &.status-completed {
+          background: #f0fdf4;
+          color: #15803d;
+          border: 1px solid #bbf7d0;
+          .dot {
+            background: #22c55e;
+          }
+        }
+
+        &.status-scheduled {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          .dot {
+            background: #3b82f6;
+          }
+        }
+
+        &.status-cancelled {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+          .dot {
+            background: #ef4444;
+          }
+        }
+      }
+
+      .action-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+
+      .empty-cell {
+        padding: 32px 16px;
+        color: #64748b;
+
+        .empty-icon {
+          font-size: 28px;
+          color: #94a3b8;
+          margin-bottom: 6px;
+        }
+      }
+
+      .text-center {
+        text-align: center;
+      }
+      .text-right {
+        text-align: right;
+      }
+
+      @media (max-width: 768px) {
+        .page-shell {
+          padding: 12px;
+        }
+        .toolbar {
+          .search-box {
+            min-width: 100%;
+            max-width: 100%;
+          }
+        }
+      }
+    `,
   ],
 })
 export class SessionListComponent implements OnInit, OnDestroy {
@@ -220,7 +576,8 @@ export class SessionListComponent implements OnInit, OnDestroy {
     private staffService: StaffService,
     private authService: AuthService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -250,6 +607,23 @@ export class SessionListComponent implements OnInit, OnDestroy {
   onFilterChange() {
     this.first = 0;
     this.loadSessions();
+  }
+
+  clearFilters() {
+    this.searchText = '';
+    this.statusFilter = null;
+    this.patientFilter = null;
+    this.machineFilter = null;
+    this.first = 0;
+    this.loadSessions();
+  }
+
+  formatIndex(idx: number): string {
+    return idx < 10 ? `0${idx}` : `${idx}`;
+  }
+
+  navigateToSession(session: DialysisSession) {
+    this.router.navigate(['/sessions', session.session_id]);
   }
 
   onLazyLoad(event: TableLazyLoadEvent) {

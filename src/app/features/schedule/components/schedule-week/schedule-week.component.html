@@ -1,18 +1,32 @@
 <div class="week-view" *ngIf="sessions.length > 0; else emptyWeek">
   <div class="week-grid desktop-only">
     <div class="week-header-cell">Máy</div>
-    <div class="week-header-cell" *ngFor="let day of weekDays">
+    <div class="week-header-cell" *ngFor="let day of weekDays" [class.today-header]="isToday(day)">
       <div class="day-title">{{ formatDayLabel(day) }}</div>
       <div class="day-subtitle">{{ formatShortDate(day) }}</div>
+      <span class="today-tag" *ngIf="isToday(day)">Hôm nay</span>
     </div>
 
     <ng-container *ngFor="let machineName of displayedMachines">
       <div class="machine-label">{{ machineName }}</div>
       <div class="day-cell" *ngFor="let day of weekDays">
-        <div class="session-pill" *ngFor="let session of getSessionForDayAndMachine(day, machineName)" [routerLink]="['/sessions', session.session_id]" [ngClass]="getStatusClass(session.status)">
-          <span class="pill-time">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
-          <span class="pill-patient">{{ session.patient_name || session.patient }}</span>
-          <span class="pill-nurse">{{ session.nurse_name || session.assigned_nurse }}</span>
+        <div
+          class="session-pill"
+          *ngFor="let session of getSessionForDayAndMachine(day, machineName)"
+          [routerLink]="['/sessions', session.session_id]"
+          [ngClass]="getStatusClass(session.status)"
+        >
+          <div class="pill-top">
+            <span class="pill-time">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
+            <span class="pill-badge" [ngClass]="getStatusBadgeClass(session.status)">{{ getStatusShortLabel(session.status) }}</span>
+          </div>
+          <div class="pill-patient">
+            <i class="pi pi-user patient-icon"></i>
+            <span>{{ session.patient_name || session.patient }}</span>
+          </div>
+          <div class="pill-nurse" *ngIf="session.nurse_name || session.assigned_nurse">
+            <i class="pi pi-id-card"></i> {{ session.nurse_name || session.assigned_nurse }}
+          </div>
         </div>
       </div>
     </ng-container>
@@ -47,6 +61,8 @@
 
 <ng-template #emptyWeek>
   <div class="empty-state">
-    <span>Không có phiên lọc nào trong tuần này.</span>
+    <i class="pi pi-calendar" style="font-size: 2.2rem; color: #94a3b8; margin-bottom: 8px;"></i>
+    <p style="font-size: 1rem; font-weight: 600; color: #475569; margin: 0 0 4px 0;">Không có phiên lọc nào trong tuần này.</p>
+    <span style="font-size: 0.85rem; color: #94a3b8;">Bạn có thể dùng nút Trước / Sau hoặc chọn ngày khác để xem lịch các tuần khác.</span>
   </div>
 </ng-template>

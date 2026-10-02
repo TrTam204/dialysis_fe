@@ -9,6 +9,17 @@
       <button pButton type="button" icon="pi pi-chevron-left" class="p-button-secondary" (click)="previousPeriod()" aria-label="Trước"></button>
       <button pButton type="button" label="Hôm nay" class="p-button-outlined" (click)="goToToday()"></button>
       <button pButton type="button" icon="pi pi-chevron-right" class="p-button-secondary" (click)="nextPeriod()" aria-label="Sau"></button>
+      <div class="date-picker-wrap">
+        <input
+          type="date"
+          class="schedule-date-input"
+          [ngModel]="selectedDateIso"
+          (ngModelChange)="onDateInputChange($event)"
+          (change)="onDateInputChange($any($event.target).value)"
+          title="Chọn ngày để xem lịch (ngày hoặc tuần)"
+          aria-label="Chọn ngày"
+        />
+      </div>
     </div>
 
     <div class="view-switch" role="tablist" aria-label="Chế độ xem lịch">
@@ -39,9 +50,26 @@
           <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
         </select>
       </label>
+
+      <label>
+        <span>Chu kỳ lọc</span>
+        <select [(ngModel)]="shiftGroupFilter" (ngModelChange)="onFilterChange()">
+          <option *ngFor="let opt of shiftGroupOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </label>
     </div>
 
     <button pButton type="button" label="Reset" class="p-button-text" (click)="resetFilters()"></button>
+  </div>
+
+  <div class="schedule-legend-bar">
+    <span class="legend-title"><i class="pi pi-info-circle"></i> Trạng thái ca:</span>
+    <div class="legend-badges">
+      <span class="legend-item"><span class="status-dot dot-scheduled"></span> Đã lên lịch</span>
+      <span class="legend-item"><span class="status-dot dot-in-progress"></span> Đang lọc máu</span>
+      <span class="legend-item"><span class="status-dot dot-completed"></span> Đã hoàn thành</span>
+      <span class="legend-item"><span class="status-dot dot-cancelled"></span> Đã hủy</span>
+    </div>
   </div>
 
   <div *ngIf="loading" class="state-block loading-state">
@@ -56,13 +84,13 @@
   <div *ngIf="!loading && !error" class="schedule-body">
     <app-schedule-day
       *ngIf="viewMode === 'day'"
-      [sessions]="scheduleSessions"
+      [sessions]="filteredScheduleSessions"
       [selectedDate]="selectedDate"
     ></app-schedule-day>
 
     <app-schedule-week
       *ngIf="viewMode === 'week'"
-      [sessions]="scheduleSessions"
+      [sessions]="filteredScheduleSessions"
       [selectedDate]="selectedDate"
     ></app-schedule-week>
   </div>

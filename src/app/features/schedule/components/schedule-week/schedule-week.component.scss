@@ -28,10 +28,39 @@
 }
 
 .week-header-cell {
-  padding: 12px 8px;
+  padding: 10px 8px;
   background: #f8fafc;
   text-align: center;
   min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &.today-header {
+    background: #0f766e !important;
+    color: #ffffff !important;
+
+    .day-title,
+    .day-subtitle {
+      color: #ffffff !important;
+      font-weight: 700;
+    }
+
+    .today-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+  }
 }
 
 .day-title {
@@ -67,51 +96,102 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px 10px;
-  border-radius: 10px;
-  border-left: 4px solid transparent;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #94a3b8;
+  background: #ffffff;
   text-decoration: none;
   color: #111827;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  }
+}
+
+.pill-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .pill-time {
   font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.pill-badge {
+  font-size: 0.65rem;
   font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.badge-scheduled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-in-progress {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .pill-patient {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .patient-icon {
+    font-size: 0.75rem;
+    color: #0f766e;
+  }
 }
 
 .pill-nurse {
   font-size: 0.72rem;
-  opacity: 0.9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .status-scheduled {
-  background: rgba(59, 130, 246, 0.12);
-  border-left-color: #2563eb;
+  border-left-color: #f59e0b;
 }
 
 .status-in-progress {
-  background: rgba(245, 158, 11, 0.12);
-  border-left-color: #d97706;
+  border-left-color: #3b82f6;
 }
 
 .status-completed {
-  background: rgba(16, 185, 129, 0.12);
-  border-left-color: #059669;
+  border-left-color: #16a34a;
 }
 
 .status-cancelled {
-  background: rgba(239, 68, 68, 0.12);
   border-left-color: #dc2626;
 }
 
 .status-default {
-  background: rgba(148, 163, 184, 0.12);
   border-left-color: #64748b;
 }
 

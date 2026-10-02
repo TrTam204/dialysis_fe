@@ -71,5 +71,176 @@ img {
 .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
 .field label { font-size: 0.8rem; font-weight: 600; color: #334155; }
 .required { color: #ef4444; }
-.form-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .empty-cell { padding: 1.5rem; color: #64748b; font-size: 0.85rem; }
+
+/* KPI & Medical Color Utilities */
+.bg-blue-light { background: #eff6ff; }
+.bg-green-light { background: #f0fdf4; }
+.bg-amber-light { background: #fffbeb; }
+.bg-red-light { background: #fef2f2; }
+.bg-teal-light { background: #f0fdfa; }
+.bg-cyan-light { background: #ecfeff; }
+.bg-indigo-light { background: #eef2ff; }
+
+.text-green { color: #16a34a !important; }
+.text-blue { color: #2563eb !important; }
+.text-amber { color: #d97706 !important; }
+.text-red { color: #dc2626 !important; }
+.text-indigo { color: #4f46e5 !important; }
+.text-teal { color: #0f766e !important; }
+.text-cyan { color: #0891b2 !important; }
+
+/* Global Print Styles */
+@media print {
+  app-sidebar,
+  app-topbar,
+  .sidebar-backdrop,
+  .p-toast {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .layout-shell,
+  .content-panel,
+  .page-body {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Reports Print Rules */
+  .reports-container {
+    padding: 0 !important;
+  }
+
+  .reports-header,
+  .filter-card,
+  .tab-switcher,
+  .header-actions {
+    display: none !important;
+  }
+
+  .print-header {
+    display: block !important;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #0f172a;
+
+    .print-org-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+    .print-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 2px 0;
+    }
+    .print-meta {
+      font-size: 0.85rem;
+      color: #334155;
+      .meta-sep { margin: 0 6px; color: #94a3b8; }
+    }
+  }
+
+  .print-section-title {
+    display: block !important;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 16px 0 10px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #cbd5e1;
+    text-transform: uppercase;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .screen-hidden {
+    display: block !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kpi-card {
+    padding: 8px 10px !important;
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    .kpi-icon-wrap { width: 32px !important; height: 32px !important; font-size: 0.9rem !important; }
+    .kpi-val { font-size: 1.2rem !important; }
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .chart-card {
+    min-height: auto !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .chart-wrapper {
+    height: 220px !important;
+  }
+
+  .doughnut-wrapper {
+    max-width: 220px !important;
+  }
+
+  .limitation-banner {
+    padding: 8px 12px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .machine-kpi-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .machine-kpi-item {
+    padding: 8px 10px !important;
+    border: 1px solid #cbd5e1 !important;
+    strong { font-size: 1.2rem !important; }
+  }
+
+  .p-datatable {
+    table { font-size: 11px !important; }
+    th, td { padding: 4px 6px !important; }
+  }
+}

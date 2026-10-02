@@ -155,3 +155,50 @@ export interface MachineStats {
   status: string;
   count: number;
 }
+
+export interface DailyTrend {
+  date: string;
+  total: number;
+  completed: number;
+  cancelled: number;
+  scheduled: number;
+  in_progress: number;
+}
+
+export interface OperationalSummaryReport {
+  date_from: string;
+  date_to: string;
+  total_sessions: number;
+  completed_sessions: number;
+  cancelled_sessions: number;
+  scheduled_sessions: number;
+  in_progress_sessions: number;
+  completion_rate: number;
+  total_uf_target: number;
+  total_uf_actual: number;
+  daily_trends: DailyTrend[];
+}
+
+export interface MachineUtilizationItem {
+  machine_id: string;
+  name: string;
+  status: string;
+  department_id?: number | null;
+  department_name?: string | null;
+  last_maintenance_date?: string | null;
+  session_count: number;
+  completed_count: number;
+  cancelled_count: number;
+  actual_runtime_hours: number;
+  actual_runtime_minutes: number;
+}
+
+export interface MachineUtilizationReport {
+  date_from: string;
+  date_to: string;
+  limitation_note: string;
+  total_machines: number;
+  total_completed_sessions: number;
+  total_runtime_hours: number;
+  machines: MachineUtilizationItem[];
+}

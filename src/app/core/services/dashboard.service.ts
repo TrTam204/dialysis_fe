@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DashboardSummary, DialysisSessionStats, MachineStats } from '../models';
 
@@ -11,22 +11,21 @@ export class DashboardService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Note: Dashboard endpoints may not exist yet in Phase 1.
-   * For now, we'll construct summary from individual entity calls.
-   */
   getSummary(): Observable<DashboardSummary> {
-    // Placeholder - backend should implement /api/dashboard/summary/
     return this.http.get<DashboardSummary>(`${this.apiBase}/dashboard/summary/`);
   }
 
-  getDialysisStats(): Observable<DialysisSessionStats[]> {
-    // Placeholder - backend should implement /api/dashboard/dialysis-stats/
-    return this.http.get<DialysisSessionStats[]>(`${this.apiBase}/dashboard/dialysis-stats/`);
+  getDialysisStats(days?: number, dateFrom?: string, dateTo?: string): Observable<DialysisSessionStats[]> {
+    let params = new HttpParams();
+    if (dateFrom && dateTo) {
+      params = params.set('date_from', dateFrom).set('date_to', dateTo);
+    } else if (days) {
+      params = params.set('days', days.toString());
+    }
+    return this.http.get<DialysisSessionStats[]>(`${this.apiBase}/dashboard/dialysis-stats/`, { params });
   }
 
   getMachineStats(): Observable<MachineStats[]> {
-    // Placeholder - backend should implement /api/dashboard/machine-stats/
     return this.http.get<MachineStats[]>(`${this.apiBase}/dashboard/machine-stats/`);
   }
 }

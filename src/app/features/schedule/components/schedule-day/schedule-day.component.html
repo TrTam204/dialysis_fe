@@ -51,6 +51,8 @@
 
 <ng-template #emptyDay>
   <div class="empty-state">
-    <span>Không có phiên lọc nào trong ngày này.</span>
+    <i class="pi pi-calendar" style="font-size: 2.2rem; color: #94a3b8; margin-bottom: 8px;"></i>
+    <p style="font-size: 1rem; font-weight: 600; color: #475569; margin: 0 0 4px 0;">Không có phiên lọc nào trong ngày {{ selectedDate | date: 'dd/MM/yyyy' }}.</p>
+    <span style="font-size: 0.85rem; color: #94a3b8;">Chọn ngày khác (ví dụ: 30/09/2026) bằng ô chọn ngày ở trên hoặc chuyển sang xem Tuần.</span>
   </div>
 </ng-template>

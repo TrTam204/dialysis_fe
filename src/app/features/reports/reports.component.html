@@ -1,0 +1,356 @@
+<div class="reports-container">
+  <p-toast></p-toast>
+
+  <!-- Print Header (visible only when printing) -->
+  <div class="print-header">
+    <div class="print-org-name">TRUNG TÂM LỌC MÁU CHU KỲ</div>
+    <div class="print-title">BÁO CÁO VẬN HÀNH & NĂNG LỰC LỌC MÁU</div>
+    <div class="print-meta">
+      <span><strong>Khoảng thời gian:</strong> Từ {{ dateFrom | date: 'dd/MM/yyyy' }} đến {{ dateTo | date: 'dd/MM/yyyy' }}</span>
+      <span class="meta-sep">•</span>
+      <span><strong>Ngày xuất:</strong> {{ currentDateStr }}</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="reports-header">
+    <div class="header-titles">
+      <h2>Báo cáo Vận hành & Hiệu suất</h2>
+      <p>Thống kê dữ liệu vận hành lâm sàng và năng lực thiết bị dựa trên dữ liệu thực tế</p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        pButton
+        icon="pi pi-print"
+        label="Xuất PDF / In"
+        class="p-button-outlined p-button-sm"
+        (click)="printReport()"
+        [disabled]="loading || (!summaryReport && !machineReport)"
+      ></button>
+      <button
+        type="button"
+        pButton
+        icon="pi pi-download"
+        label="Xuất CSV"
+        class="p-button-primary p-button-sm"
+        (click)="exportCsv()"
+        [disabled]="loading || (!summaryReport && !machineReport)"
+      ></button>
+      <button
+        type="button"
+        pButton
+        icon="pi pi-home"
+        label="Dashboard"
+        class="p-button-outlined p-button-sm"
+        routerLink="/dashboard"
+      ></button>
+    </div>
+  </div>
+
+  <!-- Filter Toolbar -->
+  <p-card class="filter-card">
+    <div class="filter-bar">
+      <div class="preset-group">
+        <span class="filter-label">Mốc thời gian:</span>
+        <button
+          type="button"
+          pButton
+          label="7 ngày qua"
+          class="p-button-sm"
+          [ngClass]="activePreset === '7d' ? 'p-button-primary' : 'p-button-outlined'"
+          (click)="setPreset('7d')"
+        ></button>
+        <button
+          type="button"
+          pButton
+          label="30 ngày qua"
+          class="p-button-sm"
+          [ngClass]="activePreset === '30d' ? 'p-button-primary' : 'p-button-outlined'"
+          (click)="setPreset('30d')"
+        ></button>
+        <button
+          type="button"
+          pButton
+          label="Tháng này"
+          class="p-button-sm"
+          [ngClass]="activePreset === 'this_month' ? 'p-button-primary' : 'p-button-outlined'"
+          (click)="setPreset('this_month')"
+        ></button>
+      </div>
+
+      <div class="custom-range-group">
+        <div class="date-field">
+          <label for="dateFrom">Từ ngày:</label>
+          <input
+            id="dateFrom"
+            type="date"
+            class="date-input"
+            [(ngModel)]="dateFrom"
+            (change)="onCustomDateChange()"
+          />
+        </div>
+        <div class="date-field">
+          <label for="dateTo">Đến ngày:</label>
+          <input
+            id="dateTo"
+            type="date"
+            class="date-input"
+            [(ngModel)]="dateTo"
+            (change)="onCustomDateChange()"
+          />
+        </div>
+        <button
+          type="button"
+          pButton
+          icon="pi pi-check"
+          label="Áp dụng"
+          class="p-button-sm"
+          [loading]="loading"
+          (click)="applyFilter()"
+        ></button>
+        <button
+          type="button"
+          pButton
+          icon="pi pi-refresh"
+          class="p-button-outlined p-button-sm"
+          pTooltip="Làm mới"
+          [disabled]="loading"
+          (click)="loadReports()"
+        ></button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Tab Switcher -->
+  <div class="tab-switcher">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'operational'"
+      (click)="switchTab('operational')"
+    >
+      <i class="pi pi-chart-bar"></i>
+      <span>Vận hành Phiên lọc</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'machine'"
+      (click)="switchTab('machine')"
+    >
+      <i class="pi pi-cog"></i>
+      <span>Suất sử dụng Máy lọc</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="state-panel loading-box">
+    <i class="pi pi-spin pi-spinner spinner-icon"></i>
+    <span>Đang tổng hợp dữ liệu báo cáo...</span>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="state-panel error-box">
+    <p-card>
+      <div class="error-panel">
+        <i class="pi pi-exclamation-triangle error-icon"></i>
+        <h3>Lỗi tải báo cáo</h3>
+        <p>{{ errorMessage || 'Không thể tổng hợp dữ liệu. Vui lòng kiểm tra kết nối mạng hoặc thử lại.' }}</p>
+        <button type="button" pButton icon="pi pi-refresh" label="Thử lại" (click)="loadReports()"></button>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- TAB 1: OPERATIONAL SUMMARY -->
+  <div *ngIf="!loading && !error" class="report-content" [class.screen-hidden]="activeTab !== 'operational'">
+    <div class="print-section-title">I. Thống kê Vận hành Phiên lọc</div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="kpi-card total-card">
+        <div class="kpi-icon-wrap bg-blue-light"><i class="pi pi-calendar text-blue"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Tổng phiên lọc</span>
+          <strong class="kpi-val">{{ summaryReport?.total_sessions ?? 0 }}</strong>
+          <span class="kpi-sub">Trong khoảng thời gian</span>
+        </div>
+      </div>
+
+      <div class="kpi-card completed-card">
+        <div class="kpi-icon-wrap bg-green-light"><i class="pi pi-check-circle text-green"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Hoàn thành</span>
+          <strong class="kpi-val text-green">{{ summaryReport?.completed_sessions ?? 0 }}</strong>
+          <span class="kpi-sub">Tỷ lệ: {{ summaryReport?.completion_rate ?? 0 }}%</span>
+        </div>
+      </div>
+
+      <div class="kpi-card inprogress-card">
+        <div class="kpi-icon-wrap bg-blue-light"><i class="pi pi-spin pi-spinner text-blue"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Đang thực hiện</span>
+          <strong class="kpi-val text-blue">{{ summaryReport?.in_progress_sessions ?? 0 }}</strong>
+          <span class="kpi-sub">Ca đang chạy</span>
+        </div>
+      </div>
+
+      <div class="kpi-card scheduled-card">
+        <div class="kpi-icon-wrap bg-amber-light"><i class="pi pi-clock text-amber"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Chờ thực hiện</span>
+          <strong class="kpi-val text-amber">{{ summaryReport?.scheduled_sessions ?? 0 }}</strong>
+          <span class="kpi-sub">Lịch đã xếp</span>
+        </div>
+      </div>
+
+      <div class="kpi-card cancelled-card">
+        <div class="kpi-icon-wrap bg-red-light"><i class="pi pi-times-circle text-red"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Đã hủy</span>
+          <strong class="kpi-val text-red">{{ summaryReport?.cancelled_sessions ?? 0 }}</strong>
+          <span class="kpi-sub">Ca hủy bỏ</span>
+        </div>
+      </div>
+
+      <div class="kpi-card rate-card">
+        <div class="kpi-icon-wrap bg-teal-light"><i class="pi pi-chart-pie text-teal"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Tỷ lệ hoàn thành</span>
+          <strong class="kpi-val">{{ summaryReport?.completion_rate ?? 0 }}%</strong>
+          <span class="kpi-sub">Hoàn tất / Tổng ca</span>
+        </div>
+      </div>
+
+      <div class="kpi-card uf-card">
+        <div class="kpi-icon-wrap bg-cyan-light"><i class="pi pi-filter text-cyan"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Tổng UF mục tiêu</span>
+          <strong class="kpi-val">{{ summaryReport?.total_uf_target ?? 0 }} L</strong>
+          <span class="kpi-sub">Dịch rút kế hoạch</span>
+        </div>
+      </div>
+
+      <div class="kpi-card uf-card">
+        <div class="kpi-icon-wrap bg-indigo-light"><i class="pi pi-gauge text-indigo"></i></div>
+        <div class="kpi-info">
+          <span class="kpi-label">Tổng UF thực tế</span>
+          <strong class="kpi-val text-indigo">{{ summaryReport?.total_uf_actual ?? 0 }} L</strong>
+          <span class="kpi-sub">Dịch rút thực tế</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-grid">
+      <!-- Daily Trend Chart -->
+      <p-card header="Xu hướng phiên lọc theo ngày" class="chart-card">
+        <div class="chart-wrapper" *ngIf="trendChartData; else emptyTrends">
+          <p-chart type="bar" [data]="trendChartData" [options]="trendChartOptions" height="260px"></p-chart>
+        </div>
+        <ng-template #emptyTrends>
+          <div class="empty-chart">Không có dữ liệu phiên lọc trong khoảng thời gian này.</div>
+        </ng-template>
+      </p-card>
+
+      <!-- Status Breakdown Doughnut -->
+      <p-card header="Phân bố trạng thái ca lọc" class="chart-card status-chart-card">
+        <div class="chart-wrapper doughnut-wrapper" *ngIf="statusDoughnutData; else emptyStatus">
+          <p-chart type="doughnut" [data]="statusDoughnutData" [options]="statusDoughnutOptions"></p-chart>
+        </div>
+        <ng-template #emptyStatus>
+          <div class="empty-chart">Không có ca lọc để phân bố trạng thái.</div>
+        </ng-template>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- TAB 2: MACHINE UTILIZATION -->
+  <div *ngIf="!loading && !error" class="report-content" [class.screen-hidden]="activeTab !== 'machine'">
+    <div class="print-section-title print-page-break">II. Suất sử dụng Máy lọc</div>
+
+    <!-- Limitation Note Banner -->
+    <div class="limitation-banner">
+      <i class="pi pi-info-circle banner-icon"></i>
+      <div class="banner-body">
+        <strong>Lưu ý về dữ liệu vận hành:</strong>
+        <span>{{ machineReport?.limitation_note || 'Cơ sở dữ liệu hiện tại không lưu lịch sử chuyển đổi trạng thái máy, do đó hệ thống không tính toán phần trăm uptime/downtime lịch sử để đảm bảo tính xác thực của dữ liệu y tế.' }}</span>
+      </div>
+    </div>
+
+    <!-- Machine Summary KPIs -->
+    <div class="machine-kpi-row">
+      <div class="machine-kpi-item">
+        <span class="label">Tổng số máy trong hệ thống</span>
+        <strong>{{ machineReport?.total_machines ?? 0 }} máy</strong>
+      </div>
+      <div class="machine-kpi-item">
+        <span class="label">Tổng phiên lọc hoàn thành trên máy</span>
+        <strong>{{ machineReport?.total_completed_sessions ?? 0 }} ca</strong>
+      </div>
+      <div class="machine-kpi-item">
+        <span class="label">Tổng thời gian máy chạy thực tế</span>
+        <strong class="text-indigo">{{ machineReport?.total_runtime_hours ?? 0 }} giờ</strong>
+      </div>
+    </div>
+
+    <!-- Machine Comparison Chart -->
+    <p-card header="So sánh số ca lọc giữa các máy" class="chart-card mb-4" *ngIf="machineBarData">
+      <div class="chart-wrapper">
+        <p-chart type="bar" [data]="machineBarData" [options]="machineBarOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <!-- Machine Utilization Table -->
+    <p-card header="Bảng thống kê chi tiết theo từng máy">
+      <p-table
+        [value]="machineReport?.machines || []"
+        [tableStyle]="{ 'min-width': '50rem' }"
+        styleClass="p-datatable-sm p-datatable-striped"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Mã máy</th>
+            <th>Tên máy</th>
+            <th>Trạng thái hiện tại</th>
+            <th>Khoa / Phòng</th>
+            <th>Bảo trì gần nhất</th>
+            <th class="text-right">Tổng ca</th>
+            <th class="text-right">Hoàn thành</th>
+            <th class="text-right">Đã hủy</th>
+            <th class="text-right">Thời gian chạy (giờ)</th>
+            <th class="text-right">Thời gian chạy (phút)</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-m>
+          <tr>
+            <td>
+              <span class="font-bold text-slate-800">{{ m.machine_id }}</span>
+            </td>
+            <td>{{ m.name }}</td>
+            <td>
+              <p-tag
+                [value]="getMachineStatusLabel(m.status)"
+                [severity]="getMachineStatusSeverity(m.status)"
+              ></p-tag>
+            </td>
+            <td>{{ m.department_name || '-' }}</td>
+            <td>{{ m.last_maintenance_date ? (m.last_maintenance_date | date: 'dd/MM/yyyy') : 'Chưa ghi nhận' }}</td>
+            <td class="text-right font-semibold">{{ m.session_count }}</td>
+            <td class="text-right font-semibold text-green">{{ m.completed_count }}</td>
+            <td class="text-right font-semibold text-red">{{ m.cancelled_count }}</td>
+            <td class="text-right font-bold text-indigo">{{ m.actual_runtime_hours }} h</td>
+            <td class="text-right text-slate-600">{{ m.actual_runtime_minutes }} min</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="10" class="text-center py-4 text-slate-500">
+              Không có dữ liệu máy lọc trong hệ thống.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>

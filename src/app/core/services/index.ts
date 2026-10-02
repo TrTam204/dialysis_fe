@@ -7,4 +7,5 @@ export * from './blood-sample.service';
 export * from './session.service';
 export * from './vital-sign.service';
 export * from './dashboard.service';
+export * from './report.service';
 export * from './http-base.service';

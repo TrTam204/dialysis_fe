@@ -1,11 +1,31 @@
 <div class="dashboard-container">
   <p-toast></p-toast>
 
+  <!-- Top Action Header -->
+  <div class="dashboard-header">
+    <div class="header-titles">
+      <h2>Tổng quan Vận hành</h2>
+      <p>Bảng điều khiển giám sát quy trình lọc máu và tình trạng thiết bị thời gian thực</p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        pButton
+        icon="pi pi-chart-line"
+        label="Xem Báo cáo chi tiết & Phân tích"
+        class="p-button-primary p-button-sm"
+        routerLink="/reports"
+      ></button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
   <div *ngIf="loading" class="loading-box">
     <i class="pi pi-spin pi-spinner"></i>
     <span>Đang tải dữ liệu Dashboard...</span>
   </div>
 
+  <!-- Error State -->
   <div *ngIf="error && !loading" class="error-box">
     <p-card>
       <div class="error-panel">
@@ -18,23 +38,159 @@
     </p-card>
   </div>
 
+  <!-- Dashboard Content -->
   <div *ngIf="!loading && !error" class="dashboard-grid">
+    <!-- 4 Top KPI Cards -->
     <p-card header="Tổng bệnh nhân" class="stat-card">
       <div class="stat-value">{{ summary?.total_patients ?? 0 }}</div>
+      <span class="stat-sub">Hồ sơ bệnh nhân</span>
     </p-card>
 
     <p-card header="Nhân sự" class="stat-card">
       <div class="stat-value">{{ summary?.total_staff ?? 0 }}</div>
+      <span class="stat-sub">Đang hoạt động</span>
     </p-card>
 
     <p-card header="Tổng phiên lọc" class="stat-card">
       <div class="stat-value">{{ summary?.total_sessions ?? 0 }}</div>
+      <span class="stat-sub">Toàn hệ thống</span>
     </p-card>
 
-    <p-card header="Máy hoạt động" class="stat-card">
-      <div class="stat-value">{{ summary?.active_machines ?? 0 }}</div>
+    <p-card header="Máy khả dụng" class="stat-card">
+      <div class="stat-value text-green">{{ summary?.active_machines ?? 0 }}</div>
+      <span class="stat-sub">Sẵn sàng / Đang dùng</span>
     </p-card>
 
+    <!-- Timeframe Selector Bar -->
+    <div class="full-width timeframe-bar">
+      <div class="timeframe-buttons">
+        <span class="timeframe-label">Khoảng thời gian:</span>
+        <button
+          type="button"
+          pButton
+          label="7 ngày qua"
+          class="p-button-sm"
+          [ngClass]="timeframe === '7d' ? 'p-button-primary' : 'p-button-outlined'"
+          (click)="setTimeframe('7d')"
+        ></button>
+        <button
+          type="button"
+          pButton
+          label="30 ngày qua"
+          class="p-button-sm"
+          [ngClass]="timeframe === '30d' ? 'p-button-primary' : 'p-button-outlined'"
+          (click)="setTimeframe('30d')"
+        ></button>
+      </div>
+
+      <div class="timeframe-stats" *ngIf="operationalSummary">
+        <div class="tf-stat">
+          <span>Tổng ca kỳ này:</span>
+          <strong>{{ operationalSummary.total_sessions }}</strong>
+        </div>
+        <div class="tf-stat">
+          <span>Tỷ lệ hoàn thành:</span>
+          <strong class="text-green">{{ operationalSummary.completion_rate }}%</strong>
+        </div>
+        <div class="tf-stat">
+          <span>Tổng UF rút:</span>
+          <strong class="text-indigo">{{ operationalSummary.total_uf_actual }} L</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart: Session Trend (Daily Trends via M7.1 Aggregate) -->
+    <p-card [header]="'Xu hướng phiên lọc (' + (timeframe === '7d' ? '7 ngày qua' : '30 ngày qua') + ')'" class="wide-card">
+      <div class="chart-panel" *ngIf="!loadingTrends; else loadingTrendBox">
+        <p-chart *ngIf="trendChartData" type="bar" [data]="trendChartData" [options]="trendOptions" height="200px"></p-chart>
+        <p *ngIf="!trendChartData" class="no-data">Không có dữ liệu trong khoảng thời gian này</p>
+      </div>
+      <ng-template #loadingTrendBox>
+        <div class="chart-loading"><i class="pi pi-spin pi-spinner"></i> Đang cập nhật biểu đồ...</div>
+      </ng-template>
+    </p-card>
+
+    <!-- Chart: Session Status Breakdown -->
+    <p-card header="Trạng thái phiên lọc trong kỳ" class="wide-card">
+      <div class="chart-panel" *ngIf="!loadingTrends; else loadingStatusBox">
+        <div class="donut-panel" *ngIf="sessionStatusDoughnutData; else noStatusData">
+          <div class="donut-chart-wrap">
+            <p-chart
+              type="doughnut"
+              [data]="sessionStatusDoughnutData"
+              [options]="statusDoughnutOptions"
+              height="160px"
+              width="160px"
+            ></p-chart>
+          </div>
+          <div class="status-legend-list" *ngIf="operationalSummary">
+            <div class="legend-item">
+              <div class="legend-label-wrap">
+                <span class="legend-dot" style="background: #22c55e;"></span>
+                <span class="legend-text">Hoàn thành</span>
+              </div>
+              <strong class="legend-count">{{ operationalSummary.completed_sessions }}</strong>
+            </div>
+            <div class="legend-item">
+              <div class="legend-label-wrap">
+                <span class="legend-dot" style="background: #3b82f6;"></span>
+                <span class="legend-text">Đang thực hiện</span>
+              </div>
+              <strong class="legend-count">{{ operationalSummary.in_progress_sessions }}</strong>
+            </div>
+            <div class="legend-item">
+              <div class="legend-label-wrap">
+                <span class="legend-dot" style="background: #f59e0b;"></span>
+                <span class="legend-text">Chờ thực hiện</span>
+              </div>
+              <strong class="legend-count">{{ operationalSummary.scheduled_sessions }}</strong>
+            </div>
+            <div class="legend-item">
+              <div class="legend-label-wrap">
+                <span class="legend-dot" style="background: #ef4444;"></span>
+                <span class="legend-text">Đã hủy</span>
+              </div>
+              <strong class="legend-count">{{ operationalSummary.cancelled_sessions }}</strong>
+            </div>
+          </div>
+        </div>
+        <ng-template #noStatusData>
+          <p class="no-data">Không có ca lọc trong kỳ</p>
+        </ng-template>
+      </div>
+      <ng-template #loadingStatusBox>
+        <div class="chart-loading"><i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...</div>
+      </ng-template>
+    </p-card>
+
+    <!-- Chart: Machine Current Status -->
+    <p-card header="Phân bố máy lọc hiện tại" class="wide-card">
+      <div class="donut-panel" *ngIf="machineDoughnutData; else noMachineData">
+        <div class="donut-chart-wrap">
+          <p-chart
+            type="doughnut"
+            [data]="machineDoughnutData"
+            [options]="machineDoughnutOptions"
+            height="160px"
+            width="160px"
+          ></p-chart>
+        </div>
+        <div class="machine-legend-list">
+          <div class="legend-item" *ngFor="let item of machineStats">
+            <div class="legend-label-wrap">
+              <span class="legend-dot" [style.background]="getMachineStatusColor(item.status)"></span>
+              <span class="legend-text">{{ getMachineLabel(item.status) }}</span>
+            </div>
+            <strong class="legend-count">{{ item.count }}</strong>
+          </div>
+        </div>
+      </div>
+      <ng-template #noMachineData>
+        <p class="no-data">Không có dữ liệu máy lọc</p>
+      </ng-template>
+    </p-card>
+
+    <!-- Today's Sessions Summary Widget -->
     <p-card header="Phiên hôm nay" class="wide-card">
       <div class="today-kpis">
         <div class="mini-kpi">
@@ -43,24 +199,29 @@
         </div>
         <div class="mini-kpi">
           <span class="label">Chờ</span>
-          <strong>{{ todaySummary.scheduled }}</strong>
+          <strong class="text-amber">{{ todaySummary.scheduled }}</strong>
         </div>
         <div class="mini-kpi">
           <span class="label">Đang chạy</span>
-          <strong>{{ todaySummary.inProgress }}</strong>
+          <strong class="text-blue">{{ todaySummary.inProgress }}</strong>
         </div>
         <div class="mini-kpi">
           <span class="label">Hoàn thành</span>
-          <strong>{{ todaySummary.completed }}</strong>
+          <strong class="text-green">{{ todaySummary.completed }}</strong>
         </div>
         <div class="mini-kpi">
           <span class="label">Đã hủy</span>
-          <strong>{{ todaySummary.cancelled }}</strong>
+          <strong class="text-red">{{ todaySummary.cancelled }}</strong>
         </div>
       </div>
 
       <div class="session-list" *ngIf="todaySessions.length; else emptySessions">
-        <div class="session-row" *ngFor="let session of todaySessions | slice:0:6" (click)="openSessionDetail(session.session_id)" [class.clickable-row]="session.session_id">
+        <div
+          class="session-row"
+          *ngFor="let session of todaySessions | slice:0:5"
+          (click)="openSessionDetail(session.session_id)"
+          [class.clickable-row]="session.session_id"
+        >
           <div>
             <div class="session-patient">{{ session.patient_name || session.patient?.full_name || session.patient || 'Bệnh nhân' }}</div>
             <div class="session-time">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</div>
@@ -85,27 +246,6 @@
       <ng-template #emptySessions>
         <div class="empty-state">Không có phiên lọc nào trong ngày hôm nay.</div>
       </ng-template>
-    </p-card>
-
-    <p-card header="Ca lọc theo 7 ngày" class="wide-card">
-      <div class="chart-panel">
-        <p-chart *ngIf="barData" type="bar" [data]="barData" [options]="barOptions"></p-chart>
-        <p *ngIf="!barData" class="no-data">Không có dữ liệu</p>
-      </div>
-    </p-card>
-
-    <p-card header="Trạng thái máy" class="wide-card">
-      <div class="chart-panel">
-        <p-chart *ngIf="doughnutData" type="doughnut" [data]="doughnutData" [options]="doughnutOptions"></p-chart>
-        <div *ngIf="doughnutData" class="legend-list">
-          <div class="legend-item" *ngFor="let item of machineStats">
-            <span class="legend-dot" [style.background]="item.status === 'AVAILABLE' ? '#22c55e' : item.status === 'IN_USE' ? '#3b82f6' : item.status === 'MAINTENANCE' ? '#f59e0b' : '#ef4444'"></span>
-            <span>{{ item.status === 'AVAILABLE' ? 'Sẵn sàng' : item.status === 'IN_USE' ? 'Đang sử dụng' : item.status === 'MAINTENANCE' ? 'Bảo trì' : 'Hỏng' }}</span>
-            <strong>{{ item.count }}</strong>
-          </div>
-        </div>
-        <p *ngIf="!doughnutData" class="no-data">Không có dữ liệu</p>
-      </div>
     </p-card>
   </div>
 </div>

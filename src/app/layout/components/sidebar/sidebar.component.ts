@@ -25,7 +25,10 @@ export class SidebarComponent {
   readonly navGroups: NavGroup[] = [
     {
       label: 'Tổng quan',
-      items: [{ label: 'Dashboard', route: '/dashboard', icon: 'pi pi-chart-bar' }],
+      items: [
+        { label: 'Dashboard', route: '/dashboard', icon: 'pi pi-chart-bar' },
+        { label: 'Báo cáo', route: '/reports', icon: 'pi pi-chart-line' },
+      ],
     },
     {
       label: 'Vận hành',

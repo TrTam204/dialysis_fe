@@ -49,6 +49,35 @@ export class ScheduleWeekComponent {
     return map[status] ?? 'status-default';
   }
 
+  getStatusShortLabel(status: string): string {
+    const map: Record<string, string> = {
+      SCHEDULED: 'Chờ',
+      IN_PROGRESS: 'Đang lọc',
+      COMPLETED: 'Xong',
+      CANCELLED: 'Hủy',
+    };
+    return map[status] ?? status;
+  }
+
+  getStatusBadgeClass(status: string): string {
+    const map: Record<string, string> = {
+      SCHEDULED: 'badge-scheduled',
+      IN_PROGRESS: 'badge-in-progress',
+      COMPLETED: 'badge-completed',
+      CANCELLED: 'badge-cancelled',
+    };
+    return map[status] ?? '';
+  }
+
+  isToday(date: Date): boolean {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  }
+
   formatDayLabel(date: Date): string {
     return new Intl.DateTimeFormat('vi-VN', {
       weekday: 'short',

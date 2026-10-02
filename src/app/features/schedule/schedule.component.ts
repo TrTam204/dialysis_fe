@@ -54,6 +54,29 @@ export class ScheduleComponent implements OnInit, OnDestroy {
   machineOptions: Array<{ label: string; value: string | null }> = [{ label: 'Tất cả máy', value: null }];
   nurseOptions: Array<{ label: string; value: number | null }> = [{ label: 'Tất cả điều dưỡng', value: null }];
 
+  shiftGroupFilter: 'ALL' | '246' | '357' = 'ALL';
+  shiftGroupOptions = [
+    { label: 'Cả tuần', value: 'ALL' },
+    { label: '246 (T2, T4, T6)', value: '246' },
+    { label: '357 (T3, T5, T7)', value: '357' },
+  ];
+
+  get filteredScheduleSessions(): DialysisSession[] {
+    if (this.shiftGroupFilter === 'ALL') {
+      return this.scheduleSessions;
+    }
+    return this.scheduleSessions.filter((session) => {
+      const day = new Date(session.scheduled_start).getDay();
+      if (this.shiftGroupFilter === '246') {
+        return day === 1 || day === 3 || day === 5;
+      }
+      if (this.shiftGroupFilter === '357') {
+        return day === 2 || day === 4 || day === 6;
+      }
+      return true;
+    });
+  }
+
   private destroy$ = new Subject<void>();
   private refreshTrigger$ = new Subject<void>();
   private requestToken = 0;
@@ -110,6 +133,28 @@ export class ScheduleComponent implements OnInit, OnDestroy {
     this.refreshTrigger$.next();
   }
 
+  get selectedDateIso(): string {
+    const d = this.selectedDate;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  onDateInputChange(dateStr: string): void {
+    if (!dateStr) {
+      return;
+    }
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      this.selectedDate = new Date(year, month, day);
+      this.refreshTrigger$.next();
+    }
+  }
+
   setViewMode(mode: ScheduleViewMode): void {
     this.viewMode = mode;
     this.refreshTrigger$.next();
@@ -119,6 +164,7 @@ export class ScheduleComponent implements OnInit, OnDestroy {
     this.statusFilter = null;
     this.machineFilter = null;
     this.nurseFilter = null;
+    this.shiftGroupFilter = 'ALL';
     this.refreshTrigger$.next();
   }
 
@@ -233,9 +279,14 @@ export class ScheduleComponent implements OnInit, OnDestroy {
       ordering: 'scheduled_start',
     };
 
-    const range = this.viewMode === 'day' ? this.getDayRange(this.selectedDate) : this.getWeekRange(this.selectedDate);
-    params['date_from'] = this.formatTimezoneAwareDateTime(range.start);
-    params['date_to'] = this.formatTimezoneAwareDateTime(range.end);
+    if (this.viewMode === 'day') {
+      params['date'] = this.formatLocalDate(this.selectedDate);
+    } else {
+      const range = this.getWeekRange(this.selectedDate);
+      params['date_from'] = this.formatTimezoneAwareDateTime(range.start);
+      const paddedEnd = this.addDays(range.end, 1);
+      params['date_to'] = this.formatTimezoneAwareDateTime(paddedEnd);
+    }
 
     if (this.statusFilter) {
       params['status'] = this.statusFilter;
