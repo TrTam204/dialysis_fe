@@ -211,14 +211,19 @@
 }
 
 .chart-card {
-  min-height: 380px;
+  min-height: 360px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .chart-wrapper {
-  height: 320px;
+  height: 300px;
   position: relative;
   width: 100%;
+  overflow: hidden;
+  canvas {
+    max-width: 100% !important;
+  }
 }
 
 .doughnut-container {

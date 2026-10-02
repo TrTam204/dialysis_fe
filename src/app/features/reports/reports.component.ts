@@ -83,11 +83,16 @@ export class ReportsComponent implements OnInit {
         x: {
           stacked: true,
           grid: { display: false },
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10,
+            font: { size: 10 },
+          },
         },
         y: {
           stacked: true,
           beginAtZero: true,
-          ticks: { stepSize: 1 },
+          ticks: { stepSize: 1, font: { size: 10 } },
         },
       },
     };

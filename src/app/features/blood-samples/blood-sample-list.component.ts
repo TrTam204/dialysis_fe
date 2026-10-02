@@ -6,13 +6,13 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { BloodSampleService } from '../../core/services/blood-sample.service';
 import { PatientService } from '../../core/services/patient.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -26,17 +26,38 @@ import { BloodSample, Patient } from '../../core/models';
     RouterLink,
     FormsModule,
     TableModule,
-    CardModule,
     ButtonModule,
     InputTextModule,
     ToastModule,
     ConfirmDialogModule,
     DropdownModule,
     TagModule,
+    TooltipModule,
   ],
   template: `
     <div class="page-shell">
-      <p-card header="Quản lý Mẫu xét nghiệm máu">
+      <div class="header-section">
+        <div>
+          <h2 class="page-title">Quản lý Mẫu xét nghiệm</h2>
+          <p class="page-subtitle">Sổ lưu trữ và theo dõi các chỉ số sinh hóa máu của bệnh nhân</p>
+        </div>
+        <div class="header-stats">
+          <span class="record-badge">
+            <i class="pi pi-file-excel text-primary"></i>
+            <span>Tổng cộng: <strong>{{ totalRecords }}</strong> mẫu xét nghiệm</span>
+          </span>
+          <a
+            pButton
+            *ngIf="canWrite"
+            routerLink="/blood-samples/new"
+            icon="pi pi-plus"
+            label="Thêm mới"
+            class="p-button-primary p-button-sm add-btn"
+          ></a>
+        </div>
+      </div>
+
+      <div class="sheet-card">
         <div class="toolbar">
           <span class="p-input-icon-left search-box">
             <i class="pi pi-search"></i>
@@ -55,13 +76,30 @@ import { BloodSample, Patient } from '../../core/models';
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
-            [style]="{ minWidth: '200px' }"
+            placeholder="Lọc theo bệnh nhân"
+            [style]="{ minWidth: '220px' }"
+            [filter]="true"
+            filterPlaceholder="Tìm bệnh nhân..."
           ></p-dropdown>
 
-          <a pButton *ngIf="canWrite" routerLink="/blood-samples/new" icon="pi pi-plus" label="Thêm mới" class="p-button-success"></a>
+          <button
+            *ngIf="searchText || patientFilter !== null"
+            pButton
+            type="button"
+            icon="pi pi-filter-slash"
+            label="Xóa lọc"
+            class="p-button-outlined p-button-secondary p-button-sm"
+            (click)="clearFilters()"
+          ></button>
+        </div>
+
+        <div *ngIf="loading" class="loading-box">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Đang tải danh sách mẫu xét nghiệm...</span>
         </div>
 
         <p-table
+          *ngIf="!loading"
           [value]="samples"
           [lazy]="true"
           [lazyLoadOnInit]="false"
@@ -70,67 +108,293 @@ import { BloodSample, Patient } from '../../core/models';
           [rows]="rows"
           [first]="first"
           [totalRecords]="totalRecords"
-          [loading]="loading"
           dataKey="sample_id"
           responsiveLayout="scroll"
+          styleClass="p-datatable-gridlines sheet-table"
         >
           <ng-template pTemplate="header">
             <tr>
-              <th pSortableColumn="sample_id">Mã mẫu <p-sortIcon field="sample_id"></p-sortIcon></th>
-              <th pSortableColumn="patient__full_name">Bệnh nhân <p-sortIcon field="patient__full_name"></p-sortIcon></th>
-              <th pSortableColumn="collection_date">Ngày lấy mẫu <p-sortIcon field="collection_date"></p-sortIcon></th>
-              <th pSortableColumn="hemoglobin_level">Hemoglobin <p-sortIcon field="hemoglobin_level"></p-sortIcon></th>
-              <th pSortableColumn="potassium_level">Kali <p-sortIcon field="potassium_level"></p-sortIcon></th>
-              <th pSortableColumn="created_at">Ngày tạo <p-sortIcon field="created_at"></p-sortIcon></th>
-              <th *ngIf="canWrite" style="width: 120px">Hành động</th>
+              <th style="width: 50px" class="text-center">STT</th>
+              <th pSortableColumn="sample_id" style="width: 130px">
+                Mã mẫu <p-sortIcon field="sample_id"></p-sortIcon>
+              </th>
+              <th pSortableColumn="patient__full_name" style="min-width: 200px">
+                Bệnh nhân <p-sortIcon field="patient__full_name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="collection_date" style="width: 175px">
+                Ngày lấy mẫu <p-sortIcon field="collection_date"></p-sortIcon>
+              </th>
+              <th pSortableColumn="hemoglobin_level" style="width: 155px" class="text-right">
+                Hemoglobin (Hb) <p-sortIcon field="hemoglobin_level"></p-sortIcon>
+              </th>
+              <th pSortableColumn="potassium_level" style="width: 145px" class="text-right">
+                Kali (K+) <p-sortIcon field="potassium_level"></p-sortIcon>
+              </th>
+              <th pSortableColumn="created_at" style="width: 130px">
+                Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+              </th>
+              <th *ngIf="canWrite" style="width: 105px" class="text-center">Thao tác</th>
             </tr>
           </ng-template>
 
-          <ng-template pTemplate="body" let-sample>
+          <ng-template pTemplate="body" let-sample let-rowIndex="rowIndex">
             <tr>
-              <td><p-tag [value]="sample.sample_id"></p-tag></td>
-              <td>{{ sample.patient_name || sample.patient }}</td>
-              <td>{{ sample.collection_date | date: 'dd/MM/yyyy HH:mm' }}</td>
-              <td>{{ sample.hemoglobin_level }} g/dL</td>
-              <td>{{ sample.potassium_level }} mEq/L</td>
-              <td>{{ sample.created_at | date: 'dd/MM/yyyy' }}</td>
-              <td *ngIf="canWrite">
-                <a
-                  pButton
-                  type="button"
-                  icon="pi pi-pencil"
-                  class="p-button-text"
-                  [routerLink]="['/blood-samples', sample.sample_id, 'edit']"
-                  [attr.aria-label]="'Sửa ' + sample.sample_id"
-                ></a>
-                <button
-                  pButton
-                  type="button"
-                  icon="pi pi-trash"
-                  class="p-button-text p-button-danger"
-                  (click)="confirmDelete(sample)"
-                ></button>
+              <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+              <td>
+                <span class="code-badge">{{ sample.sample_id }}</span>
+              </td>
+              <td>
+                <span class="patient-name">{{ sample.patient_name || sample.patient }}</span>
+              </td>
+              <td>
+                <span class="date-text">
+                  <i class="pi pi-calendar text-xs text-slate-400"></i>
+                  {{ sample.collection_date | date: 'dd/MM/yyyy HH:mm' }}
+                </span>
+              </td>
+              <td class="text-right">
+                <span class="val-pill font-mono font-semibold">
+                  {{ sample.hemoglobin_level }} <span class="val-unit">g/dL</span>
+                </span>
+              </td>
+              <td class="text-right">
+                <span class="val-pill font-mono font-semibold">
+                  {{ sample.potassium_level }} <span class="val-unit">mEq/L</span>
+                </span>
+              </td>
+              <td>
+                <span class="date-text">{{ sample.created_at | date: 'dd/MM/yyyy' }}</span>
+              </td>
+              <td *ngIf="canWrite" class="text-center">
+                <div class="action-cell">
+                  <a
+                    pButton
+                    type="button"
+                    icon="pi pi-pencil"
+                    class="p-button-text p-button-rounded p-button-sm p-button-info"
+                    [routerLink]="['/blood-samples', sample.sample_id, 'edit']"
+                    [attr.aria-label]="'Sửa ' + sample.sample_id"
+                    pTooltip="Sửa thông tin"
+                    tooltipPosition="top"
+                  ></a>
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                    (click)="confirmDelete(sample)"
+                    pTooltip="Xóa mẫu xét nghiệm"
+                    tooltipPosition="top"
+                  ></button>
+                </div>
               </td>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td [attr.colspan]="canWrite ? 7 : 6" class="text-center">Không có dữ liệu</td>
+              <td [attr.colspan]="canWrite ? 8 : 7" class="text-center empty-cell">
+                <i class="pi pi-inbox empty-icon"></i>
+                <div>Không tìm thấy mẫu xét nghiệm nào</div>
+              </td>
             </tr>
           </ng-template>
         </p-table>
-      </p-card>
+      </div>
 
       <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
     </div>
   `,
   styles: [
-    '.page-shell { padding: 24px; }',
-    '.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }',
-    '.search-box { flex: 1; min-width: 200px; max-width: 360px; }',
-    '.search-box input { width: 100%; }',
-    '.text-center { text-align: center; }',
+    `
+      .page-shell {
+        padding: 20px 24px;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .page-title {
+          margin: 0 0 4px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #0f172a;
+          letter-spacing: -0.3px;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          font-size: 13px;
+          color: #64748b;
+        }
+
+        .header-stats {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .record-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #334155;
+        }
+      }
+
+      .sheet-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+
+        .search-box {
+          flex: 1;
+          min-width: 220px;
+          max-width: 320px;
+
+          input {
+            width: 100%;
+          }
+        }
+      }
+
+      .loading-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 40px 0;
+        color: #64748b;
+      }
+
+      :host ::ng-deep .sheet-table {
+        .p-datatable-thead > tr > th {
+          background: #f8fafc;
+          color: #334155;
+          font-size: 11.5px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          padding: 8px 10px;
+          border: 1px solid #e2e8f0;
+          border-bottom: 2px solid #cbd5e1;
+          white-space: nowrap;
+        }
+
+        .p-datatable-tbody > tr {
+          transition: background-color 0.15s ease;
+
+          &:nth-child(even) {
+            background-color: #fafbfc;
+          }
+          &:nth-child(odd) {
+            background-color: #ffffff;
+          }
+
+          &:hover {
+            background-color: #f1f5f9 !important;
+          }
+
+          > td {
+            padding: 7px 10px;
+            font-size: 13px;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+          }
+        }
+
+        .p-paginator {
+          padding: 8px 12px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+        }
+      }
+
+      .col-stt {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .code-badge {
+        display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 2px 6px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+      }
+
+      .patient-name {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 13px;
+      }
+
+      .date-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12.5px;
+        color: #475569;
+      }
+
+      .val-pill {
+        display: inline-block;
+        font-size: 13px;
+        color: #0f172a;
+      }
+
+      .val-unit {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 400;
+      }
+
+      .action-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+
+      .empty-cell {
+        padding: 32px 16px;
+        color: #64748b;
+
+        .empty-icon {
+          font-size: 24px;
+          margin-bottom: 8px;
+          display: block;
+        }
+      }
+    `,
   ],
 })
 export class BloodSampleListComponent implements OnInit, OnDestroy {
@@ -184,11 +448,23 @@ export class BloodSampleListComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  formatIndex(idx: number): string {
+    return idx < 10 ? `0${idx}` : `${idx}`;
+  }
+
   onSearchInput(text: string) {
+    this.searchText = text;
     this.searchSubject.next(text);
   }
 
   onFilterChange() {
+    this.first = 0;
+    this.loadSamples();
+  }
+
+  clearFilters() {
+    this.searchText = '';
+    this.patientFilter = null;
     this.first = 0;
     this.loadSamples();
   }

@@ -246,7 +246,7 @@
       <!-- Daily Trend Chart -->
       <p-card header="Xu hướng phiên lọc theo ngày" class="chart-card">
         <div class="chart-wrapper" *ngIf="trendChartData; else emptyTrends">
-          <p-chart type="bar" [data]="trendChartData" [options]="trendChartOptions" height="260px"></p-chart>
+          <p-chart type="bar" [data]="trendChartData" [options]="trendChartOptions" height="100%"></p-chart>
         </div>
         <ng-template #emptyTrends>
           <div class="empty-chart">Không có dữ liệu phiên lọc trong khoảng thời gian này.</div>

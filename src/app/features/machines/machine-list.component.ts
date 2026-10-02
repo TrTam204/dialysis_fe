@@ -6,13 +6,13 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { MachineService } from '../../core/services/machine.service';
 import { DepartmentService } from '../../core/services/department.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -26,24 +26,45 @@ import { DialysisMachine, Department } from '../../core/models';
     RouterLink,
     FormsModule,
     TableModule,
-    CardModule,
     ButtonModule,
     InputTextModule,
     ToastModule,
     ConfirmDialogModule,
     DropdownModule,
     TagModule,
+    TooltipModule,
   ],
   template: `
     <div class="page-shell">
-      <p-card header="Quản lý Máy lọc máu">
+      <div class="header-section">
+        <div>
+          <h2 class="page-title">Quản lý Máy lọc máu</h2>
+          <p class="page-subtitle">Danh mục trang thiết bị máy lọc thận và theo dõi bảo trì định kỳ</p>
+        </div>
+        <div class="header-stats">
+          <span class="record-badge">
+            <i class="pi pi-server text-primary"></i>
+            <span>Tổng cộng: <strong>{{ totalRecords }}</strong> máy lọc</span>
+          </span>
+          <a
+            pButton
+            *ngIf="isAdmin"
+            routerLink="/machines/new"
+            icon="pi pi-plus"
+            label="Thêm mới"
+            class="p-button-primary p-button-sm add-btn"
+          ></a>
+        </div>
+      </div>
+
+      <div class="sheet-card">
         <div class="toolbar">
           <span class="p-input-icon-left search-box">
             <i class="pi pi-search"></i>
             <input
               pInputText
               type="text"
-              placeholder="Tìm theo mã / tên máy..."
+              placeholder="Tìm theo mã máy / tên máy..."
               [ngModel]="searchText"
               (ngModelChange)="onSearchInput($event)"
             />
@@ -55,6 +76,7 @@ import { DialysisMachine, Department } from '../../core/models';
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
+            placeholder="Trạng thái"
             [style]="{ minWidth: '160px' }"
           ></p-dropdown>
 
@@ -64,13 +86,28 @@ import { DialysisMachine, Department } from '../../core/models';
             (ngModelChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
+            placeholder="Khoa / Phòng"
             [style]="{ minWidth: '180px' }"
           ></p-dropdown>
 
-          <a pButton *ngIf="isAdmin" routerLink="/machines/new" icon="pi pi-plus" label="Thêm mới" class="p-button-success"></a>
+          <button
+            *ngIf="searchText || statusFilter !== null || departmentFilter !== null"
+            pButton
+            type="button"
+            icon="pi pi-filter-slash"
+            label="Xóa lọc"
+            class="p-button-outlined p-button-secondary p-button-sm"
+            (click)="clearFilters()"
+          ></button>
+        </div>
+
+        <div *ngIf="loading" class="loading-box">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Đang tải danh sách máy lọc máu...</span>
         </div>
 
         <p-table
+          *ngIf="!loading"
           [value]="machines"
           [lazy]="true"
           [lazyLoadOnInit]="false"
@@ -79,69 +116,344 @@ import { DialysisMachine, Department } from '../../core/models';
           [rows]="rows"
           [first]="first"
           [totalRecords]="totalRecords"
-          [loading]="loading"
           dataKey="machine_id"
           responsiveLayout="scroll"
+          styleClass="p-datatable-gridlines sheet-table"
         >
           <ng-template pTemplate="header">
             <tr>
-              <th pSortableColumn="machine_id">Mã máy <p-sortIcon field="machine_id"></p-sortIcon></th>
-              <th pSortableColumn="name">Tên máy <p-sortIcon field="name"></p-sortIcon></th>
-              <th pSortableColumn="status">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
-              <th pSortableColumn="department__name">Khoa <p-sortIcon field="department__name"></p-sortIcon></th>
-              <th pSortableColumn="last_maintenance_date">Bảo trì gần nhất <p-sortIcon field="last_maintenance_date"></p-sortIcon></th>
-              <th pSortableColumn="created_at">Ngày tạo <p-sortIcon field="created_at"></p-sortIcon></th>
-              <th *ngIf="isAdmin" style="width: 120px">Hành động</th>
+              <th style="width: 50px" class="text-center">STT</th>
+              <th pSortableColumn="machine_id" style="width: 130px">
+                Mã máy <p-sortIcon field="machine_id"></p-sortIcon>
+              </th>
+              <th pSortableColumn="name">
+                Tên máy <p-sortIcon field="name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="department__name" style="width: 190px">
+                Khoa / Phòng <p-sortIcon field="department__name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="last_maintenance_date" style="width: 170px">
+                Bảo trì gần nhất <p-sortIcon field="last_maintenance_date"></p-sortIcon>
+              </th>
+              <th pSortableColumn="created_at" style="width: 130px">
+                Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+              </th>
+              <th pSortableColumn="status" style="width: 150px" class="text-center">
+                Trạng thái <p-sortIcon field="status"></p-sortIcon>
+              </th>
+              <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
             </tr>
           </ng-template>
 
-          <ng-template pTemplate="body" let-machine>
+          <ng-template pTemplate="body" let-machine let-rowIndex="rowIndex">
             <tr>
-              <td><p-tag [value]="machine.machine_id"></p-tag></td>
-              <td>{{ machine.name }}</td>
+              <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
               <td>
-                <p-tag [value]="getStatusLabel(machine.status)" [severity]="getStatusSeverity(machine.status)"></p-tag>
+                <span class="code-badge">{{ machine.machine_id }}</span>
               </td>
-              <td>{{ machine.department_name || getDepartmentName(machine.department) }}</td>
-              <td>{{ machine.last_maintenance_date ? (machine.last_maintenance_date | date: 'dd/MM/yyyy') : '-' }}</td>
-              <td>{{ machine.created_at | date: 'dd/MM/yyyy' }}</td>
-              <td *ngIf="isAdmin">
-                <a
-                  pButton
-                  type="button"
-                  icon="pi pi-pencil"
-                  class="p-button-text"
-                  [routerLink]="['/machines', machine.machine_id, 'edit']"
-                  [attr.aria-label]="'Sửa ' + machine.name"
-                ></a>
-                <button
-                  pButton
-                  type="button"
-                  icon="pi pi-trash"
-                  class="p-button-text p-button-danger"
-                  (click)="confirmDelete(machine)"
-                ></button>
+              <td>
+                <span class="machine-name">{{ machine.name }}</span>
+              </td>
+              <td>
+                <span class="dept-name">
+                  <i class="pi pi-building text-xs text-slate-400"></i>
+                  {{ machine.department_name || getDepartmentName(machine.department) }}
+                </span>
+              </td>
+              <td>
+                <span class="date-text">
+                  <i class="pi pi-wrench text-xs text-slate-400"></i>
+                  {{ machine.last_maintenance_date ? (machine.last_maintenance_date | date: 'dd/MM/yyyy') : '-' }}
+                </span>
+              </td>
+              <td>
+                <span class="date-text">{{ machine.created_at | date: 'dd/MM/yyyy' }}</span>
+              </td>
+              <td class="text-center">
+                <span [class]="'status-pill status-' + (machine.status || '').toLowerCase().replace('_', '-')">
+                  <span class="dot"></span>
+                  {{ getStatusLabel(machine.status) }}
+                </span>
+              </td>
+              <td *ngIf="isAdmin" class="text-center">
+                <div class="action-cell">
+                  <a
+                    pButton
+                    type="button"
+                    icon="pi pi-pencil"
+                    class="p-button-text p-button-rounded p-button-sm p-button-info"
+                    [routerLink]="['/machines', machine.machine_id, 'edit']"
+                    [attr.aria-label]="'Sửa ' + machine.name"
+                    pTooltip="Sửa thông tin"
+                    tooltipPosition="top"
+                  ></a>
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                    (click)="confirmDelete(machine)"
+                    pTooltip="Xóa máy lọc"
+                    tooltipPosition="top"
+                  ></button>
+                </div>
               </td>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td [attr.colspan]="isAdmin ? 7 : 6" class="text-center">Không có dữ liệu</td>
+              <td [attr.colspan]="isAdmin ? 8 : 7" class="text-center empty-cell">
+                <i class="pi pi-inbox empty-icon"></i>
+                <div>Không tìm thấy máy lọc nào</div>
+              </td>
             </tr>
           </ng-template>
         </p-table>
-      </p-card>
+      </div>
 
       <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
     </div>
   `,
   styles: [
-    '.page-shell { padding: 24px; }',
-    '.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }',
-    '.search-box { flex: 1; min-width: 200px; max-width: 360px; }',
-    '.search-box input { width: 100%; }',
-    '.text-center { text-align: center; }',
+    `
+      .page-shell {
+        padding: 20px 24px;
+      }
+
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .page-title {
+          margin: 0 0 4px;
+          font-size: 20px;
+          font-weight: 700;
+          color: #0f172a;
+          letter-spacing: -0.3px;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          font-size: 13px;
+          color: #64748b;
+        }
+
+        .header-stats {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .record-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #334155;
+        }
+      }
+
+      .sheet-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+
+        .search-box {
+          flex: 1;
+          min-width: 220px;
+          max-width: 320px;
+
+          input {
+            width: 100%;
+          }
+        }
+      }
+
+      .loading-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 40px 0;
+        color: #64748b;
+      }
+
+      :host ::ng-deep .sheet-table {
+        .p-datatable-thead > tr > th {
+          background: #f8fafc;
+          color: #334155;
+          font-size: 11.5px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          padding: 8px 10px;
+          border: 1px solid #e2e8f0;
+          border-bottom: 2px solid #cbd5e1;
+          white-space: nowrap;
+        }
+
+        .p-datatable-tbody > tr {
+          transition: background-color 0.15s ease;
+
+          &:nth-child(even) {
+            background-color: #fafbfc;
+          }
+          &:nth-child(odd) {
+            background-color: #ffffff;
+          }
+
+          &:hover {
+            background-color: #f1f5f9 !important;
+          }
+
+          > td {
+            padding: 7px 10px;
+            font-size: 13px;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+          }
+        }
+
+        .p-paginator {
+          padding: 8px 12px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+        }
+      }
+
+      .col-stt {
+        color: #64748b;
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .code-badge {
+        display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 2px 6px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+      }
+
+      .machine-name {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 13px;
+      }
+
+      .dept-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500;
+        color: #334155;
+      }
+
+      .date-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12.5px;
+        color: #475569;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+
+        &.status-available {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+          .dot {
+            background: #10b981;
+          }
+        }
+
+        &.status-in-use {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          .dot {
+            background: #3b82f6;
+          }
+        }
+
+        &.status-maintenance {
+          background: #fefce8;
+          color: #b45309;
+          border: 1px solid #fef08a;
+          .dot {
+            background: #eab308;
+          }
+        }
+
+        &.status-broken {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+          .dot {
+            background: #ef4444;
+          }
+        }
+      }
+
+      .action-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+
+      .empty-cell {
+        padding: 32px 16px;
+        color: #64748b;
+
+        .empty-icon {
+          font-size: 24px;
+          margin-bottom: 8px;
+          display: block;
+        }
+      }
+    `,
   ],
 })
 export class MachineListComponent implements OnInit, OnDestroy {
@@ -203,11 +515,24 @@ export class MachineListComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  formatIndex(idx: number): string {
+    return idx < 10 ? `0${idx}` : `${idx}`;
+  }
+
   onSearchInput(text: string) {
+    this.searchText = text;
     this.searchSubject.next(text);
   }
 
   onFilterChange() {
+    this.first = 0;
+    this.loadMachines();
+  }
+
+  clearFilters() {
+    this.searchText = '';
+    this.statusFilter = null;
+    this.departmentFilter = null;
     this.first = 0;
     this.loadMachines();
   }
