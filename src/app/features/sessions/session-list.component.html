@@ -1,0 +1,192 @@
+<div class="page-shell">
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Quản lý Phiên lọc máu</h2>
+      <p class="page-subtitle">Sổ theo dõi và phân công ca lọc máu tại buồng lọc</p>
+    </div>
+    <div class="header-stats">
+      <span class="record-badge">
+        <i class="pi pi-calendar-plus text-primary"></i>
+        <span>Tổng cộng: <strong>{{ totalRecords }}</strong> ca lọc</span>
+      </span>
+      <a pButton *ngIf="canWrite" routerLink="/sessions/new" icon="pi pi-plus" label="Thêm mới" class="p-button-primary p-button-sm add-btn"></a>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <div class="toolbar">
+      <span class="p-input-icon-left search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Tìm theo mã ca / tên bệnh nhân..."
+          [ngModel]="searchText"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </span>
+
+      <p-dropdown
+        [options]="statusFilterOptions"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [style]="{ minWidth: '150px' }"
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="patientFilterOptions"
+        [(ngModel)]="patientFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Bệnh nhân"
+        [style]="{ minWidth: '170px' }"
+        [filter]="true"
+        filterPlaceholder="Tìm bệnh nhân..."
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="machineFilterOptions"
+        [(ngModel)]="machineFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Máy lọc"
+        [style]="{ minWidth: '140px' }"
+      ></p-dropdown>
+
+      <button
+        *ngIf="searchText || statusFilter !== null || patientFilter !== null || machineFilter !== null"
+        pButton
+        type="button"
+        icon="pi pi-filter-slash"
+        label="Xóa lọc"
+        class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="clearFilters()"
+      ></button>
+    </div>
+
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Đang tải danh sách ca lọc máu...</span>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="sessions"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [first]="first"
+      [totalRecords]="totalRecords"
+      dataKey="session_id"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-gridlines sheet-table"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px" class="text-center">STT</th>
+          <th pSortableColumn="session_id" style="width: 115px">Mã phiên <p-sortIcon field="session_id"></p-sortIcon></th>
+          <th pSortableColumn="patient__full_name">Bệnh nhân <p-sortIcon field="patient__full_name"></p-sortIcon></th>
+          <th pSortableColumn="machine__name" style="width: 125px">Máy lọc <p-sortIcon field="machine__name"></p-sortIcon></th>
+          <th pSortableColumn="assigned_nurse__first_name" style="width: 155px">Điều dưỡng <p-sortIcon field="assigned_nurse__first_name"></p-sortIcon></th>
+          <th pSortableColumn="scheduled_start" style="width: 155px">Thời gian ca <p-sortIcon field="scheduled_start"></p-sortIcon></th>
+          <th style="width: 110px" class="text-right">UF Mục tiêu</th>
+          <th pSortableColumn="status" style="width: 140px" class="text-center">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
+          <th style="width: 115px" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-session let-rowIndex="rowIndex">
+        <tr (click)="navigateToSession(session)" class="clickable-row">
+          <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+          <td>
+            <span class="code-badge">{{ session.session_id }}</span>
+          </td>
+          <td>
+            <span class="patient-name">{{ session.patient_name || session.patient }}</span>
+          </td>
+          <td>
+            <span class="machine-badge">
+              <i class="pi pi-server text-xs"></i>
+              {{ session.machine_name || session.machine }}
+            </span>
+          </td>
+          <td>
+            <span class="nurse-cell">
+              <i class="pi pi-user text-xs"></i>
+              {{ session.nurse_name || session.assigned_nurse }}
+            </span>
+          </td>
+          <td>
+            <div class="time-cell">
+              <span class="date-str">{{ session.scheduled_start | date: 'dd/MM/yyyy' }}</span>
+              <span class="hours-str">{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
+            </div>
+          </td>
+          <td class="text-right">
+            <span *ngIf="session.uf_target != null" class="uf-val font-semibold">{{ session.uf_target }} L</span>
+            <span *ngIf="session.uf_target == null" class="text-slate-400">-</span>
+          </td>
+          <td class="text-center">
+            <span [class]="'status-pill status-' + (session.status || '').toLowerCase().replace('_', '-')">
+              <span class="dot"></span>
+              {{ getStatusLabel(session.status) }}
+            </span>
+          </td>
+          <td class="text-center" (click)="$event.stopPropagation()">
+            <div class="action-cell">
+              <a
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                class="p-button-text p-button-rounded p-button-sm"
+                [routerLink]="['/sessions', session.session_id]"
+                [attr.aria-label]="'Xem ' + session.session_id"
+                pTooltip="Xem ca lọc"
+                tooltipPosition="top"
+              ></a>
+              <a
+                pButton
+                *ngIf="canWrite"
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-rounded p-button-sm p-button-info"
+                [routerLink]="['/sessions', session.session_id, 'edit']"
+                [attr.aria-label]="'Sửa ' + session.session_id"
+                pTooltip="Sửa ca lọc"
+                tooltipPosition="top"
+              ></a>
+              <button
+                pButton
+                *ngIf="canWrite"
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                (click)="confirmDelete(session)"
+                pTooltip="Xóa ca lọc"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="text-center empty-cell">
+            <i class="pi pi-inbox empty-icon"></i>
+            <div>Không tìm thấy ca lọc máu nào</div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+</div>

@@ -1,0 +1,189 @@
+<div class="page-shell">
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Quản lý Nhân sự</h2>
+      <p class="page-subtitle">Danh sách tài khoản y bác sĩ và nhân viên hệ thống lọc máu</p>
+    </div>
+    <div class="header-stats">
+      <span class="record-badge">
+        <i class="pi pi-users text-primary"></i>
+        <span>Tổng cộng: <strong>{{ totalRecords }}</strong> nhân sự</span>
+      </span>
+      <a
+        pButton
+        *ngIf="isAdmin"
+        routerLink="/staff/new"
+        icon="pi pi-plus"
+        label="Thêm mới"
+        class="p-button-primary p-button-sm add-btn"
+      ></a>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <div class="toolbar">
+      <span class="p-input-icon-left search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Tìm theo username / họ tên / email..."
+          [ngModel]="searchText"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </span>
+
+      <p-dropdown
+        [options]="roleFilterOptions"
+        [(ngModel)]="roleFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Vai trò"
+        [style]="{ minWidth: '150px' }"
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="departmentFilterOptions"
+        [(ngModel)]="departmentFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Khoa / Phòng"
+        [style]="{ minWidth: '180px' }"
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="statusOptions"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [style]="{ minWidth: '150px' }"
+      ></p-dropdown>
+
+      <button
+        *ngIf="searchText || roleFilter !== null || departmentFilter !== null || statusFilter !== null"
+        pButton
+        type="button"
+        icon="pi pi-filter-slash"
+        label="Xóa lọc"
+        class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="clearFilters()"
+      ></button>
+    </div>
+
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Đang tải danh sách nhân sự...</span>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="staff"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [first]="first"
+      [totalRecords]="totalRecords"
+      dataKey="id"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-gridlines sheet-table"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px" class="text-center">STT</th>
+          <th pSortableColumn="username" style="width: 140px">
+            Username <p-sortIcon field="username"></p-sortIcon>
+          </th>
+          <th pSortableColumn="first_name">
+            Họ và tên <p-sortIcon field="first_name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="email">
+            Email <p-sortIcon field="email"></p-sortIcon>
+          </th>
+          <th pSortableColumn="role" style="width: 145px" class="text-center">
+            Vai trò <p-sortIcon field="role"></p-sortIcon>
+          </th>
+          <th pSortableColumn="department__name" style="width: 180px">
+            Khoa / Phòng <p-sortIcon field="department__name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="is_active" style="width: 135px" class="text-center">
+            Trạng thái <p-sortIcon field="is_active"></p-sortIcon>
+          </th>
+          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-user let-rowIndex="rowIndex">
+        <tr>
+          <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+          <td>
+            <span class="code-badge">{{ user.username }}</span>
+          </td>
+          <td>
+            <span class="user-name">{{ getUserFullName(user) }}</span>
+          </td>
+          <td>
+            <span class="email-text">{{ user.email }}</span>
+          </td>
+          <td class="text-center">
+            <span [class]="'role-badge role-' + (user.role || '').toLowerCase()">
+              <i class="pi" [ngClass]="getRoleIcon(user.role)"></i>
+              {{ getRoleLabel(user.role) }}
+            </span>
+          </td>
+          <td>
+            <span class="dept-name">
+              <i class="pi pi-building text-xs text-slate-400"></i>
+              {{ user.department_name || getDepartmentName(user.department) }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span [class]="'status-pill ' + (user.is_active ? 'status-active' : 'status-inactive')">
+              <span class="dot"></span>
+              {{ user.is_active ? 'Hoạt động' : 'Vô hiệu' }}
+            </span>
+          </td>
+          <td *ngIf="isAdmin" class="text-center">
+            <div class="action-cell">
+              <a
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-rounded p-button-sm p-button-info"
+                [routerLink]="['/staff', user.id, 'edit']"
+                [attr.aria-label]="'Sửa ' + user.username"
+                pTooltip="Sửa thông tin"
+                tooltipPosition="top"
+              ></a>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                (click)="confirmDelete(user)"
+                pTooltip="Xóa nhân sự"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="isAdmin ? 8 : 7" class="text-center empty-cell">
+            <i class="pi pi-inbox empty-icon"></i>
+            <div>Không tìm thấy nhân sự nào</div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+</div>

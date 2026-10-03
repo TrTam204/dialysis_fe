@@ -15,63 +15,8 @@ import { Department } from '../../core/models';
   selector: 'app-department-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, CardModule, ButtonModule, InputTextModule, InputTextareaModule, CheckboxModule],
-  template: `
-    <div class="page-shell">
-      <p-card [header]="editMode ? 'Sửa Khoa/Phòng ban' : 'Thêm Khoa/Phòng ban'">
-        <div *ngIf="loading" class="loading-box">
-          <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
-        </div>
-
-        <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-          <div class="field">
-            <label for="name">Tên <span class="required">*</span></label>
-            <input id="name" pInputText formControlName="name" class="w-full" placeholder="VD: Khoa Lọc Máu" />
-            <small class="p-error" *ngIf="hasError('name', 'required')">Tên không được rỗng</small>
-            <small class="p-error" *ngIf="hasError('name', 'maxlength')">Tên tối đa 120 ký tự</small>
-            <small class="p-error" *ngIf="hasError('name', 'server')">{{ form.get('name')?.errors?.['server'] }}</small>
-          </div>
-
-          <div class="field">
-            <label for="code">Mã <span class="required">*</span></label>
-            <input id="code" pInputText formControlName="code" class="w-full code-input" placeholder="VD: KLM" maxlength="30" />
-            <small class="hint">Mã được chuẩn hóa thành chữ in hoa (tối đa 30 ký tự)</small>
-            <small class="p-error" *ngIf="hasError('code', 'required')">Mã không được rỗng</small>
-            <small class="p-error" *ngIf="hasError('code', 'maxlength')">Mã tối đa 30 ký tự</small>
-            <small class="p-error" *ngIf="hasError('code', 'server')">{{ form.get('code')?.errors?.['server'] }}</small>
-          </div>
-
-          <div class="field">
-            <label for="description">Mô tả</label>
-            <textarea id="description" pInputTextarea formControlName="description" class="w-full" rows="3"></textarea>
-            <small class="p-error" *ngIf="hasError('description', 'server')">{{ form.get('description')?.errors?.['server'] }}</small>
-          </div>
-
-          <div class="field">
-            <p-checkbox formControlName="is_active" label="Hoạt động" [binary]="true"></p-checkbox>
-          </div>
-
-          <div class="form-footer">
-            <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-            <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
-          </div>
-        </form>
-      </p-card>
-    </div>
-  `,
-  styles: [
-    `
-      .page-shell { padding: 24px; max-width: 640px; }
-      .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
-      label { font-weight: 600; }
-      .required { color: red; }
-      .p-error { color: #f87171; font-size: 0.875rem; }
-      .hint { color: #64748b; font-size: 0.8rem; }
-      .code-input { text-transform: uppercase; }
-      .form-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
-      .loading-box { padding: 32px 0; color: #64748b; }
-      .loading-box i { margin-right: 8px; }
-    `,
-  ],
+  templateUrl: './department-form.component.html',
+  styleUrls: ['./department-form.component.scss'],
 })
 export class DepartmentFormComponent implements OnInit {
   form: FormGroup;

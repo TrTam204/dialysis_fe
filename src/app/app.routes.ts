@@ -13,6 +13,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/main-layout/main-layout.component').then((m) => m.MainLayoutComponent),
     canActivate: [AuthGuard],
+    canActivateChild: [AuthGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/home.component').then((m) => m.HomeComponent) },
@@ -85,6 +86,11 @@ export const routes: Routes = [
         path: 'blood-samples/:id/edit',
         loadComponent: () => import('./features/blood-samples/blood-sample-form.component').then((m) => m.BloodSampleFormComponent),
         data: { roles: ['ADMIN', 'DOCTOR'] },
+      },
+      {
+        path: 'audit-logs',
+        loadComponent: () => import('./features/audit-logs/audit-log-list.component').then((m) => m.AuditLogListComponent),
+        data: { roles: ['ADMIN'] },
       },
     ],
   },

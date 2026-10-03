@@ -1,0 +1,297 @@
+<div class="audit-log-page p-3">
+  <p-toast></p-toast>
+
+  <p-card styleClass="p-shadow-2">
+    <!-- Header -->
+    <ng-template pTemplate="header">
+      <div class="header-container px-4 pt-4 pb-2">
+        <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <h2 class="m-0 text-900 font-bold flex align-items-center gap-2">
+              <i class="pi pi-history text-primary text-2xl"></i>
+              Nhật ký hệ thống (Audit Log)
+            </h2>
+            <p class="text-500 m-0 mt-1">
+              Ghi nhận toàn bộ thao tác thêm, sửa, xóa dữ liệu trên các thực thể y tế và vận hành
+            </p>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-refresh"
+              label="Làm mới"
+              class="p-button-outlined p-button-sm"
+              [loading]="loading"
+              (click)="onRefresh()"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Filter Toolbar -->
+    <div class="filter-toolbar mb-3 p-3 surface-ground border-round flex flex-wrap gap-3 align-items-center">
+      <div class="filter-item">
+        <label class="block text-500 text-xs font-semibold mb-1">Hành động</label>
+        <p-dropdown
+          [options]="actionOptions"
+          [(ngModel)]="selectedAction"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="onFilterChange()"
+          styleClass="w-full md:w-14rem"
+        ></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label class="block text-500 text-xs font-semibold mb-1">Đối tượng thực thể</label>
+        <p-dropdown
+          [options]="entityTypeOptions"
+          [(ngModel)]="selectedEntityType"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="onFilterChange()"
+          styleClass="w-full md:w-16rem"
+        ></p-dropdown>
+      </div>
+
+      <div class="filter-item flex-1 min-w-16rem">
+        <label class="block text-500 text-xs font-semibold mb-1">Tìm kiếm từ khóa</label>
+        <span class="p-input-icon-left w-full">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            class="w-full"
+            placeholder="Tìm theo mã ID, đối tượng, tài khoản..."
+            [(ngModel)]="searchKeyword"
+            (ngModelChange)="onSearchChange()"
+          />
+        </span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="logs"
+      [lazy]="true"
+      (onLazyLoad)="loadLogs($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [first]="first"
+      [totalRecords]="totalRecords"
+      [loading]="loading"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Hiển thị {first} - {last} trong tổng số {totalRecords} bản ghi"
+      styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped"
+      [responsiveLayout]="'scroll'"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 170px">Thời gian</th>
+          <th style="min-width: 180px">Người thực hiện</th>
+          <th style="width: 130px; text-align: center">Hành động</th>
+          <th style="min-width: 150px">Thực thể</th>
+          <th style="min-width: 140px">Mã ID</th>
+          <th style="width: 100px; text-align: center">Chi tiết</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-log>
+        <tr>
+          <td>
+            <div class="font-medium text-800 text-sm">
+              {{ log.timestamp | date:'dd/MM/yyyy' }}
+            </div>
+            <div class="text-xs text-500 font-mono">
+              {{ log.timestamp | date:'HH:mm:ss' }}
+            </div>
+          </td>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <span class="font-semibold text-900">{{ log.actor_name || 'Hệ thống' }}</span>
+              <p-tag
+                *ngIf="log.actor_role"
+                [value]="log.actor_role"
+                [severity]="getRoleSeverity(log.actor_role)"
+                styleClass="text-xs"
+              ></p-tag>
+            </div>
+          </td>
+          <td style="text-align: center">
+            <p-tag
+              [value]="log.action"
+              [severity]="getActionSeverity(log.action)"
+            ></p-tag>
+          </td>
+          <td>
+            <span class="font-semibold text-primary">{{ log.entity_type }}</span>
+          </td>
+          <td>
+            <span class="id-badge font-mono">{{ log.entity_id }}</span>
+          </td>
+          <td style="text-align: center">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-eye"
+              class="p-button-text p-button-sm p-button-info"
+              pTooltip="Xem chi tiết thay đổi"
+              tooltipPosition="top"
+              (click)="viewDetails(log)"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center p-4">
+            <div class="text-500">
+              <i class="pi pi-inbox text-3xl mb-2 block"></i>
+              Không tìm thấy bản ghi nhật ký phù hợp.
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Detail Dialog -->
+  <p-dialog
+    [(visible)]="displayDetailModal"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '720px', maxWidth: '95vw' }"
+    styleClass="audit-detail-dialog"
+  >
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-info-circle text-primary text-xl"></i>
+        <span class="font-bold text-lg text-900">
+          Chi tiết nhật ký #{{ selectedLog?.id }}
+        </span>
+      </div>
+    </ng-template>
+
+    <div *ngIf="selectedLog" class="dialog-body">
+      <!-- Summary Info Box -->
+      <div class="surface-ground border-round p-3 mb-3 grid m-0">
+        <div class="col-12 md:col-6 p-2">
+          <div class="text-500 text-xs font-semibold">Thời gian:</div>
+          <div class="font-medium text-900">
+            {{ selectedLog.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}
+          </div>
+        </div>
+        <div class="col-12 md:col-6 p-2">
+          <div class="text-500 text-xs font-semibold">Người thực hiện:</div>
+          <div class="flex align-items-center gap-2 mt-1">
+            <span class="font-medium text-900">{{ selectedLog.actor_name || 'Hệ thống' }}</span>
+            <p-tag
+              *ngIf="selectedLog.actor_role"
+              [value]="selectedLog.actor_role"
+              [severity]="getRoleSeverity(selectedLog.actor_role)"
+            ></p-tag>
+          </div>
+        </div>
+        <div class="col-12 md:col-6 p-2">
+          <div class="text-500 text-xs font-semibold">Hành động:</div>
+          <div class="mt-1">
+            <p-tag
+              [value]="selectedLog.action"
+              [severity]="getActionSeverity(selectedLog.action)"
+            ></p-tag>
+          </div>
+        </div>
+        <div class="col-12 md:col-6 p-2">
+          <div class="text-500 text-xs font-semibold">Thực thể tác động:</div>
+          <div class="font-medium text-900 mt-1">
+            <span class="text-primary font-semibold">{{ selectedLog.entity_type }}</span>
+            <span class="mx-1 text-400">/</span>
+            <span class="font-mono text-sm id-badge">{{ selectedLog.entity_id }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle View Mode -->
+      <div class="flex justify-content-between align-items-center mb-2">
+        <h4 class="m-0 text-800 font-semibold">Dữ liệu thay đổi (Changes)</h4>
+        <button
+          pButton
+          type="button"
+          [icon]="viewRawJson ? 'pi pi-table' : 'pi pi-code'"
+          [label]="viewRawJson ? 'Xem dạng bảng' : 'Xem JSON thô'"
+          class="p-button-text p-button-sm"
+          (click)="viewRawJson = !viewRawJson"
+        ></button>
+      </div>
+
+      <!-- Raw JSON View -->
+      <div *ngIf="viewRawJson" class="raw-json-box">
+        <pre class="json-code"><code>{{ selectedLog.changes | json }}</code></pre>
+      </div>
+
+      <!-- Table View for UPDATE (Diff) -->
+      <div *ngIf="!viewRawJson && selectedLog.action === 'UPDATE' && isUpdateDiff(selectedLog.changes)">
+        <div class="table-container border-1 surface-border border-round overflow-hidden">
+          <table class="w-full diff-table">
+            <thead>
+              <tr class="surface-100 text-700 text-xs font-semibold">
+                <th class="p-2 text-left" style="width: 30%">Trường thông tin</th>
+                <th class="p-2 text-left" style="width: 35%">Giá trị trước (Before)</th>
+                <th class="p-2 text-left" style="width: 35%">Giá trị sau (After)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let key of getChangeKeys(selectedLog.changes)" class="border-top-1 surface-border">
+                <td class="p-2 font-semibold text-800 text-sm">{{ key }}</td>
+                <td class="p-2 text-red-600 font-mono text-xs bg-red-50">
+                  {{ formatValue(selectedLog.changes[key]?.before) }}
+                </td>
+                <td class="p-2 text-green-600 font-mono text-xs bg-green-50">
+                  {{ formatValue(selectedLog.changes[key]?.after) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Table View for CREATE / DELETE (Snapshot) -->
+      <div *ngIf="!viewRawJson && (selectedLog.action !== 'UPDATE' || !isUpdateDiff(selectedLog.changes))">
+        <div class="table-container border-1 surface-border border-round overflow-hidden">
+          <table class="w-full snapshot-table">
+            <thead>
+              <tr class="surface-100 text-700 text-xs font-semibold">
+                <th class="p-2 text-left" style="width: 35%">Trường thông tin</th>
+                <th class="p-2 text-left" style="width: 65%">Giá trị ghi nhận</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let key of getChangeKeys(selectedLog.changes)" class="border-top-1 surface-border">
+                <td class="p-2 font-semibold text-800 text-sm">{{ key }}</td>
+                <td class="p-2 font-mono text-xs text-700">
+                  {{ formatValue(selectedLog.changes[key]) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Đóng"
+        icon="pi pi-times"
+        class="p-button-outlined"
+        (click)="displayDetailModal = false"
+      ></button>
+    </ng-template>
+  </p-dialog>
+</div>

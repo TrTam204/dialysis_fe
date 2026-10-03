@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { environment } from '../../../environments/environment';
 import { ReportService } from './report.service';
 
 describe('ReportService', () => {
@@ -47,7 +48,7 @@ describe('ReportService', () => {
       expect(data.completion_rate).toBe(80.0);
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/api/reports/operational-summary/?date_from=2026-09-01&date_to=2026-09-30');
+    const req = httpMock.expectOne(`${environment.apiUrl}/reports/operational-summary/?date_from=2026-09-01&date_to=2026-09-30`);
     expect(req.request.method).toBe('GET');
     req.flush(mockReport);
   });
@@ -68,7 +69,7 @@ describe('ReportService', () => {
       expect(data.total_runtime_hours).toBe(32.0);
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/api/reports/machine-utilization/?date_from=2026-09-01&date_to=2026-09-30');
+    const req = httpMock.expectOne(`${environment.apiUrl}/reports/machine-utilization/?date_from=2026-09-01&date_to=2026-09-30`);
     expect(req.request.method).toBe('GET');
     req.flush(mockReport);
   });

@@ -1,0 +1,97 @@
+<div class="page-shell">
+  <p-card [header]="editMode ? 'Sửa Nhân sự' : 'Thêm Nhân sự'">
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
+      <div class="field">
+        <label for="username">Tên đăng nhập <span class="required">*</span></label>
+        <input id="username" pInputText formControlName="username" class="w-full" />
+        <small class="p-error" *ngIf="hasError('username', 'required')">Tên đăng nhập không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('username', 'server')">{{ form.get('username')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="email">Email <span class="required">*</span></label>
+        <input id="email" pInputText type="email" formControlName="email" class="w-full" />
+        <small class="p-error" *ngIf="hasError('email', 'required')">Email không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('email', 'email')">Email không hợp lệ</small>
+        <small class="p-error" *ngIf="hasError('email', 'server')">{{ form.get('email')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="first_name">Tên</label>
+          <input id="first_name" pInputText formControlName="first_name" class="w-full" />
+          <small class="p-error" *ngIf="hasError('first_name', 'server')">{{ form.get('first_name')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="last_name">Họ</label>
+          <input id="last_name" pInputText formControlName="last_name" class="w-full" />
+          <small class="p-error" *ngIf="hasError('last_name', 'server')">{{ form.get('last_name')?.errors?.['server'] }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="phone_number">Số điện thoại</label>
+        <input id="phone_number" pInputText formControlName="phone_number" class="w-full" />
+        <small class="p-error" *ngIf="hasError('phone_number', 'server')">{{ form.get('phone_number')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="role">Vai trò <span class="required">*</span></label>
+        <p-dropdown
+          id="role"
+          [options]="roleOptions"
+          formControlName="role"
+          [showClear]="false"
+          class="w-full"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('role', 'required')">Vai trò không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('role', 'server')">{{ form.get('role')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="department">Khoa/Phòng ban <span class="required">*</span></label>
+        <p-dropdown
+          id="department"
+          [options]="departments"
+          optionLabel="name"
+          optionValue="id"
+          formControlName="department"
+          [showClear]="false"
+          class="w-full"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('department', 'required')">Khoa/Phòng ban không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('department', 'server')">{{ form.get('department')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="password">
+          Mật khẩu <span class="required" *ngIf="!editMode">*</span>
+          <span class="hint" *ngIf="editMode">(để trống nếu không đổi)</span>
+        </label>
+        <p-password
+          id="password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          class="w-full"
+        />
+        <small class="p-error" *ngIf="hasError('password', 'required')">Mật khẩu không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('password', 'server')">{{ form.get('password')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <p-checkbox formControlName="is_active" label="Hoạt động" [binary]="true"></p-checkbox>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
+        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+      </div>
+    </form>
+  </p-card>
+</div>

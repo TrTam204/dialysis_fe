@@ -1,0 +1,155 @@
+<div class="page-shell">
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Quản lý Khoa / Phòng ban</h2>
+      <p class="page-subtitle">Danh mục các đơn vị chuyên môn và buồng lọc máu thuộc bệnh viện</p>
+    </div>
+    <div class="header-stats">
+      <span class="record-badge">
+        <i class="pi pi-building text-primary"></i>
+        <span>Tổng cộng: <strong>{{ totalRecords }}</strong> khoa / phòng</span>
+      </span>
+      <a
+        pButton
+        *ngIf="isAdmin"
+        routerLink="/departments/new"
+        icon="pi pi-plus"
+        label="Thêm mới"
+        class="p-button-primary p-button-sm add-btn"
+      ></a>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <div class="toolbar">
+      <span class="p-input-icon-left search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Tìm theo tên / mã khoa / mô tả..."
+          [ngModel]="searchText"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </span>
+
+      <p-dropdown
+        [options]="statusOptions"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [style]="{ minWidth: '170px' }"
+      ></p-dropdown>
+
+      <button
+        *ngIf="searchText || statusFilter !== null"
+        pButton
+        type="button"
+        icon="pi pi-filter-slash"
+        label="Xóa lọc"
+        class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="clearFilters()"
+      ></button>
+    </div>
+
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Đang tải danh sách khoa/phòng ban...</span>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="departments"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [first]="first"
+      [totalRecords]="totalRecords"
+      dataKey="id"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-gridlines sheet-table"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px" class="text-center">STT</th>
+          <th pSortableColumn="code" style="width: 120px">
+            Mã khoa <p-sortIcon field="code"></p-sortIcon>
+          </th>
+          <th pSortableColumn="name" style="width: 220px">
+            Tên khoa / Phòng ban <p-sortIcon field="name"></p-sortIcon>
+          </th>
+          <th>Mô tả chức năng</th>
+          <th pSortableColumn="created_at" style="width: 130px">
+            Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+          </th>
+          <th pSortableColumn="is_active" style="width: 160px" class="text-center">
+            Trạng thái <p-sortIcon field="is_active"></p-sortIcon>
+          </th>
+          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-dept let-rowIndex="rowIndex">
+        <tr>
+          <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+          <td>
+            <span class="code-badge">{{ dept.code }}</span>
+          </td>
+          <td>
+            <span class="dept-title">{{ dept.name }}</span>
+          </td>
+          <td>
+            <span class="desc-text">{{ dept.description || '-' }}</span>
+          </td>
+          <td>
+            <span class="date-text">{{ dept.created_at | date: 'dd/MM/yyyy' }}</span>
+          </td>
+          <td class="text-center">
+            <span [class]="'status-pill ' + (dept.is_active ? 'status-active' : 'status-inactive')">
+              <span class="dot"></span>
+              {{ dept.is_active ? 'Hoạt động' : 'Ngừng hoạt động' }}
+            </span>
+          </td>
+          <td *ngIf="isAdmin" class="text-center">
+            <div class="action-cell">
+              <a
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-rounded p-button-sm p-button-info"
+                [routerLink]="['/departments', dept.id, 'edit']"
+                [attr.aria-label]="'Sửa ' + dept.name"
+                pTooltip="Sửa thông tin"
+                tooltipPosition="top"
+              ></a>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                (click)="confirmDelete(dept)"
+                pTooltip="Xóa khoa"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="isAdmin ? 7 : 6" class="text-center empty-cell">
+            <i class="pi pi-inbox empty-icon"></i>
+            <div>Không tìm thấy khoa/phòng ban nào</div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+</div>

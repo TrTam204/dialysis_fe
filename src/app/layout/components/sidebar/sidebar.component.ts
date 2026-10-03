@@ -3,9 +3,16 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
+interface NavItem {
+  label: string;
+  route: string;
+  icon: string;
+  roles?: string[];
+}
+
 interface NavGroup {
   label: string;
-  items: { label: string; route: string; icon: string }[];
+  items: NavItem[];
 }
 
 @Component({
@@ -45,9 +52,21 @@ export class SidebarComponent {
         { label: 'Máy lọc', route: '/machines', icon: 'pi pi-cog' },
         { label: 'Khoa / Phòng ban', route: '/departments', icon: 'pi pi-building' },
         { label: 'Mẫu xét nghiệm', route: '/blood-samples', icon: 'pi pi-clipboard' },
+        { label: 'Nhật ký hệ thống', route: '/audit-logs', icon: 'pi pi-history', roles: ['ADMIN'] },
       ],
     },
   ];
+
+  isItemVisible(item: NavItem): boolean {
+    if (!item.roles || item.roles.length === 0) {
+      return true;
+    }
+    return item.roles.includes(this.currentUserRole);
+  }
+
+  isGroupVisible(group: NavGroup): boolean {
+    return group.items.some((item) => this.isItemVisible(item));
+  }
 
   onNavigate(): void {
     this.itemSelected.emit();

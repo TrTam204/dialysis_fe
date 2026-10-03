@@ -1,0 +1,179 @@
+<div class="page-shell">
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Quản lý Máy lọc máu</h2>
+      <p class="page-subtitle">Danh mục trang thiết bị máy lọc thận và theo dõi bảo trì định kỳ</p>
+    </div>
+    <div class="header-stats">
+      <span class="record-badge">
+        <i class="pi pi-server text-primary"></i>
+        <span>Tổng cộng: <strong>{{ totalRecords }}</strong> máy lọc</span>
+      </span>
+      <a
+        pButton
+        *ngIf="isAdmin"
+        routerLink="/machines/new"
+        icon="pi pi-plus"
+        label="Thêm mới"
+        class="p-button-primary p-button-sm add-btn"
+      ></a>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <div class="toolbar">
+      <span class="p-input-icon-left search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Tìm theo mã máy / tên máy..."
+          [ngModel]="searchText"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </span>
+
+      <p-dropdown
+        [options]="statusFilterOptions"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [style]="{ minWidth: '160px' }"
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="departmentFilterOptions"
+        [(ngModel)]="departmentFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Khoa / Phòng"
+        [style]="{ minWidth: '180px' }"
+      ></p-dropdown>
+
+      <button
+        *ngIf="searchText || statusFilter !== null || departmentFilter !== null"
+        pButton
+        type="button"
+        icon="pi pi-filter-slash"
+        label="Xóa lọc"
+        class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="clearFilters()"
+      ></button>
+    </div>
+
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Đang tải danh sách máy lọc máu...</span>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="machines"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [first]="first"
+      [totalRecords]="totalRecords"
+      dataKey="machine_id"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-gridlines sheet-table"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px" class="text-center">STT</th>
+          <th pSortableColumn="machine_id" style="width: 130px">
+            Mã máy <p-sortIcon field="machine_id"></p-sortIcon>
+          </th>
+          <th pSortableColumn="name">
+            Tên máy <p-sortIcon field="name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="department__name" style="width: 190px">
+            Khoa / Phòng <p-sortIcon field="department__name"></p-sortIcon>
+          </th>
+          <th pSortableColumn="last_maintenance_date" style="width: 170px">
+            Bảo trì gần nhất <p-sortIcon field="last_maintenance_date"></p-sortIcon>
+          </th>
+          <th pSortableColumn="created_at" style="width: 130px">
+            Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+          </th>
+          <th pSortableColumn="status" style="width: 150px" class="text-center">
+            Trạng thái <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-machine let-rowIndex="rowIndex">
+        <tr>
+          <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+          <td>
+            <span class="code-badge">{{ machine.machine_id }}</span>
+          </td>
+          <td>
+            <span class="machine-name">{{ machine.name }}</span>
+          </td>
+          <td>
+            <span class="dept-name">
+              <i class="pi pi-building text-xs text-slate-400"></i>
+              {{ machine.department_name || getDepartmentName(machine.department) }}
+            </span>
+          </td>
+          <td>
+            <span class="date-text">
+              <i class="pi pi-wrench text-xs text-slate-400"></i>
+              {{ machine.last_maintenance_date ? (machine.last_maintenance_date | date: 'dd/MM/yyyy') : '-' }}
+            </span>
+          </td>
+          <td>
+            <span class="date-text">{{ machine.created_at | date: 'dd/MM/yyyy' }}</span>
+          </td>
+          <td class="text-center">
+            <span [class]="'status-pill status-' + (machine.status || '').toLowerCase().replace('_', '-')">
+              <span class="dot"></span>
+              {{ getStatusLabel(machine.status) }}
+            </span>
+          </td>
+          <td *ngIf="isAdmin" class="text-center">
+            <div class="action-cell">
+              <a
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text p-button-rounded p-button-sm p-button-info"
+                [routerLink]="['/machines', machine.machine_id, 'edit']"
+                [attr.aria-label]="'Sửa ' + machine.name"
+                pTooltip="Sửa thông tin"
+                tooltipPosition="top"
+              ></a>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-rounded p-button-sm p-button-danger"
+                (click)="confirmDelete(machine)"
+                pTooltip="Xóa máy lọc"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="isAdmin ? 8 : 7" class="text-center empty-cell">
+            <i class="pi pi-inbox empty-icon"></i>
+            <div>Không tìm thấy máy lọc nào</div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+</div>

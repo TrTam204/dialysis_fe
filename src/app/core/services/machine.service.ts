@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DialysisMachine } from '../models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class MachineService {
-  private apiBase = 'http://localhost:8000/api';
+  private apiBase = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

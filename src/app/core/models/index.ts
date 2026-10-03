@@ -202,3 +202,5 @@ export interface MachineUtilizationReport {
   total_runtime_hours: number;
   machines: MachineUtilizationItem[];
 }
+
+export * from './audit-log.model';

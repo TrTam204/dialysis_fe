@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class HttpBaseService {
-  protected apiBase = 'http://localhost:8000/api';
+  protected apiBase = environment.apiUrl;
 
   constructor(protected http: HttpClient) {}
 

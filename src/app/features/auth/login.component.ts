@@ -23,47 +23,8 @@ import { LoginRequest } from '../../core/models';
     PasswordModule,
     MessagesModule,
   ],
-  template: `
-    <div class="auth-shell">
-      <p-card header="Đăng nhập hệ thống" subheader="Trung tâm Lọc máu">
-        <p-messages [(value)]="messages" [enableService]="false" [closable]="true" />
-
-        <form [formGroup]="form" (ngSubmit)="submit()">
-          <div class="field">
-            <label for="username">Tên đăng nhập</label>
-            <input id="username" pInputText formControlName="username" />
-            <small class="p-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
-              Tên đăng nhập không được rỗng
-            </small>
-          </div>
-
-          <div class="field">
-            <label for="password">Mật khẩu</label>
-            <p-password formControlName="password" [feedback]="false" [toggleMask]="true" />
-            <small class="p-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-              Mật khẩu không được rỗng
-            </small>
-          </div>
-
-          <button pButton type="submit" label="Đăng nhập" class="w-full" [loading]="loading" [disabled]="loading"></button>
-        </form>
-
-        <div class="auth-footer">
-          <a routerLink="/auth/forgot-password">Quên mật khẩu?</a>
-        </div>
-      </p-card>
-    </div>
-  `,
-  styles: [
-    '.auth-shell { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 24px; }',
-    'p-card { width: min(420px, 100%); }',
-    '.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }',
-    'label { font-weight: 600; }',
-    '.p-error { color: #f87171; font-size: 0.875rem; }',
-    '.auth-footer { margin-top: 16px; text-align: center; }',
-    '.auth-footer a { color: #3b82f6; text-decoration: none; font-size: 0.875rem; }',
-    '.auth-footer a:hover { text-decoration: underline; }',
-  ],
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent {
   form;

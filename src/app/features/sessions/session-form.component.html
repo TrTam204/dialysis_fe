@@ -1,0 +1,118 @@
+<div class="page-shell">
+  <p-card [header]="editMode ? 'Sửa Phiên lọc' : 'Thêm Phiên lọc'">
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
+      <div class="field">
+        <label for="session_id">Mã phiên lọc <span class="required">*</span></label>
+        <input id="session_id" pInputText formControlName="session_id" class="w-full" [readonly]="editMode" />
+        <small class="p-error" *ngIf="hasError('session_id', 'required')">Mã phiên không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('session_id', 'server')">{{ form.get('session_id')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="patient">Bệnh nhân <span class="required">*</span></label>
+        <p-dropdown
+          id="patient"
+          [options]="patients"
+          optionLabel="full_name"
+          optionValue="patient_id"
+          formControlName="patient"
+          [showClear]="false"
+          class="w-full"
+          placeholder="Chọn bệnh nhân"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('patient', 'required')">Bệnh nhân không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('patient', 'server')">{{ form.get('patient')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="machine">Máy lọc <span class="required">*</span></label>
+        <p-dropdown
+          id="machine"
+          [options]="machines"
+          optionLabel="name"
+          optionValue="machine_id"
+          formControlName="machine"
+          [showClear]="false"
+          class="w-full"
+          placeholder="Chọn máy lọc"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('machine', 'required')">Máy lọc không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('machine', 'server')">{{ form.get('machine')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="assigned_nurse">Điều dưỡng phụ trách <span class="required">*</span></label>
+        <p-dropdown
+          id="assigned_nurse"
+          [options]="nurses"
+          optionLabel="full_name"
+          optionValue="id"
+          formControlName="assigned_nurse"
+          [showClear]="false"
+          class="w-full"
+          placeholder="Chọn điều dưỡng"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('assigned_nurse', 'required')">Điều dưỡng không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('assigned_nurse', 'server')">{{ form.get('assigned_nurse')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="scheduled_start">Thời gian bắt đầu <span class="required">*</span></label>
+          <p-calendar
+            id="scheduled_start"
+            formControlName="scheduled_start"
+            [showTime]="true"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            appendTo="body"
+          ></p-calendar>
+          <small class="p-error" *ngIf="hasError('scheduled_start', 'required')">Thời gian bắt đầu không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('scheduled_start', 'server')">{{ form.get('scheduled_start')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="scheduled_end">Thời gian kết thúc <span class="required">*</span></label>
+          <p-calendar
+            id="scheduled_end"
+            formControlName="scheduled_end"
+            [showTime]="true"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            appendTo="body"
+          ></p-calendar>
+          <small class="p-error" *ngIf="hasError('scheduled_end', 'required')">Thời gian kết thúc không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('scheduled_end', 'server')">{{ form.get('scheduled_end')?.errors?.['server'] }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="status">Trạng thái <span class="required">*</span></label>
+        <p-dropdown
+          id="status"
+          [options]="statusOptions"
+          formControlName="status"
+          [showClear]="false"
+          class="w-full"
+        ></p-dropdown>
+        <small class="p-error" *ngIf="hasError('status', 'required')">Trạng thái không được rỗng</small>
+        <small class="p-error" *ngIf="hasError('status', 'server')">{{ form.get('status')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="field">
+        <label for="notes">Ghi chú</label>
+        <textarea id="notes" pInputTextarea formControlName="notes" class="w-full" rows="3"></textarea>
+        <small class="p-error" *ngIf="hasError('notes', 'server')">{{ form.get('notes')?.errors?.['server'] }}</small>
+      </div>
+
+      <div class="form-footer">
+        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
+        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+      </div>
+    </form>
+  </p-card>
+</div>
