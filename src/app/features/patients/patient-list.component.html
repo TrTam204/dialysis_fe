@@ -97,7 +97,18 @@
             <span class="code-badge">{{ patient.patient_id }}</span>
           </td>
           <td>
-            <span class="patient-name">{{ patient.full_name }}</span>
+            <div class="patient-name-container">
+              <span class="patient-name">{{ patient.full_name }}</span>
+              <span
+                *ngIf="isMissingTreatmentPattern(patient)"
+                class="pattern-warning-badge"
+                pTooltip="Bệnh nhân chưa có chu kỳ điều trị"
+                tooltipPosition="top"
+              >
+                <i class="pi pi-exclamation-triangle"></i>
+                Chưa có chu kỳ
+              </span>
+            </div>
           </td>
           <td>
             <span class="birth-year">{{ getBirthYear(patient.date_of_birth) }}</span>

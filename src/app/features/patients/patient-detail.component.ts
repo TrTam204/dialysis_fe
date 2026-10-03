@@ -207,6 +207,23 @@ export class PatientDetailComponent implements OnInit {
     return severities[status] || 'info';
   }
 
+  getShiftLabel(shift?: string | null): string {
+    const labels: Record<string, string> = {
+      SHIFT_1: 'Ca 1',
+      SHIFT_2: 'Ca 2',
+      SHIFT_3: 'Ca 3',
+    };
+    return (shift && labels[shift]) || 'Chưa thiết lập';
+  }
+
+  getPatternLabel(pattern?: string | null): string {
+    const labels: Record<string, string> = {
+      T2_T4_T6: 'Thứ 2 - Thứ 4 - Thứ 6',
+      T3_T5_T7: 'Thứ 3 - Thứ 5 - Thứ 7',
+    };
+    return (pattern && labels[pattern]) || 'Chưa thiết lập';
+  }
+
   latestSession(): DialysisSession | null {
     return this.latestSessionInfo ?? (this.sessions.length > 0 ? this.sessions[0] : null);
   }

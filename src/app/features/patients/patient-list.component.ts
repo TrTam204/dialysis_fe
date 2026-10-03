@@ -223,6 +223,11 @@ export class PatientListComponent implements OnInit, OnDestroy {
     return age >= 0 ? age : null;
   }
 
+  isMissingTreatmentPattern(patient: Patient): boolean {
+    const activeStatuses = ['ACTIVE', 'IN_TREATMENT', 'STABLE'];
+    return activeStatuses.includes(patient.status) && !patient.treatment_pattern;
+  }
+
   confirmDelete(patient: Patient) {
     this.confirmationService.confirm({
       header: 'Xác nhận xóa',

@@ -89,6 +89,14 @@
           <h3>Thông tin điều trị</h3>
           <div class="summary-grid">
             <div class="summary-item">
+              <span class="summary-label">Ca lọc mong muốn</span>
+              <strong>{{ getShiftLabel(patient.preferred_shift) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Chu kỳ điều trị</span>
+              <strong>{{ getPatternLabel(patient.treatment_pattern) }}</strong>
+            </div>
+            <div class="summary-item">
               <span class="summary-label">Tổng số phiên</span>
               <strong>{{ sessionsCount }}</strong>
             </div>

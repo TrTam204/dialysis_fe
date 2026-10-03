@@ -1,6 +1,7 @@
 /**
  * Phase 1 TypeScript Models - Canonical field names must match API and Database exactly
  */
+import { ShiftType, TreatmentPatternType } from './schedule-plan.model';
 
 export interface Department {
   id?: number;
@@ -37,6 +38,8 @@ export interface Patient {
   dry_weight?: number | null;
   location?: string | null; // GeoJSON - do not parse in Phase 1
   status: 'ACTIVE' | 'IN_TREATMENT' | 'STABLE' | 'DISCHARGED';
+  preferred_shift?: ShiftType | null;
+  treatment_pattern?: TreatmentPatternType | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -67,7 +70,7 @@ export interface DialysisSession {
   session_id: string;
   patient: string; // patient_id
   machine: string; // machine_id
-  assigned_nurse: number; // user ID
+  assigned_nurse?: number | null; // user ID (nullable in M9)
   scheduled_start: string; // ISO 8601
   scheduled_end: string; // ISO 8601
   actual_start?: string | null;
@@ -204,3 +207,4 @@ export interface MachineUtilizationReport {
 }
 
 export * from './audit-log.model';
+export * from './schedule-plan.model';

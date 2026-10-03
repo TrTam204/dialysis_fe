@@ -53,6 +53,19 @@ export class PatientFormComponent implements OnInit {
     { label: 'Đã xuất viện', value: 'DISCHARGED' },
   ];
 
+  shiftOptions = [
+    { label: 'Chưa thiết lập', value: null },
+    { label: 'Ca 1', value: 'SHIFT_1' },
+    { label: 'Ca 2', value: 'SHIFT_2' },
+    { label: 'Ca 3', value: 'SHIFT_3' },
+  ];
+
+  patternOptions = [
+    { label: 'Chưa thiết lập', value: null },
+    { label: 'Thứ 2 - Thứ 4 - Thứ 6', value: 'T2_T4_T6' },
+    { label: 'Thứ 3 - Thứ 5 - Thứ 7', value: 'T3_T5_T7' },
+  ];
+
   private currentPatientId: string | null = null;
 
   constructor(
@@ -72,6 +85,8 @@ export class PatientFormComponent implements OnInit {
       phone_number: [''],
       dry_weight: [null],
       status: ['', Validators.required],
+      preferred_shift: [null],
+      treatment_pattern: [null],
       medical_history: [''],
     });
   }
@@ -97,6 +112,8 @@ export class PatientFormComponent implements OnInit {
           phone_number: patient.phone_number,
           dry_weight: patient.dry_weight,
           status: patient.status,
+          preferred_shift: patient.preferred_shift || null,
+          treatment_pattern: patient.treatment_pattern || null,
           medical_history: patient.medical_history,
         });
         this.loading = false;
@@ -145,6 +162,8 @@ export class PatientFormComponent implements OnInit {
       phone_number: raw.phone_number || null,
       dry_weight: raw.dry_weight || null,
       status: raw.status,
+      preferred_shift: raw.preferred_shift || null,
+      treatment_pattern: raw.treatment_pattern || null,
       medical_history: raw.medical_history || undefined,
     };
 

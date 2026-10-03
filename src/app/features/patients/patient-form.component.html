@@ -73,6 +73,34 @@
         <small class="p-error" *ngIf="hasError('status', 'server')">{{ form.get('status')?.errors?.['server'] }}</small>
       </div>
 
+      <div class="form-row">
+        <div class="field">
+          <label for="preferred_shift">Ca lọc máu mong muốn</label>
+          <p-dropdown
+            id="preferred_shift"
+            [options]="shiftOptions"
+            formControlName="preferred_shift"
+            [showClear]="true"
+            placeholder="Chọn ca lọc máu"
+            class="w-full"
+          ></p-dropdown>
+          <small class="p-error" *ngIf="hasError('preferred_shift', 'server')">{{ form.get('preferred_shift')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="treatment_pattern">Chu kỳ điều trị</label>
+          <p-dropdown
+            id="treatment_pattern"
+            [options]="patternOptions"
+            formControlName="treatment_pattern"
+            [showClear]="true"
+            placeholder="Chọn chu kỳ điều trị"
+            class="w-full"
+          ></p-dropdown>
+          <small class="p-error" *ngIf="hasError('treatment_pattern', 'server')">{{ form.get('treatment_pattern')?.errors?.['server'] }}</small>
+        </div>
+      </div>
+
       <div class="field" *ngIf="!isNurse || !editMode">
         <label for="medical_history">Tiền sử bệnh lý</label>
         <textarea id="medical_history" pInputTextarea formControlName="medical_history" class="w-full" rows="3"></textarea>
