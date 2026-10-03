@@ -63,6 +63,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/machines/machine-form.component').then((m) => m.MachineFormComponent),
         data: { roles: ['ADMIN'] },
       },
+      { path: 'schedule-plans', loadComponent: () => import('./features/schedule-plans/schedule-plan-list.component').then((m) => m.SchedulePlanListComponent) },
+      { path: 'schedule-plans/:id', loadComponent: () => import('./features/schedule-plans/schedule-plan-detail.component').then((m) => m.SchedulePlanDetailComponent) },
       { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then((m) => m.ScheduleComponent) },
       { path: 'sessions', loadComponent: () => import('./features/sessions/session-list.component').then((m) => m.SessionListComponent) },
       {

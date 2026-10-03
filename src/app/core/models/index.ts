@@ -90,6 +90,7 @@ export interface DialysisSession {
   patient_dry_weight?: number | null;
   machine_name?: string;
   nurse_name?: string;
+  schedule_assignment?: number | null;
   created_at?: string;
   updated_at?: string;
 }

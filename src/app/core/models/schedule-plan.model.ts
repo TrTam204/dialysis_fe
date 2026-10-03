@@ -18,6 +18,7 @@ export interface SchedulePlan {
   approved_by?: number | null;
   approved_by_name?: string | null;
   approved_at?: string | null;
+  rejection_reason?: string | null;
   assignments_count?: number;
   created_at?: string;
   updated_at?: string;

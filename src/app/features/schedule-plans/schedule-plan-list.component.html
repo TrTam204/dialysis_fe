@@ -1,0 +1,174 @@
+<div class="page-shell">
+  <p-toast></p-toast>
+
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Kế hoạch lọc máu tuần</h2>
+      <p class="page-subtitle">Quản lý các kế hoạch phân ca lọc máu theo tuần, kiểm tra ràng buộc và phê duyệt</p>
+    </div>
+    <div class="header-stats">
+      <span class="record-badge">
+        <i class="pi pi-calendar-plus text-primary"></i>
+        <span>Tổng cộng: <strong>{{ totalRecords }}</strong> kế hoạch</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="sheet-card">
+    <div class="toolbar">
+      <span class="p-input-icon-left search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Tìm theo tên kế hoạch..."
+          [ngModel]="searchText"
+          (ngModelChange)="onSearchInput($event)"
+        />
+      </span>
+
+      <p-dropdown
+        [options]="statusOptions"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [style]="{ minWidth: '180px' }"
+      ></p-dropdown>
+
+      <p-dropdown
+        [options]="departmentOptions"
+        [(ngModel)]="departmentFilter"
+        (ngModelChange)="onFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Khoa / Phòng"
+        [style]="{ minWidth: '200px' }"
+      ></p-dropdown>
+
+      <button
+        *ngIf="searchText || statusFilter !== null || departmentFilter !== null"
+        pButton
+        type="button"
+        icon="pi pi-filter-slash"
+        label="Xóa lọc"
+        class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="clearFilters()"
+      ></button>
+    </div>
+
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Đang tải danh sách kế hoạch tuần...</span>
+    </div>
+
+    <p-table
+      *ngIf="!loading"
+      [value]="plans"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true"
+      [rows]="rows"
+      [totalRecords]="totalRecords"
+      [first]="first"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      styleClass="sheet-table"
+      responsiveLayout="scroll"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 60px">ID</th>
+          <th pSortableColumn="name">
+            Tên kế hoạch <p-sortIcon field="name"></p-sortIcon>
+          </th>
+          <th>Khoa / Phòng</th>
+          <th pSortableColumn="week_start">
+            Thời gian tuần <p-sortIcon field="week_start"></p-sortIcon>
+          </th>
+          <th style="width: 100px; text-align: center">Số ca</th>
+          <th style="width: 110px; text-align: center">Điểm GA</th>
+          <th pSortableColumn="status" style="width: 130px; text-align: center">
+            Trạng thái <p-sortIcon field="status"></p-sortIcon>
+          </th>
+          <th>Người tạo</th>
+          <th pSortableColumn="created_at" style="width: 150px">
+            Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
+          </th>
+          <th style="width: 120px; text-align: center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-plan>
+        <tr class="table-row">
+          <td class="font-mono text-muted">#{{ plan.id }}</td>
+          <td>
+            <a class="plan-name-link" [routerLink]="['/schedule-plans', plan.id]">
+              <strong>{{ plan.name }}</strong>
+            </a>
+          </td>
+          <td>
+            <span class="dept-badge">
+              <i class="pi pi-building text-xs"></i>
+              {{ plan.department_name || ('Khoa #' + plan.department) }}
+            </span>
+          </td>
+          <td>
+            <span class="week-range">
+              <i class="pi pi-calendar text-xs text-muted"></i>
+              {{ plan.week_start | date: 'dd/MM/yyyy' }} &rarr; {{ plan.week_end | date: 'dd/MM/yyyy' }}
+            </span>
+          </td>
+          <td style="text-align: center">
+            <span class="count-pill">
+              {{ plan.assignments_count ?? 0 }}
+            </span>
+          </td>
+          <td style="text-align: center">
+            <span *ngIf="plan.fitness_score !== null && plan.fitness_score !== undefined" class="fitness-badge">
+              {{ plan.fitness_score | number: '1.2-2' }}
+            </span>
+            <span *ngIf="plan.fitness_score === null || plan.fitness_score === undefined" class="text-muted">--</span>
+          </td>
+          <td style="text-align: center">
+            <p-tag
+              [value]="getStatusLabel(plan.status)"
+              [severity]="getStatusSeverity(plan.status)"
+              styleClass="status-tag"
+            ></p-tag>
+          </td>
+          <td>
+            <span class="creator-text">{{ plan.created_by_name || '--' }}</span>
+          </td>
+          <td>
+            <span class="date-text">{{ plan.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </td>
+          <td style="text-align: center">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-eye"
+              label="Chi tiết"
+              class="p-button-sm p-button-outlined p-button-primary action-btn"
+              (click)="viewDetail(plan)"
+              pTooltip="Xem chi tiết và phân ca"
+              tooltipPosition="top"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="empty-state">
+            <div class="empty-box">
+              <i class="pi pi-calendar-times empty-icon"></i>
+              <p class="empty-title">Không tìm thấy kế hoạch tuần nào</p>
+              <p class="empty-desc">Chưa có kế hoạch tuần nào được tạo hoặc không khớp với bộ lọc hiện tại.</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

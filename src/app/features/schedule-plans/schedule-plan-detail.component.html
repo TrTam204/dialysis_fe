@@ -1,0 +1,316 @@
+<div class="page-shell">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Top Action & Navigation Bar -->
+  <div class="top-nav-bar">
+    <a routerLink="/schedule-plans" class="back-link">
+      <i class="pi pi-arrow-left"></i>
+      <span>Quay lại danh sách</span>
+    </a>
+
+    <div class="action-buttons" *ngIf="plan">
+      <button
+        *ngIf="canApproveOrReject"
+        pButton
+        type="button"
+        icon="pi pi-times"
+        label="Từ chối"
+        class="p-button-outlined p-button-danger action-btn"
+        [disabled]="plan.status !== 'PROPOSED' || actionLoading"
+        (click)="openRejectDialog()"
+        pTooltip="Từ chối kế hoạch tuần (yêu cầu nhập lý do)"
+        tooltipPosition="bottom"
+      ></button>
+
+      <button
+        *ngIf="canApproveOrReject"
+        pButton
+        type="button"
+        icon="pi pi-check"
+        label="Phê duyệt kế hoạch"
+        class="p-button-success action-btn"
+        [disabled]="plan.status !== 'PROPOSED' || actionLoading"
+        [loading]="actionLoading"
+        (click)="approvePlan()"
+        pTooltip="Phê duyệt kế hoạch và khởi tạo phiên lọc máu"
+        tooltipPosition="bottom"
+      ></button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-box">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span>Đang tải thông tin kế hoạch...</span>
+  </div>
+
+  <div *ngIf="!loading && plan" class="detail-container">
+    <!-- Header Title Section -->
+    <div class="detail-header">
+      <div class="title-row">
+        <h1 class="plan-title">{{ plan.name }}</h1>
+        <p-tag
+          [value]="getStatusLabel(plan.status)"
+          [severity]="getStatusSeverity(plan.status)"
+          styleClass="status-badge-lg"
+        ></p-tag>
+      </div>
+      <p class="plan-subtitle">
+        Khoa: <strong>{{ plan.department_name || ('Khoa #' + plan.department) }}</strong>
+        &nbsp;&bull;&nbsp;
+        Tuần: <strong>{{ plan.week_start | date: 'dd/MM/yyyy' }}</strong> đến <strong>{{ plan.week_end | date: 'dd/MM/yyyy' }}</strong>
+      </p>
+    </div>
+
+    <!-- Alert Banner: Rejected Reason -->
+    <div *ngIf="plan.status === 'REJECTED' && plan.rejection_reason" class="alert-banner alert-danger">
+      <i class="pi pi-times-circle banner-icon"></i>
+      <div class="banner-body">
+        <h4 class="banner-title">Kế hoạch đã bị từ chối</h4>
+        <p class="banner-text"><strong>Lý do từ chối:</strong> {{ plan.rejection_reason }}</p>
+      </div>
+    </div>
+
+    <!-- Alert Banner: Approval Validation Errors -->
+    <div *ngIf="approvalErrors.length > 0" class="alert-banner alert-danger">
+      <i class="pi pi-exclamation-triangle banner-icon"></i>
+      <div class="banner-body">
+        <h4 class="banner-title">Không thể phê duyệt kế hoạch do vi phạm ràng buộc:</h4>
+        <ul class="banner-list">
+          <li *ngFor="let err of approvalErrors">{{ err }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Alert Banner: Approval Warnings -->
+    <div *ngIf="approvalWarnings.length > 0" class="alert-banner alert-warning">
+      <i class="pi pi-info-circle banner-icon"></i>
+      <div class="banner-body">
+        <h4 class="banner-title">Cảnh báo sau khi phê duyệt:</h4>
+        <ul class="banner-list">
+          <li *ngFor="let warn of approvalWarnings">{{ warn }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Overview Cards Grid -->
+    <div class="cards-grid">
+      <!-- Card 1: Thông tin tuần -->
+      <div class="info-card">
+        <div class="card-icon-wrap icon-primary">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Chu kỳ tuần</span>
+          <span class="card-value">
+            {{ plan.week_start | date: 'dd/MM/yyyy' }} - {{ plan.week_end | date: 'dd/MM/yyyy' }}
+          </span>
+          <span class="card-sub">Khoa: {{ plan.department_name || ('Khoa #' + plan.department) }}</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Số ca & GA -->
+      <div class="info-card">
+        <div class="card-icon-wrap icon-purple">
+          <i class="pi pi-chart-pie"></i>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Quy mô & Điểm GA</span>
+          <span class="card-value">
+            {{ assignments.length }} ca phân công
+          </span>
+          <span class="card-sub">
+            Điểm GA:
+            <strong *ngIf="plan.fitness_score !== null && plan.fitness_score !== undefined">
+              {{ plan.fitness_score | number: '1.2-2' }}
+            </strong>
+            <span *ngIf="plan.fitness_score === null || plan.fitness_score === undefined">Chưa ghi nhận</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Card 3: Thông tin phê duyệt -->
+      <div class="info-card">
+        <div class="card-icon-wrap" [ngClass]="plan.status === 'APPROVED' ? 'icon-success' : (plan.status === 'REJECTED' ? 'icon-danger' : 'icon-warning')">
+          <i [class]="plan.status === 'APPROVED' ? 'pi pi-check' : (plan.status === 'REJECTED' ? 'pi pi-times' : 'pi pi-clock')"></i>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Trạng thái phê duyệt</span>
+          <span class="card-value">{{ getStatusLabel(plan.status) }}</span>
+          <span class="card-sub" *ngIf="plan.status === 'APPROVED'">
+            Bởi {{ plan.approved_by_name || 'Hệ thống' }} ({{ plan.approved_at | date: 'dd/MM/yyyy HH:mm' }})
+          </span>
+          <span class="card-sub" *ngIf="plan.status === 'PROPOSED'">
+            Người tạo: {{ plan.created_by_name || 'Hệ thống' }} ({{ plan.created_at | date: 'dd/MM/yyyy HH:mm' }})
+          </span>
+          <span class="card-sub" *ngIf="plan.status === 'REJECTED'">
+            Đã bị từ chối
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignments Section -->
+    <div class="sheet-card table-section">
+      <div class="table-header-box">
+        <div>
+          <h3 class="table-title">Danh sách phân ca lọc máu (Assignments)</h3>
+          <p class="table-subtitle">Chi tiết lịch phân bổ bệnh nhân, máy lọc và ca lọc máu trong tuần</p>
+        </div>
+        <span class="record-count">
+          <i class="pi pi-list"></i>
+          <span>{{ assignments.length }} phân ca</span>
+        </span>
+      </div>
+
+      <div *ngIf="assignmentsLoading" class="loading-box">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Đang tải danh sách phân ca...</span>
+      </div>
+
+      <p-table
+        *ngIf="!assignmentsLoading"
+        [value]="assignments"
+        [paginator]="assignments.length > 10"
+        [rows]="15"
+        [rowsPerPageOptions]="[15, 30, 50, 100]"
+        styleClass="sheet-table"
+        responsiveLayout="scroll"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 50px; text-align: center">STT</th>
+            <th>Bệnh nhân</th>
+            <th>Mã BN</th>
+            <th>Máy lọc</th>
+            <th style="width: 120px">Ngày lọc</th>
+            <th style="width: 90px; text-align: center">Ca</th>
+            <th style="width: 140px">Thời gian dự kiến</th>
+            <th style="width: 100px; text-align: center">Nguồn</th>
+            <th>Ghi chú phân bổ</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-assignment let-rowIndex="rowIndex">
+          <tr class="table-row">
+            <td style="text-align: center" class="text-muted font-mono">{{ rowIndex + 1 }}</td>
+            <td>
+              <a [routerLink]="['/patients', assignment.patient]" class="patient-link">
+                <strong>{{ assignment.patient_name || assignment.patient }}</strong>
+              </a>
+            </td>
+            <td>
+              <span class="code-badge">{{ assignment.patient_code || assignment.patient }}</span>
+            </td>
+            <td>
+              <span class="machine-badge">
+                <i class="pi pi-cog text-xs"></i>
+                {{ assignment.machine_name || assignment.machine }}
+              </span>
+            </td>
+            <td>
+              <span class="date-col">
+                {{ assignment.scheduled_date | date: 'dd/MM/yyyy' }}
+              </span>
+            </td>
+            <td style="text-align: center">
+              <span class="shift-pill">
+                {{ getShiftLabel(assignment.shift) }}
+              </span>
+            </td>
+            <td>
+              <span class="time-range font-mono">
+                {{ assignment.start_datetime | date: 'HH:mm' }} &rarr; {{ assignment.end_datetime | date: 'HH:mm' }}
+              </span>
+            </td>
+            <td style="text-align: center">
+              <p-tag
+                [value]="getSourceLabel(assignment.source)"
+                [severity]="getSourceSeverity(assignment.source)"
+                styleClass="source-tag"
+              ></p-tag>
+            </td>
+            <td>
+              <span *ngIf="assignment.original_machine && assignment.original_machine !== assignment.machine" class="text-xs text-muted">
+                Máy gốc: {{ assignment.original_machine }}
+              </span>
+              <span *ngIf="assignment.original_shift && assignment.original_shift !== assignment.shift" class="text-xs text-muted ml-2">
+                Ca gốc: {{ getShiftLabel(assignment.original_shift) }}
+              </span>
+              <span *ngIf="(!assignment.original_machine || assignment.original_machine === assignment.machine) && (!assignment.original_shift || assignment.original_shift === assignment.shift)" class="text-muted">
+                --
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="empty-state">
+              <div class="empty-box">
+                <i class="pi pi-info-circle empty-icon"></i>
+                <p class="empty-title">Kế hoạch này chưa có phân ca nào</p>
+                <p class="empty-desc">Không có dữ liệu phân công lịch được tạo cho tuần này.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Rejection Dialog -->
+  <p-dialog
+    [(visible)]="rejectDialogVisible"
+    header="Từ chối kế hoạch tuần"
+    [modal]="true"
+    [style]="{ width: '480px' }"
+    [closable]="!actionLoading"
+  >
+    <div class="reject-dialog-content">
+      <p class="dialog-instruction">
+        Vui lòng nhập lý do từ chối kế hoạch tuần <strong>"{{ plan?.name }}"</strong>.
+        Lý do này sẽ được lưu vào nhật ký và hiển thị cho người lập kế hoạch.
+      </p>
+
+      <div class="field">
+        <label for="rejectionReasonInput" class="form-label">
+          Lý do từ chối <span class="required text-danger">*</span>
+        </label>
+        <textarea
+          id="rejectionReasonInput"
+          pInputTextarea
+          [(ngModel)]="rejectionReason"
+          rows="4"
+          placeholder="Nhập lý do từ chối cụ thể (ví dụ: Thiếu máy lọc ca 2 thứ 4, chưa khớp với phác đồ bệnh nhân...)"
+          class="w-full"
+          [disabled]="actionLoading"
+        ></textarea>
+        <small class="p-error block mt-1" *ngIf="rejectionError">
+          {{ rejectionError }}
+        </small>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Hủy bỏ"
+        class="p-button-text p-button-secondary"
+        (click)="rejectDialogVisible = false"
+        [disabled]="actionLoading"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Xác nhận từ chối"
+        icon="pi pi-times"
+        class="p-button-danger"
+        [loading]="actionLoading"
+        [disabled]="actionLoading"
+        (click)="confirmReject()"
+      ></button>
+    </ng-template>
+  </p-dialog>
+</div>
