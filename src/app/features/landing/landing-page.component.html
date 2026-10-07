@@ -1,0 +1,386 @@
+<div class="landing-page">
+  <!-- Navbar -->
+  <header class="navbar" [class.scrolled]="isScrolled">
+    <div class="navbar-container">
+      <a href="#" class="brand" (click)="scrollToSection('hero', $event)">
+        <span class="brand-icon pi pi-heart-fill"></span>
+        <span class="brand-text">{{ data.footer.brand }}</span>
+      </a>
+
+      <nav class="desktop-nav">
+        <ul class="nav-links">
+          <li *ngFor="let item of data.navItems">
+            <a href="#{{ item.sectionId }}" 
+               [class.active]="activeSection === item.sectionId"
+               (click)="scrollToSection(item.sectionId, $event)">
+              {{ item.label }}
+            </a>
+          </li>
+        </ul>
+        <a routerLink="/auth/login" class="btn-login-sm">Đăng nhập</a>
+      </nav>
+
+      <button class="mobile-toggle" (click)="toggleMobileMenu()">
+        <span class="pi" [ngClass]="isMobileMenuOpen ? 'pi-times' : 'pi-bars'"></span>
+      </button>
+    </div>
+
+    <div class="mobile-nav" [class.open]="isMobileMenuOpen">
+      <ul class="mobile-links">
+        <li *ngFor="let item of data.navItems">
+          <a href="#{{ item.sectionId }}" 
+             [class.active]="activeSection === item.sectionId"
+             (click)="scrollToSection(item.sectionId, $event)">
+            {{ item.label }}
+          </a>
+        </li>
+        <li>
+          <a routerLink="/auth/login" class="mobile-login">Đăng nhập hệ thống</a>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section id="hero" class="section hero">
+      <div class="hero-bg-accent"></div>
+      <div class="container hero-container">
+        <div class="hero-left">
+          <span class="eyebrow" appReveal direction="down">{{ data.hero.eyebrow }}</span>
+          <h1 class="hero-title" appReveal delay="100">{{ data.hero.title }}</h1>
+          <p class="hero-description" appReveal delay="200">{{ data.hero.description }}</p>
+          <div class="hero-actions" appReveal delay="300">
+            <a routerLink="/auth/login" class="btn-primary">
+              {{ data.hero.ctaPrimary }}
+              <span class="pi pi-arrow-right"></span>
+            </a>
+            <a href="#process" class="btn-secondary" (click)="scrollToSection('process', $event)">
+              {{ data.hero.ctaSecondary }}
+            </a>
+          </div>
+        </div>
+        <div class="hero-right" appReveal direction="left" delay="200">
+          <div class="hero-visual-wrapper">
+            <img [src]="data.hero.imageUrl" alt="Medical Hero Visual" class="hero-img">
+            <div class="floating-card top-left">
+              <span class="pi pi-heart-fill icon text-primary"></span>
+              <div class="card-content">
+                <strong>Theo dõi sinh hiệu</strong>
+                <span>Cập nhật liên tục</span>
+              </div>
+            </div>
+            <div class="floating-card bottom-right">
+              <span class="pi pi-shield icon text-success"></span>
+              <div class="card-content">
+                <strong>An toàn</strong>
+                <span>Quản lý chuẩn xác</span>
+              </div>
+            </div>
+            <p class="img-caption">{{ data.hero.imageCaption }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="section about bg-light">
+      <div class="container about-container">
+        <div class="about-collage" appReveal direction="right">
+          <div class="img-wrap img-1">
+            <img [src]="data.about.imageUrl1" alt="Dialysis Room">
+          </div>
+          <div class="img-wrap img-2">
+            <img [src]="data.about.imageUrl2" alt="Medical Staff">
+          </div>
+          <p class="img-caption text-center mt-2">{{ data.about.caption }}</p>
+        </div>
+        <div class="about-content" appReveal direction="left" delay="200">
+          <div class="section-header align-left">
+            <h2>{{ data.about.title }}</h2>
+            <div class="divider"></div>
+          </div>
+          <div class="about-text">
+            <p *ngFor="let p of data.about.paragraphs">{{ p }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE PROCESS SECTION -->
+    <section id="process" class="section process">
+      <div class="container">
+        <div class="section-header center" appReveal direction="up">
+          <h2>{{ data.processTitle }}</h2>
+          <p>{{ data.processSubtitle }}</p>
+        </div>
+
+        <div class="process-interactive">
+          <div class="process-sidebar" appReveal direction="right">
+            <div class="progress-track">
+              <div class="progress-bar" [style.height.%]="processProgress"></div>
+            </div>
+            <ul class="process-steps">
+              <li *ngFor="let step of data.processSteps; let i = index" 
+                  class="step-item" 
+                  [class.active]="activeProcessStep.id === step.id"
+                  (click)="setActiveProcessStep(step)">
+                <div class="step-indicator">
+                  <span class="step-dot"></span>
+                </div>
+                <div class="step-title-wrap">
+                  <span class="step-num">{{ step.number }}</span>
+                  <span class="step-title">{{ step.title }}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="process-content" appReveal direction="left" delay="100">
+            <div class="process-card">
+              <div class="process-image-wrapper">
+                <img [src]="activeProcessStep.imageUrl" [alt]="activeProcessStep.title" class="process-img">
+                <div class="process-icon">
+                  <span class="{{ activeProcessStep.icon }}"></span>
+                </div>
+              </div>
+              <div class="process-info">
+                <h3>{{ activeProcessStep.title }}</h3>
+                <p>{{ activeProcessStep.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="disclaimer mt-4 text-center" appReveal delay="200">
+          <span class="pi pi-info-circle"></span> {{ data.processDisclaimer }}
+        </p>
+      </div>
+    </section>
+
+    <!-- EDUCATIONAL VISUAL DIAGRAM -->
+    <section class="section flow-diagram bg-dark">
+      <div class="container">
+        <div class="section-header center light" appReveal direction="up">
+          <h2>Nguyên lý Lọc máu (Hemodialysis)</h2>
+          <p>Mô phỏng tổng quan vòng tuần hoàn ngoài cơ thể.</p>
+        </div>
+        
+        <div class="diagram-wrapper" appReveal delay="200">
+          <div class="diagram-flow">
+            <div class="flow-node" [class.highlight]="hoveredNode === 1" (mouseenter)="setHoveredNode(1)" (mouseleave)="setHoveredNode(null)">
+              <div class="node-icon"><span class="pi pi-user"></span></div>
+              <span class="node-label">Người bệnh</span>
+            </div>
+            <div class="flow-arrow" [class.highlight-arrow]="hoveredNode === 1 || hoveredNode === 2"><span class="line animated text-red"></span></div>
+            <div class="flow-node" [class.highlight]="hoveredNode === 2" (mouseenter)="setHoveredNode(2)" (mouseleave)="setHoveredNode(null)">
+              <div class="node-icon"><span class="pi pi-link"></span></div>
+              <span class="node-label">Đường vào mạch máu</span>
+            </div>
+            <div class="flow-arrow" [class.highlight-arrow]="hoveredNode === 2 || hoveredNode === 3"><span class="line animated text-red"></span></div>
+            <div class="flow-node" [class.highlight]="hoveredNode === 3" (mouseenter)="setHoveredNode(3)" (mouseleave)="setHoveredNode(null)">
+              <div class="node-icon"><span class="pi pi-cog"></span></div>
+              <span class="node-label">Máy lọc & Màng lọc</span>
+            </div>
+            <div class="flow-arrow" [class.highlight-arrow]="hoveredNode === 3 || hoveredNode === 4"><span class="line animated text-blue"></span></div>
+            <div class="flow-node" [class.highlight]="hoveredNode === 4" (mouseenter)="setHoveredNode(4)" (mouseleave)="setHoveredNode(null)">
+              <div class="node-icon"><span class="pi pi-undo"></span></div>
+              <span class="node-label">Máu sạch trở lại</span>
+            </div>
+          </div>
+          <p class="img-caption light-caption text-center mt-3">Sơ đồ giáo dục minh họa - Không đại diện cho thông số y khoa cụ thể.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIDEO SECTION -->
+    <section class="section video-section bg-light">
+      <div class="container">
+        <div class="video-placeholder-container" appReveal direction="up">
+          <img [src]="data.video.thumbnailUrl" alt="Thumbnail video quy trình lọc máu" class="video-bg">
+          <a [href]="data.video.youtubeUrl" target="_blank" rel="noopener noreferrer" class="video-overlay" aria-label="Xem video giới thiệu về quá trình lọc máu trên YouTube">
+            <button class="btn-play" tabindex="-1" aria-hidden="true">
+              <span class="pi pi-play"></span>
+            </button>
+            <div class="video-text">
+              <h3>{{ data.video.title }}</h3>
+              <p>{{ data.video.description }}</p>
+            </div>
+          </a>
+          <p class="img-caption external-caption">{{ data.video.caption }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FACILITY GALLERY SECTION -->
+    <section id="facilities" class="section facility">
+      <div class="container">
+        <div class="section-header center" appReveal direction="up">
+          <h2>{{ data.facilitiesTitle }}</h2>
+        </div>
+        
+        <div class="gallery-grid">
+          <div *ngFor="let item of data.facilities; let i = index" 
+               class="gallery-item" [class.large]="item.size === 'large'"
+               appReveal direction="up" [delay]="i * 100">
+            <img [src]="item.imageUrl" [alt]="item.title">
+            <div class="gallery-overlay">
+              <h4>{{ item.title }}</h4>
+            </div>
+            <p class="img-caption overlay-caption">{{ item.caption }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SYSTEM PREVIEW SECTION -->
+    <section id="system" class="section system bg-light">
+      <div class="container">
+        <div class="section-header center" appReveal direction="up">
+          <h2>{{ data.systemTitle }}</h2>
+          <p>{{ data.systemDescription }}</p>
+        </div>
+        
+        <div class="system-mockup" appReveal direction="up" delay="100">
+          <div class="browser-header">
+            <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="address-bar">locmau-system.internal</div>
+          </div>
+          <div class="browser-body">
+            <!-- Simulated UI Dashboard -->
+            <div class="mockup-sidebar">
+              <div class="ms-logo"><span class="pi pi-heart-fill"></span> LocMau</div>
+              <ul class="ms-menu">
+                <li class="active"><span class="pi pi-home"></span> Dashboard</li>
+                <li><span class="pi pi-users"></span> Bệnh nhân</li>
+                <li><span class="pi pi-calendar"></span> Lịch lọc máu</li>
+                <li><span class="pi pi-chart-line"></span> Báo cáo</li>
+              </ul>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-header">
+                <div class="mh-title">Dashboard Tổng quan</div>
+                <div class="mh-user"><span class="pi pi-user-edit"></span> Bác sĩ A</div>
+              </div>
+              <div class="mockup-cards">
+                <div class="m-card"><span class="m-val">12</span><span class="m-lbl">Ca đang lọc</span></div>
+                <div class="m-card"><span class="m-val">4</span><span class="m-lbl">Chờ tiếp nhận</span></div>
+                <div class="m-card warning"><span class="m-val">2</span><span class="m-lbl">Cần lưu ý</span></div>
+                <div class="m-card"><span class="m-val">8</span><span class="m-lbl">Trống máy</span></div>
+              </div>
+              <div class="mockup-charts">
+                <div class="m-chart main">
+                  <div class="chart-title">Tiến trình lọc máu hôm nay</div>
+                  <div class="chart-bars">
+                    <div class="c-bar" style="height: 60%"></div>
+                    <div class="c-bar" style="height: 80%"></div>
+                    <div class="c-bar" style="height: 40%"></div>
+                    <div class="c-bar" style="height: 90%"></div>
+                    <div class="c-bar" style="height: 30%"></div>
+                  </div>
+                </div>
+                <div class="m-chart side">
+                  <div class="chart-title">Danh sách chờ</div>
+                  <ul class="c-list">
+                    <li><span class="c-dot"></span> BN. Nguyễn Văn A</li>
+                    <li><span class="c-dot"></span> BN. Trần Thị B</li>
+                    <li><span class="c-dot"></span> BN. Lê Văn C</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="mockup-overlay-text">{{ data.systemNote }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DECISION SUPPORT SECTION -->
+    <section class="section support">
+      <div class="container">
+        <div class="section-header center" appReveal direction="up">
+          <h2>{{ data.supportTitle }}</h2>
+        </div>
+        
+        <div class="support-grid">
+          <div class="support-card" *ngFor="let feat of data.supportFeatures; let i = index"
+               appReveal direction="up" [delay]="i * 100">
+            <div class="icon-wrap">
+              <span class="{{ feat.icon }}"></span>
+            </div>
+            <h3>{{ feat.title }}</h3>
+            <p>{{ feat.description }}</p>
+          </div>
+        </div>
+        
+        <p class="disclaimer mt-4 text-center" appReveal delay="300">
+          <span class="pi pi-exclamation-triangle"></span> {{ data.supportDisclaimer }}
+        </p>
+      </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="section cta bg-primary-dark">
+      <div class="cta-pattern"></div>
+      <div class="container">
+        <div class="cta-content" appReveal direction="up">
+          <h2>{{ data.cta.title }}</h2>
+          <p>{{ data.cta.description }}</p>
+          <a routerLink="/auth/login" class="btn-cta-large">
+            {{ data.cta.button }}
+            <span class="pi pi-arrow-right ml-2"></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-columns">
+          <div class="col-brand" appReveal direction="right">
+            <a href="#" class="brand">
+              <span class="brand-icon pi pi-heart-fill"></span>
+              <span class="brand-text">{{ data.footer.brand }}</span>
+            </a>
+            <p class="tagline">{{ data.footer.tagline }}</p>
+          </div>
+          
+          <div class="col-links" appReveal direction="up" delay="100">
+            <h4>Khám phá</h4>
+            <ul>
+              <li><a href="#hero" (click)="scrollToSection('hero', $event)">Trang chủ</a></li>
+              <li><a href="#about" (click)="scrollToSection('about', $event)">Giới thiệu</a></li>
+              <li><a href="#process" (click)="scrollToSection('process', $event)">Quy trình</a></li>
+              <li><a href="#facilities" (click)="scrollToSection('facilities', $event)">Cơ sở vật chất</a></li>
+            </ul>
+          </div>
+          
+          <div class="col-links" appReveal direction="up" delay="200">
+            <h4>Hệ thống</h4>
+            <ul>
+              <li><a routerLink="/auth/login">Đăng nhập</a></li>
+              <li><a routerLink="/dashboard">Dashboard</a></li>
+              <li><a routerLink="/patients">Bệnh nhân</a></li>
+              <li><a routerLink="/sessions">Phiên lọc</a></li>
+              <li><a routerLink="/schedule">Lịch lọc</a></li>
+            </ul>
+          </div>
+          
+          <div class="col-contact" appReveal direction="left" delay="300">
+            <h4>Thông tin liên hệ</h4>
+            <ul>
+              <li><span class="pi pi-map-marker"></span> {{ data.footer.contact.address }}</li>
+              <li><span class="pi pi-phone"></span> {{ data.footer.contact.phone }}</li>
+              <li><span class="pi pi-envelope"></span> {{ data.footer.contact.email }}</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <p>{{ data.footer.copyright }}</p>
+        </div>
+      </div>
+    </footer>
+  </main>
+</div>

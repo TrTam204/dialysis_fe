@@ -1,29 +1,121 @@
-<div class="auth-shell">
-  <p-card header="Đăng nhập hệ thống" subheader="Trung tâm Lọc máu">
-    <p-messages [(value)]="messages" [enableService]="false" [closable]="true" />
+<div class="login-page">
+  <!-- Left Panel: Brand & Visual -->
+  <div class="login-left" appReveal direction="right">
+    <div class="login-left-content">
+      <a routerLink="/" class="brand-logo">
+        <span class="pi pi-heart-fill"></span>
+        <span>LocMau Center</span>
+      </a>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <div class="field">
-        <label for="username">Tên đăng nhập</label>
-        <input id="username" pInputText formControlName="username" />
-        <small class="p-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
-          Tên đăng nhập không được rỗng
-        </small>
+      <div class="visual-container">
+        <!-- Floating abstract shapes -->
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?q=80&w=1200&auto=format&fit=crop" alt="Medical Visual" class="medical-img">
+        <div class="visual-overlay"></div>
       </div>
 
-      <div class="field">
-        <label for="password">Mật khẩu</label>
-        <p-password formControlName="password" [feedback]="false" [toggleMask]="true" />
-        <small class="p-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-          Mật khẩu không được rỗng
-        </small>
+      <div class="brand-text-block">
+        <h1>Hệ thống quản lý và hỗ trợ ra quyết định</h1>
+        <p>Quản lý thông tin người bệnh, phiên lọc máu, sinh hiệu và các hoạt động liên quan trong quá trình điều trị.</p>
+        
+        <ul class="feature-list">
+          <li>
+            <span class="pi pi-check-circle"></span>
+            Quản lý hồ sơ người bệnh
+          </li>
+          <li>
+            <span class="pi pi-check-circle"></span>
+            Theo dõi phiên lọc máu và sinh hiệu
+          </li>
+          <li>
+            <span class="pi pi-check-circle"></span>
+            Hỗ trợ tổng hợp thông tin điều trị
+          </li>
+        </ul>
       </div>
-
-      <button pButton type="submit" label="Đăng nhập" class="w-full" [loading]="loading" [disabled]="loading"></button>
-    </form>
-
-    <div class="auth-footer">
-      <a routerLink="/auth/forgot-password">Quên mật khẩu?</a>
     </div>
-  </p-card>
+  </div>
+
+  <!-- Right Panel: Login Form -->
+  <div class="login-right">
+    <div class="login-card-wrapper" appReveal direction="up" delay="200">
+      <div class="login-header">
+        <div class="mobile-logo">
+          <span class="pi pi-heart-fill"></span>
+        </div>
+        <h2>Đăng nhập hệ thống</h2>
+        <p>Đăng nhập bằng tài khoản được cấp để truy cập hệ thống Trung tâm Lọc máu.</p>
+      </div>
+
+      <div class="login-form-container">
+        <!-- Error Messages using PrimeNG Messages -->
+        <p-messages [(value)]="messages" [enableService]="false" [closable]="true"></p-messages>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" [class.shake]="shakeError">
+          <div class="field form-group">
+            <label for="username">Tên đăng nhập</label>
+            <div class="p-input-icon-left w-full">
+              <i class="pi pi-user"></i>
+              <input id="username" type="text" pInputText formControlName="username" class="w-full" placeholder="Nhập tên đăng nhập" />
+            </div>
+            <small class="p-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
+              Vui lòng nhập tên đăng nhập
+            </small>
+          </div>
+
+          <div class="field form-group mt-3">
+            <label for="password">Mật khẩu</label>
+            <div class="w-full custom-password">
+              <p-password formControlName="password" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" placeholder="Nhập mật khẩu"></p-password>
+            </div>
+            <small class="p-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+              Vui lòng nhập mật khẩu
+            </small>
+          </div>
+
+          <div class="form-actions mt-4">
+            <button pButton type="submit" [label]="loading ? 'Đang đăng nhập...' : 'Đăng nhập'" class="w-full btn-login" [loading]="loading" [disabled]="loading || form.invalid"></button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Role Information (Visual Only) -->
+      <div class="role-info mt-4">
+        <div class="divider">
+          <span>Quyền truy cập hệ thống</span>
+        </div>
+        <div class="role-badges">
+          <div class="role-badge">
+            <span class="pi pi-cog icon-admin"></span>
+            <div class="role-text">
+              <strong>ADMIN</strong>
+              <span>Quản trị hệ thống</span>
+            </div>
+          </div>
+          <div class="role-badge">
+            <span class="pi pi-user icon-doctor"></span>
+            <div class="role-text">
+              <strong>DOCTOR</strong>
+              <span>Quản lý chuyên môn</span>
+            </div>
+          </div>
+          <div class="role-badge">
+            <span class="pi pi-heart icon-nurse"></span>
+            <div class="role-text">
+              <strong>NURSE</strong>
+              <span>Theo dõi chăm sóc</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Information -->
+      <div class="security-info mt-4">
+        <span class="pi pi-shield"></span>
+        <p>Truy cập dành cho nhân viên được cấp quyền. Thông tin trong hệ thống được bảo vệ theo cơ chế xác thực hiện tại.</p>
+      </div>
+      
+    </div>
+  </div>
 </div>

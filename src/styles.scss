@@ -90,6 +90,24 @@ img {
 .text-teal { color: #0f766e !important; }
 .text-cyan { color: #0891b2 !important; }
 
+/* Scroll Reveal Animations */
+.reveal-element {
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal-up { transform: translateY(40px); }
+.reveal-down { transform: translateY(-40px); }
+.reveal-left { transform: translateX(40px); }
+.reveal-right { transform: translateX(-40px); }
+.reveal-fade { transform: none; }
+
+.reveal-element.revealed {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
 /* Global Print Styles */
 @media print {
   app-sidebar,

@@ -9,6 +9,7 @@ import { PasswordModule } from 'primeng/password';
 import { MessagesModule } from 'primeng/messages';
 import { AuthService } from '../../core/services/auth.service';
 import { LoginRequest } from '../../core/models';
+import { RevealDirective } from '../landing/reveal.directive';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ import { LoginRequest } from '../../core/models';
     ButtonModule,
     PasswordModule,
     MessagesModule,
+    RevealDirective
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
@@ -29,6 +31,7 @@ import { LoginRequest } from '../../core/models';
 export class LoginComponent {
   form;
   loading = false;
+  shakeError = false;
   messages: { severity: string; summary: string; detail: string }[] = [];
 
   constructor(
@@ -45,6 +48,7 @@ export class LoginComponent {
   submit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.triggerShake();
       return;
     }
 
@@ -68,7 +72,18 @@ export class LoginComponent {
         this.form.enable();
         const detail = err?.error?.detail || err?.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
         this.messages = [{ severity: 'error', summary: 'Lỗi đăng nhập', detail }];
+        this.triggerShake();
       },
     });
+  }
+  
+  private triggerShake() {
+    this.shakeError = false;
+    setTimeout(() => {
+      this.shakeError = true;
+      setTimeout(() => {
+        this.shakeError = false;
+      }, 500); // 500ms shake duration
+    }, 10);
   }
 }
