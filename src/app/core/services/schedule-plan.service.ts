@@ -43,4 +43,8 @@ export class SchedulePlanService {
   reject(id: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.apiBase}/schedule-plans/${id}/reject/`, { reason });
   }
+
+  generate(department: number, week_start: string): Observable<any> {
+    return this.http.post<any>(`${this.apiBase}/schedule-plans/generate/`, { department, week_start });
+  }
 }

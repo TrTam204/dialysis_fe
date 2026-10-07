@@ -6,11 +6,20 @@
       <h2 class="page-title">Kế hoạch lọc máu tuần</h2>
       <p class="page-subtitle">Quản lý các kế hoạch phân ca lọc máu theo tuần, kiểm tra ràng buộc và phê duyệt</p>
     </div>
-    <div class="header-stats">
-      <span class="record-badge">
+    <div class="header-actions">
+      <span class="record-badge mr-3">
         <i class="pi pi-calendar-plus text-primary"></i>
         <span>Tổng cộng: <strong>{{ totalRecords }}</strong> kế hoạch</span>
       </span>
+      <button 
+        *ngIf="canManage"
+        pButton 
+        type="button" 
+        icon="pi pi-bolt" 
+        label="Tạo lịch tuần (GA)" 
+        class="p-button-warning"
+        (click)="openGenerateDialog()">
+      </button>
     </div>
   </div>
 
@@ -58,13 +67,8 @@
       ></button>
     </div>
 
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i>
-      <span>Đang tải danh sách kế hoạch tuần...</span>
-    </div>
-
     <p-table
-      *ngIf="!loading"
+      [loading]="loading"
       [value]="plans"
       [lazy]="true"
       (onLazyLoad)="onLazyLoad($event)"
@@ -172,3 +176,42 @@
     </p-table>
   </div>
 </div>
+
+
+  <p-dialog 
+    [(visible)]="generateDialogVisible" 
+    header="Tạo lịch tuần tự động bằng Genetic Algorithm" 
+    [modal]="true" 
+    [style]="{ width: '450px' }" 
+    [closable]="!generating">
+    <div class="p-fluid">
+      <div class="field mb-4">
+        <label>Khoa / Phòng</label>
+        <p-dropdown 
+          [options]="departments" 
+          [(ngModel)]="genDepartment" 
+          optionLabel="name" 
+          optionValue="id" 
+          placeholder="Chọn khoa phòng" 
+          [disabled]="generating">
+        </p-dropdown>
+      </div>
+      <div class="field mb-4">
+        <label>Tuần bắt đầu (chọn ngày Thứ 2)</label>
+        <p-calendar 
+          [(ngModel)]="genWeekStart" 
+          appendTo="body" 
+          dateFormat="dd/mm/yy" 
+          placeholder="VD: Thứ 2 tới" 
+          [showIcon]="true"
+          [disabled]="generating">
+        </p-calendar>
+        <small class="text-muted block mt-1">Lưu ý: Bắt buộc chọn ngày Thứ 2.</small>
+      </div>
+    </div>
+    
+    <ng-template pTemplate="footer">
+      <button pButton label="Hủy" icon="pi pi-times" class="p-button-text" (click)="generateDialogVisible = false" [disabled]="generating"></button>
+      <button pButton label="Chạy thuật toán" icon="pi pi-bolt" class="p-button-warning" (click)="submitGenerate()" [loading]="generating"></button>
+    </ng-template>
+  </p-dialog>

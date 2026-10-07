@@ -17,6 +17,9 @@ import { DepartmentService } from '../../core/services/department.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Department, SchedulePlan, SchedulePlanStatus } from '../../core/models';
 
+import { DialogModule } from 'primeng/dialog';
+import { CalendarModule } from 'primeng/calendar';
+
 @Component({
   selector: 'app-schedule-plan-list',
   standalone: true,
@@ -31,6 +34,8 @@ import { Department, SchedulePlan, SchedulePlanStatus } from '../../core/models'
     DropdownModule,
     TagModule,
     TooltipModule,
+    DialogModule,
+    CalendarModule
   ],
   templateUrl: './schedule-plan-list.component.html',
   styleUrls: ['./schedule-plan-list.component.scss'],
@@ -63,6 +68,12 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
   sortOrder = -1;
 
   canManage = false;
+  
+  // GA Generate Modal
+  generateDialogVisible = false;
+  generating = false;
+  genDepartment: number | null = null;
+  genWeekStart: Date | null = null;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -86,8 +97,6 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
         this.first = 0;
         this.loadPlans();
       });
-
-    this.loadPlans();
   }
 
   ngOnDestroy(): void {
@@ -206,5 +215,61 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
       default:
         return status;
     }
+  }
+
+  openGenerateDialog(): void {
+    this.generateDialogVisible = true;
+    this.genDepartment = null;
+    this.genWeekStart = null;
+  }
+
+  submitGenerate(): void {
+    if (!this.genDepartment || !this.genWeekStart) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Vui lòng chọn Khoa/Phòng và Tuần bắt đầu.'
+      });
+      return;
+    }
+    
+    // Ensure it's Monday
+    const day = this.genWeekStart.getDay();
+    if (day !== 1) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Lỗi',
+        detail: 'Tuần bắt đầu phải là ngày Thứ 2.'
+      });
+      return;
+    }
+
+    const year = this.genWeekStart.getFullYear();
+    const month = String(this.genWeekStart.getMonth() + 1).padStart(2, '0');
+    const localDay = String(this.genWeekStart.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${localDay}`;
+    
+    this.generating = true;
+    this.schedulePlanService.generate(this.genDepartment, localDate).subscribe({
+      next: (res) => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Thành công',
+          detail: 'Đã tạo lịch mới bằng thuật toán GA thành công.'
+        });
+        this.generateDialogVisible = false;
+        this.generating = false;
+        this.loadPlans();
+      },
+      error: (err) => {
+        const msg = err.error?.detail || 'Không thể tạo lịch. Có thể do lỗi thuật toán hoặc thiếu dữ liệu.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi tạo lịch',
+          detail: msg
+        });
+        this.generating = false;
+      }
+    });
   }
 }
