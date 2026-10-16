@@ -1,0 +1,172 @@
+.topsis-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Disclaimer Banner */
+.disclaimer-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background-color: #fff8e1;
+  border-left: 5px solid #f59e0b;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .disclaimer-icon {
+    i {
+      font-size: 1.75rem;
+      color: #d97706;
+      margin-top: 0.125rem;
+    }
+  }
+
+  .disclaimer-content {
+    flex: 1;
+
+    .disclaimer-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #92400e;
+      margin: 0 0 0.35rem 0;
+      letter-spacing: 0.025em;
+    }
+
+    .disclaimer-text {
+      font-size: 0.85rem;
+      color: #78350f;
+      line-height: 1.5;
+      margin: 0;
+
+      code {
+        background-color: #fef3c7;
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #b45309;
+      }
+    }
+  }
+}
+
+/* Page Header */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Weight Chip */
+.weight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  color: #334155;
+  cursor: help;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: #e2e8f0;
+  }
+}
+
+/* Rank Badges */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.rank-first {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.rank-second {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
+}
+
+.rank-third {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
+}
+
+.rank-normal {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+/* Patient Link */
+.patient-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+  }
+}
+
+/* Score Progress Bar */
+.score-bar-bg {
+  width: 100%;
+  height: 6px;
+  background-color: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+
+  &.danger {
+    background-color: #ef4444;
+  }
+
+  &.warning {
+    background-color: #f59e0b;
+  }
+
+  &.info {
+    background-color: #3b82f6;
+  }
+}
+
+/* Explain Table */
+.explain-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+
+  th,
+  td {
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

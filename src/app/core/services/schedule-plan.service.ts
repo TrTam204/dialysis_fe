@@ -44,7 +44,11 @@ export class SchedulePlanService {
     return this.http.post<any>(`${this.apiBase}/schedule-plans/${id}/reject/`, { reason });
   }
 
-  generate(department: number, week_start: string): Observable<any> {
-    return this.http.post<any>(`${this.apiBase}/schedule-plans/generate/`, { department, week_start });
+  generate(department: number, week_start: string, seed?: number | null): Observable<any> {
+    const payload: any = { department, week_start };
+    if (seed !== undefined && seed !== null && (seed as any) !== '') {
+      payload.seed = Number(seed);
+    }
+    return this.http.post<any>(`${this.apiBase}/schedule-plans/generate/`, payload);
   }
 }

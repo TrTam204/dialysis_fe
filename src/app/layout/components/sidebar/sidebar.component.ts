@@ -47,6 +47,12 @@ export class SidebarComponent {
       ],
     },
     {
+      label: 'Hỗ trợ quyết định',
+      items: [
+        { label: 'Phân loại TOPSIS', route: '/topsis', icon: 'pi pi-sort-amount-down' },
+      ],
+    },
+    {
       label: 'Quản lý',
       items: [
         { label: 'Nhân sự', route: '/staff', icon: 'pi pi-users' },

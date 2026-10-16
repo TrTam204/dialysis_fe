@@ -10,3 +10,4 @@ export * from './dashboard.service';
 export * from './report.service';
 export * from './http-base.service';
 export * from './schedule-plan.service';
+export * from './topsis.service';

@@ -1,0 +1,484 @@
+<div class="topsis-container p-4">
+  <p-toast></p-toast>
+
+  <!-- CLINICAL DISCLAIMER BANNER -->
+  <div class="disclaimer-banner mb-4">
+    <div class="disclaimer-icon">
+      <i class="pi pi-exclamation-triangle"></i>
+    </div>
+    <div class="disclaimer-content">
+      <h3 class="disclaimer-title">
+        CẢNH BÁO LÂM SÀNG: HỆ THỐNG MÔ PHỎNG HỖ TRỢ RA QUYẾT ĐỊNH (DECISION SUPPORT SIMULATION)
+      </h3>
+      <p class="disclaimer-text">
+        Bảng xếp hạng ưu tiên bệnh nhân do thuật toán TOPSIS tính toán chỉ mang tính chất <strong>tham khảo kỹ thuật</strong>,
+        <strong>KHÔNG THAY THẾ</strong> chỉ định và quyết định lâm sàng của Bác sĩ chuyên khoa Thận - Lọc Máu.
+        Hệ thống hiện ở phiên bản V1 kỹ thuật và <strong>chưa được phê duyệt ứng dụng lâm sàng chính thức</strong>
+        (<code>is_clinical_approved = false</code>).
+      </p>
+    </div>
+  </div>
+
+  <!-- PAGE HEADER & TOOLBAR -->
+  <div class="page-header mb-4 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+    <div>
+      <h1 class="page-title m-0">Phân Loại & Ưu Tiên Lọc Máu (TOPSIS V1)</h1>
+      <p class="text-secondary text-sm mt-1 mb-0">
+        Phương pháp thứ tự sở thích tương đồng với giải pháp lý tưởng (Technique for Order of Preference by Similarity to Ideal Solution)
+      </p>
+    </div>
+
+    <div class="action-buttons flex align-items-center gap-2">
+      <p-button
+        label="Tùy chỉnh trọng số"
+        icon="pi pi-sliders-h"
+        [outlined]="true"
+        severity="secondary"
+        (onClick)="openWeightModal()"
+      ></p-button>
+
+      <p-button
+        label="Tính toán xếp hạng TOPSIS"
+        icon="pi pi-refresh"
+        severity="primary"
+        [loading]="loadingRanking"
+        (onClick)="calculateRanking()"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- CONTROL & FILTER PANEL -->
+  <div class="control-panel p-card p-3 mb-4 surface-card shadow-1 border-round">
+    <div class="grid align-items-center">
+      <!-- Department Selector -->
+      <div class="col-12 md:col-4">
+        <label class="block font-medium mb-1 text-sm text-700">Khoa / Đơn nguyên lọc máu:</label>
+        <p-dropdown
+          [options]="departmentOptions"
+          [(ngModel)]="selectedDepartmentId"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Chọn khoa lọc máu"
+          [disabled]="isDepartmentLocked"
+          styleClass="w-full"
+          (onChange)="calculateRanking()"
+        ></p-dropdown>
+        <small *ngIf="isDepartmentLocked" class="text-500 block mt-1">
+          <i class="pi pi-lock text-xs mr-1"></i>Tự động cố định theo khoa công tác của bạn
+        </small>
+      </div>
+
+      <!-- Current Weights Summary Badges -->
+      <div class="col-12 md:col-8">
+        <label class="block font-medium mb-1 text-sm text-700">Trọng số 5 tiêu chí hiện tại:</label>
+        <div class="flex flex-wrap gap-2">
+          <span class="weight-chip" pTooltip="Kali máu (Cực đại hóa)">
+            <strong>C1 (K⁺):</strong> {{ (customWeights['C1'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-xs text-green-500"></i>
+          </span>
+          <span class="weight-chip" pTooltip="Hemoglobin (Cực tiểu hóa để ưu tiên thiếu máu nặng)">
+            <strong>C2 (Hb):</strong> {{ (customWeights['C2'] * 100).toFixed(0) }}% <i class="pi pi-arrow-down text-xs text-orange-500"></i>
+          </span>
+          <span class="weight-chip" pTooltip="Số ngày chưa lọc (Cực đại hóa)">
+            <strong>C3 (Ngày):</strong> {{ (customWeights['C3'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-xs text-green-500"></i>
+          </span>
+          <span class="weight-chip" pTooltip="Tăng cân gian lọc (Cực đại hóa)">
+            <strong>C4 (IDWG):</strong> {{ (customWeights['C4'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-xs text-green-500"></i>
+          </span>
+          <span class="weight-chip" pTooltip="Khoảng cách địa lý (Cực tiểu hóa để giảm tải di chuyển)">
+            <strong>C5 (Khoảng cách):</strong> {{ (customWeights['C5'] * 100).toFixed(0) }}% <i class="pi pi-arrow-down text-xs text-orange-500"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI SUMMARY CARDS -->
+  <div class="kpi-grid grid mb-4" *ngIf="rankResponse">
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="p-card p-3 surface-card shadow-1 border-round h-full">
+        <div class="text-500 font-medium text-xs text-uppercase mb-2">Tổng số bệnh nhân</div>
+        <div class="text-3xl font-bold text-900">{{ rankResponse.total_patients }}</div>
+        <div class="text-xs text-500 mt-2">
+          <i class="pi pi-users mr-1"></i>Thuộc khoa đang lọc
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="p-card p-3 surface-card shadow-1 border-round h-full">
+        <div class="text-500 font-medium text-xs text-uppercase mb-2">Ưu tiên cao nhất (#1)</div>
+        <div class="text-xl font-bold text-red-600 truncate" *ngIf="rankings.length > 0">
+          {{ rankings[0].patient.full_name }}
+        </div>
+        <div class="text-xs text-500 mt-2" *ngIf="rankings.length > 0">
+          Điểm C₁: <strong>{{ rankings[0].closeness_score.toFixed(4) }}</strong>
+        </div>
+        <div class="text-sm text-500" *ngIf="rankings.length === 0">-</div>
+      </div>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="p-card p-3 surface-card shadow-1 border-round h-full">
+        <div class="text-500 font-medium text-xs text-uppercase mb-2">Khoa đánh giá</div>
+        <div class="text-xl font-bold text-900">
+          {{ rankResponse.department_name || 'Toàn trung tâm' }}
+        </div>
+        <div class="text-xs text-500 mt-2">
+          <i class="pi pi-building mr-1"></i>Hệ thống phân quyền RBAC
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="p-card p-3 surface-card shadow-1 border-round h-full">
+        <div class="text-500 font-medium text-xs text-uppercase mb-2">Thời điểm tính toán</div>
+        <div class="text-base font-bold text-900">
+          {{ rankResponse.calculated_at | date:'HH:mm:ss dd/MM/yyyy' }}
+        </div>
+        <div class="text-xs text-green-600 mt-2 font-medium">
+          <i class="pi pi-check-circle mr-1"></i>Pure Python Algorithm V1
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN RANKINGS TABLE -->
+  <div class="table-container p-card surface-card shadow-1 border-round overflow-hidden">
+    <div class="p-3 border-bottom-1 surface-border flex justify-content-between align-items-center">
+      <h3 class="m-0 text-lg font-semibold text-900">
+        <i class="pi pi-list mr-2 text-primary"></i>Danh Sách Xếp Hạng Ưu Tiên Bệnh Nhân
+      </h3>
+      <span class="text-xs text-500" *ngIf="rankings.length > 0">
+        Sắp xếp giảm dần theo điểm tương đồng giải pháp lý tưởng Cᵢ
+      </span>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loadingRanking" class="text-center p-6">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary mb-3"></i>
+      <p class="text-700 m-0">Đang chuẩn hóa vector và tính khoảng cách Euclidean TOPSIS...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="!loadingRanking && errorMessage" class="text-center p-6">
+      <i class="pi pi-times-circle text-4xl text-red-500 mb-3"></i>
+      <h4 class="text-900 m-0 mb-2">Không thể tải danh sách xếp hạng</h4>
+      <p class="text-600 m-0 max-w-30rem mx-auto">{{ errorMessage }}</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loadingRanking && !errorMessage && rankings.length === 0" class="text-center p-6">
+      <i class="pi pi-inbox text-5xl text-300 mb-3"></i>
+      <h4 class="text-700 m-0 mb-1">Không có dữ liệu bệnh nhân</h4>
+      <p class="text-500 text-sm m-0">
+        Không tìm thấy bệnh nhân nào thuộc khoa được chọn hoặc chưa có bệnh nhân nào được gán khoa.
+      </p>
+    </div>
+
+    <!-- Rankings Table -->
+    <p-table
+      *ngIf="!loadingRanking && !errorMessage && rankings.length > 0"
+      [value]="rankings"
+      styleClass="p-datatable-sm p-datatable-striped"
+      [responsiveLayout]="'scroll'"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 70px" class="text-center">Hạng</th>
+          <th style="min-width: 140px">Bệnh nhân</th>
+          <th style="min-width: 120px">Khoa</th>
+          <th style="min-width: 180px">Điểm ưu tiên Cᵢ</th>
+          <th style="min-width: 110px" class="text-right">D⁺ / D⁻</th>
+          <th style="min-width: 100px" class="text-right" pTooltip="C1: Kali máu (mmol/L) [Benefit]">K⁺ (mmol/L)</th>
+          <th style="min-width: 100px" class="text-right" pTooltip="C2: Hemoglobin (g/dL) [Cost]">Hb (g/dL)</th>
+          <th style="min-width: 100px" class="text-right" pTooltip="C3: Số ngày chưa lọc [Benefit]">Ngày</th>
+          <th style="min-width: 100px" class="text-right" pTooltip="C4: Tăng cân gian lọc (kg) [Benefit]">IDWG (kg)</th>
+          <th style="min-width: 110px" class="text-right" pTooltip="C5: Khoảng cách địa lý (km) [Cost]">Khoảng cách</th>
+          <th style="width: 100px" class="text-center">Chi tiết</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <!-- Rank Badge -->
+          <td class="text-center">
+            <span [ngClass]="getRankBadgeClass(item.rank)">
+              #{{ item.rank }}
+            </span>
+          </td>
+
+          <!-- Patient Info -->
+          <td>
+            <div class="font-semibold text-900">
+              <a [routerLink]="['/patients', item.patient.patient_id]" class="patient-link">
+                {{ item.patient.full_name }}
+              </a>
+            </div>
+            <div class="text-xs text-500">{{ item.patient.patient_id }}</div>
+          </td>
+
+          <!-- Department -->
+          <td>
+            <span class="text-sm text-700">
+              {{ item.patient.department_name || 'Chưa gán khoa' }}
+            </span>
+          </td>
+
+          <!-- Closeness Score Ci -->
+          <td>
+            <div class="flex align-items-center justify-content-between mb-1">
+              <span class="font-bold text-base font-mono">
+                {{ item.closeness_score.toFixed(4) }}
+              </span>
+              <p-tag
+                [value]="getScoreLabel(item.closeness_score)"
+                [severity]="getScoreSeverity(item.closeness_score)"
+              ></p-tag>
+            </div>
+            <div class="score-bar-bg">
+              <div
+                class="score-bar-fill"
+                [style.width.%]="item.closeness_score * 100"
+                [ngClass]="getScoreSeverity(item.closeness_score)"
+              ></div>
+            </div>
+          </td>
+
+          <!-- Distances D+ / D- -->
+          <td class="text-right font-mono text-xs">
+            <div class="text-green-700" pTooltip="Khoảng cách tới nghiệm lý tưởng dương D⁺">
+              D⁺: {{ item.distance_positive.toFixed(4) }}
+            </div>
+            <div class="text-red-700" pTooltip="Khoảng cách tới nghiệm lý tưởng âm D⁻">
+              D⁻: {{ item.distance_negative.toFixed(4) }}
+            </div>
+          </td>
+
+          <!-- C1: Potassium -->
+          <td class="text-right font-mono">
+            <span [ngClass]="{ 'text-red-600 font-bold': item.patient.potassium_level >= 5.5 }">
+              {{ item.patient.potassium_level.toFixed(2) }}
+            </span>
+            <span *ngIf="item.patient.potassium_level >= 5.5" class="ml-1 text-red-500" title="K+ >= 5.5 mmol/L (Tham chiếu kỹ thuật mô phỏng)">⚠️</span>
+          </td>
+
+          <!-- C2: Hemoglobin -->
+          <td class="text-right font-mono">
+            <span [ngClass]="{ 'text-orange-600 font-bold': item.patient.hemoglobin_level < 9.0 }">
+              {{ item.patient.hemoglobin_level.toFixed(1) }}
+            </span>
+            <span *ngIf="item.patient.hemoglobin_level < 9.0" class="ml-1 text-orange-500" title="Hb < 9.0 g/dL (Tham chiếu kỹ thuật mô phỏng)">⚠️</span>
+          </td>
+
+          <!-- C3: Days since dialysis -->
+          <td class="text-right font-mono">
+            <span [ngClass]="{ 'text-red-600 font-bold': item.patient.days_since_dialysis >= 3 }">
+              {{ item.patient.days_since_dialysis }}
+            </span>
+            <span class="text-xs text-500 ml-1">ng</span>
+          </td>
+
+          <!-- C4: Fluid overload (IDWG) -->
+          <td class="text-right font-mono">
+            <span [ngClass]="{ 'text-orange-600 font-bold': item.patient.fluid_overload_kg >= 3.0 }">
+              {{ item.patient.fluid_overload_kg.toFixed(2) }}
+            </span>
+          </td>
+
+          <!-- C5: Distance -->
+          <td class="text-right font-mono">
+            <span>{{ item.patient.distance_km.toFixed(1) }}</span>
+            <span class="text-xs text-500 ml-1">km</span>
+            <i *ngIf="!item.patient.has_location" class="pi pi-question-circle text-xs text-400 ml-1" pTooltip="Khoảng cách mặc định (chưa có tọa độ)"></i>
+          </td>
+
+          <!-- Actions: Explain Modal -->
+          <td class="text-center">
+            <p-button
+              icon="pi pi-info-circle"
+              [rounded]="true"
+              [text]="true"
+              severity="info"
+              pTooltip="Xem giải thích chi tiết tính toán TOPSIS"
+              (onClick)="openExplainModal(item)"
+            ></p-button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- EXPLANATION MODAL (DIALOG) -->
+  <p-dialog
+    header="Giải Thích Tính Toán TOPSIS"
+    [(visible)]="showExplainModal"
+    [modal]="true"
+    [style]="{ width: '90vw', maxWidth: '850px' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <div *ngIf="selectedAlternative" class="explain-modal-content">
+      <!-- Patient Banner in Dialog -->
+      <div class="patient-modal-header p-3 surface-100 border-round mb-3 flex justify-content-between align-items-center">
+        <div>
+          <h4 class="m-0 text-900 font-bold">{{ selectedAlternative.patient.full_name }}</h4>
+          <span class="text-xs text-600">
+            Mã BN: {{ selectedAlternative.patient.patient_id }} | Khoa: {{ selectedAlternative.patient.department_name || 'N/A' }}
+          </span>
+        </div>
+        <div class="text-right">
+          <span [ngClass]="getRankBadgeClass(selectedAlternative.rank)" class="mr-2">
+            Hạng #{{ selectedAlternative.rank }}
+          </span>
+          <span class="font-bold font-mono text-lg text-primary">
+            Cᵢ = {{ selectedAlternative.closeness_score.toFixed(4) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Math Equation Card -->
+      <div class="math-card p-3 surface-50 border-1 surface-border border-round mb-3">
+        <h5 class="m-0 mb-2 text-700 font-semibold">Công thức tính hệ số tương đồng (Closeness Coefficient):</h5>
+        <div class="formula-box text-center p-2 surface-0 border-round font-mono text-base font-bold text-900">
+          Cᵢ = Dᵢ⁻ / (Dᵢ⁺ + Dᵢ⁻)
+          = {{ selectedAlternative.distance_negative.toFixed(4) }} /
+          ({{ selectedAlternative.distance_positive.toFixed(4) }} + {{ selectedAlternative.distance_negative.toFixed(4) }})
+          = {{ selectedAlternative.closeness_score.toFixed(4) }}
+        </div>
+        <p class="text-xs text-500 m-0 mt-2">
+          Khoảng cách tới nghiệm lý tưởng dương Dᵢ⁺ = {{ selectedAlternative.distance_positive.toFixed(4) }} |
+          Khoảng cách tới nghiệm lý tưởng âm Dᵢ⁻ = {{ selectedAlternative.distance_negative.toFixed(4) }}
+        </p>
+      </div>
+
+      <!-- Criteria Step-by-Step Table -->
+      <h5 class="m-0 mb-2 text-800 font-semibold">Chi tiết từng tiêu chí (Vector Normalization & Weighted Matrix):</h5>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm explain-table border-collapse">
+          <thead>
+            <tr class="surface-100 text-700">
+              <th class="p-2 text-left">Tiêu chí</th>
+              <th class="p-2 text-center">Hướng</th>
+              <th class="p-2 text-right">Trọng số (w)</th>
+              <th class="p-2 text-right">Giá trị thô (x)</th>
+              <th class="p-2 text-right">Chuẩn hóa (r)</th>
+              <th class="p-2 text-right">Có trọng số (v)</th>
+              <th class="p-2 text-right">PIS (v⁺)</th>
+              <th class="p-2 text-right">NIS (v⁻)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of criteria; let j = index" class="border-bottom-1 surface-border">
+              <td class="p-2 font-medium">
+                {{ c.name }} ({{ c.code }})
+              </td>
+              <td class="p-2 text-center">
+                <span class="text-xs px-2 py-1 border-round font-bold"
+                  [ngClass]="c.type === 'benefit' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'">
+                  {{ c.type === 'benefit' ? 'Max (+)' : 'Min (-)' }}
+                </span>
+              </td>
+              <td class="p-2 text-right font-mono">
+                {{ (customWeights[c.code] || c.weight).toFixed(2) }}
+              </td>
+              <td class="p-2 text-right font-mono font-semibold">
+                {{ selectedAlternative.raw_values[j].toFixed(2) }} {{ c.unit }}
+              </td>
+              <td class="p-2 text-right font-mono text-600">
+                {{ getNormalizedValue(j, selectedAlternative.raw_values[j]).toFixed(4) }}
+              </td>
+              <td class="p-2 text-right font-mono font-bold text-primary">
+                {{ getWeightedValue(j, selectedAlternative.raw_values[j], c.code).toFixed(4) }}
+              </td>
+              <td class="p-2 text-right font-mono text-green-700">
+                {{ idealPositive[j].toFixed(4) }}
+              </td>
+              <td class="p-2 text-right font-mono text-red-700">
+                {{ idealNegative[j].toFixed(4) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button label="Đóng" icon="pi pi-check" (onClick)="showExplainModal = false"></p-button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- WEIGHTS ADJUSTMENT MODAL (DIALOG) -->
+  <p-dialog
+    header="Tùy Chỉnh Trọng Số Tiêu Chí TOPSIS"
+    [(visible)]="showWeightModal"
+    [modal]="true"
+    [style]="{ width: '90vw', maxWidth: '600px' }"
+    [draggable]="false"
+    [resizable]="false"
+  >
+    <div class="weight-modal-body p-2">
+      <p class="text-sm text-600 mb-3">
+        Điều chỉnh trọng số tương đối của 5 tiêu chí. Tổng trọng số sẽ được chuẩn hóa về 1.0 khi chạy thuật toán.
+      </p>
+
+      <div *ngFor="let item of editableWeights" class="weight-row mb-3 flex align-items-center justify-content-between">
+        <div class="w-7">
+          <div class="font-medium text-900">{{ item.name }} ({{ item.code }})</div>
+          <div class="text-xs text-500">
+            Hướng: <strong>{{ item.type === 'benefit' ? 'Benefit (Càng cao càng ưu tiên)' : 'Cost (Càng thấp càng ưu tiên)' }}</strong>
+          </div>
+        </div>
+        <div class="w-5 flex align-items-center justify-content-end gap-2">
+          <input
+            type="number"
+            step="0.05"
+            min="0.01"
+            max="1.0"
+            [(ngModel)]="item.weight"
+            class="p-inputtext p-inputtext-sm w-5rem text-right font-mono"
+          />
+          <span class="text-xs text-600 w-3rem font-mono">
+            ({{ (item.weight * 100).toFixed(0) }}%)
+          </span>
+        </div>
+      </div>
+
+      <div class="total-weight-box p-3 surface-100 border-round flex justify-content-between align-items-center mt-3">
+        <span class="font-bold text-700">Tổng trọng số:</span>
+        <span
+          class="font-bold font-mono text-lg"
+          [ngClass]="totalEditableWeight > 0 ? 'text-green-600' : 'text-red-600'"
+        >
+          {{ totalEditableWeight.toFixed(2) }} ({{ (totalEditableWeight * 100).toFixed(0) }}%)
+        </span>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-between w-full">
+        <p-button
+          label="Khôi phục mặc định"
+          icon="pi pi-replay"
+          [text]="true"
+          severity="secondary"
+          (onClick)="resetWeights()"
+        ></p-button>
+
+        <div class="flex gap-2">
+          <p-button
+            label="Hủy"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="showWeightModal = false"
+          ></p-button>
+          <p-button
+            label="Áp dụng & Tính lại"
+            icon="pi pi-check"
+            severity="primary"
+            (onClick)="applyWeights()"
+          ></p-button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
+</div>

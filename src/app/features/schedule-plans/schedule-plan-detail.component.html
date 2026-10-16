@@ -150,6 +150,51 @@
       </div>
     </div>
 
+    <!-- GA Convergence & Metadata Section -->
+    <div *ngIf="plan.algorithm_metadata" class="ga-analytics-section">
+      <div class="analytics-header">
+        <div class="analytics-title-group">
+          <div class="analytics-badge">
+            <i class="pi pi-bolt"></i>
+          </div>
+          <div>
+            <h3 class="table-title">Thuật toán Di truyền (Genetic Algorithm V1)</h3>
+            <p class="table-subtitle">Thông số tối ưu hóa và biểu đồ hội tụ thích nghi qua các thế hệ</p>
+          </div>
+        </div>
+        <div class="meta-pills">
+          <span class="meta-pill">
+            <span class="meta-key">Thuật toán:</span>
+            <strong>{{ plan.algorithm_metadata['engine'] || 'GA_V1' }}</strong>
+          </span>
+          <span class="meta-pill" *ngIf="plan.algorithm_metadata['seed'] !== undefined && plan.algorithm_metadata['seed'] !== null">
+            <span class="meta-key">Seed:</span>
+            <strong>#{{ plan.algorithm_metadata['seed'] }}</strong>
+          </span>
+          <span class="meta-pill" *ngIf="plan.algorithm_metadata['population_size']">
+            <span class="meta-key">Quần thể:</span>
+            <strong>{{ plan.algorithm_metadata['population_size'] }} cá thể</strong>
+          </span>
+          <span class="meta-pill" *ngIf="plan.algorithm_metadata['max_generations'] || plan.algorithm_metadata['generations']">
+            <span class="meta-key">Số thế hệ:</span>
+            <strong>{{ plan.algorithm_metadata['generations'] || plan.algorithm_metadata['max_generations'] }}</strong>
+          </span>
+          <span class="meta-pill" *ngIf="plan.algorithm_metadata['elapsed_time_sec'] !== undefined || plan.algorithm_metadata['elapsed_seconds'] !== undefined">
+            <span class="meta-key">Thời gian chạy:</span>
+            <strong>{{ (plan.algorithm_metadata['elapsed_time_sec'] || plan.algorithm_metadata['elapsed_seconds']) | number:'1.2-3' }}s</strong>
+          </span>
+          <span class="meta-pill" *ngIf="plan.fitness_score !== null && plan.fitness_score !== undefined">
+            <span class="meta-key">Best Fitness:</span>
+            <strong class="text-primary">{{ plan.fitness_score | number:'1.2-2' }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="fitnessChartData" class="chart-wrapper">
+        <p-chart type="line" [data]="fitnessChartData" [options]="fitnessChartOptions" height="260px"></p-chart>
+      </div>
+    </div>
+
     <!-- Assignments Section -->
     <div class="sheet-card table-section">
       <div class="table-header-box">

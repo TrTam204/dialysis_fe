@@ -68,12 +68,15 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
   sortOrder = -1;
 
   canManage = false;
+  isDoctor = false;
+  userDepartmentId: number | null = null;
   
   // GA Generate Modal
   generateDialogVisible = false;
   generating = false;
   genDepartment: number | null = null;
   genWeekStart: Date | null = null;
+  genSeed: number | null = null;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -88,6 +91,9 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.canManage = this.authService.hasRole(['ADMIN', 'DOCTOR']);
+    const currentUser = this.authService.getCurrentUser();
+    this.isDoctor = currentUser?.role === 'DOCTOR';
+    this.userDepartmentId = currentUser?.department || null;
 
     this.loadDepartments();
 
@@ -219,8 +225,13 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
 
   openGenerateDialog(): void {
     this.generateDialogVisible = true;
-    this.genDepartment = null;
+    if (this.isDoctor && this.userDepartmentId) {
+      this.genDepartment = this.userDepartmentId;
+    } else {
+      this.genDepartment = null;
+    }
     this.genWeekStart = null;
+    this.genSeed = null;
   }
 
   submitGenerate(): void {
@@ -250,7 +261,7 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
     const localDate = `${year}-${month}-${localDay}`;
     
     this.generating = true;
-    this.schedulePlanService.generate(this.genDepartment, localDate).subscribe({
+    this.schedulePlanService.generate(this.genDepartment, localDate, this.genSeed).subscribe({
       next: (res) => {
         this.messageService.add({
           severity: 'success',
@@ -259,7 +270,11 @@ export class SchedulePlanListComponent implements OnInit, OnDestroy {
         });
         this.generateDialogVisible = false;
         this.generating = false;
-        this.loadPlans();
+        if (res?.plan?.id) {
+          this.router.navigate(['/schedule-plans', res.plan.id]);
+        } else {
+          this.loadPlans();
+        }
       },
       error: (err) => {
         const msg = err.error?.detail || 'Không thể tạo lịch. Có thể do lỗi thuật toán hoặc thiếu dữ liệu.';

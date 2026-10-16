@@ -178,40 +178,56 @@
 </div>
 
 
-  <p-dialog 
-    [(visible)]="generateDialogVisible" 
-    header="Tạo lịch tuần tự động bằng Genetic Algorithm" 
-    [modal]="true" 
-    [style]="{ width: '450px' }" 
+  <p-dialog
+    [(visible)]="generateDialogVisible"
+    header="Tạo lịch tuần tự động bằng Genetic Algorithm (GA V1)"
+    [modal]="true"
+    [style]="{ width: '480px' }"
     [closable]="!generating">
     <div class="p-fluid">
-      <div class="field mb-4">
-        <label>Khoa / Phòng</label>
-        <p-dropdown 
-          [options]="departments" 
-          [(ngModel)]="genDepartment" 
-          optionLabel="name" 
-          optionValue="id" 
-          placeholder="Chọn khoa phòng" 
-          [disabled]="generating">
+      <div class="field mb-3">
+        <label>Khoa / Phòng <span class="text-danger">*</span></label>
+        <p-dropdown
+          [options]="departments"
+          [(ngModel)]="genDepartment"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Chọn khoa phòng"
+          [disabled]="generating || (isDoctor && !!userDepartmentId)">
         </p-dropdown>
+        <small *ngIf="isDoctor && userDepartmentId" class="text-muted block mt-1">
+          <i class="pi pi-lock text-xs"></i> Bác sĩ được chỉ định lập lịch cho khoa quản lý của mình.
+        </small>
       </div>
-      <div class="field mb-4">
-        <label>Tuần bắt đầu (chọn ngày Thứ 2)</label>
-        <p-calendar 
-          [(ngModel)]="genWeekStart" 
-          appendTo="body" 
-          dateFormat="dd/mm/yy" 
-          placeholder="VD: Thứ 2 tới" 
+
+      <div class="field mb-3">
+        <label>Tuần bắt đầu (chọn ngày Thứ 2) <span class="text-danger">*</span></label>
+        <p-calendar
+          [(ngModel)]="genWeekStart"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          placeholder="VD: Thứ 2 tới"
           [showIcon]="true"
           [disabled]="generating">
         </p-calendar>
-        <small class="text-muted block mt-1">Lưu ý: Bắt buộc chọn ngày Thứ 2.</small>
+        <small class="text-muted block mt-1">Lưu ý: Bắt buộc chọn ngày Thứ 2 làm ngày khởi đầu tuần.</small>
+      </div>
+
+      <div class="field mb-3">
+        <label>Mã hạt giống - Seed (Tùy chọn)</label>
+        <input
+          pInputText
+          type="number"
+          [(ngModel)]="genSeed"
+          placeholder="VD: 42 (để trống nếu muốn ngẫu nhiên)"
+          [disabled]="generating"
+        />
+        <small class="text-muted block mt-1">Cố định seed để tái lập chính xác kết quả phân ca GA (phục vụ kiểm thử/nghiệm thu).</small>
       </div>
     </div>
     
     <ng-template pTemplate="footer">
       <button pButton label="Hủy" icon="pi pi-times" class="p-button-text" (click)="generateDialogVisible = false" [disabled]="generating"></button>
-      <button pButton label="Chạy thuật toán" icon="pi pi-bolt" class="p-button-warning" (click)="submitGenerate()" [loading]="generating"></button>
+      <button pButton label="Chạy thuật toán GA" icon="pi pi-bolt" class="p-button-warning" (click)="submitGenerate()" [loading]="generating"></button>
     </ng-template>
   </p-dialog>

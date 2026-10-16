@@ -11,6 +11,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
+import { ChartModule } from 'primeng/chart';
 import { SchedulePlanService } from '../../core/services/schedule-plan.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ScheduleAssignment, SchedulePlan, SchedulePlanStatus, ShiftType } from '../../core/models';
@@ -30,6 +31,7 @@ import { ScheduleAssignment, SchedulePlan, SchedulePlanStatus, ShiftType } from 
     InputTextareaModule,
     ConfirmDialogModule,
     TooltipModule,
+    ChartModule,
   ],
   templateUrl: './schedule-plan-detail.component.html',
   styleUrls: ['./schedule-plan-detail.component.scss'],
@@ -40,6 +42,9 @@ export class SchedulePlanDetailComponent implements OnInit {
   loading = false;
   assignmentsLoading = false;
   actionLoading = false;
+
+  fitnessChartData: any = null;
+  fitnessChartOptions: any = null;
 
   canApproveOrReject = false;
 
@@ -83,6 +88,7 @@ export class SchedulePlanDetailComponent implements OnInit {
       next: (plan: SchedulePlan) => {
         this.plan = plan;
         this.loading = false;
+        this.initFitnessChart(plan);
         this.loadAssignments(planId);
       },
       error: () => {
@@ -95,6 +101,98 @@ export class SchedulePlanDetailComponent implements OnInit {
         });
       },
     });
+  }
+
+  initFitnessChart(plan: SchedulePlan): void {
+    const meta = plan?.algorithm_metadata;
+    const history = meta ? meta['fitness_history'] : null;
+
+    if (Array.isArray(history) && history.length > 0) {
+      const labels = history.map((item: any, idx: number) => {
+        const gen = typeof item === 'object' && item !== null && item.generation !== undefined ? item.generation : idx + 1;
+        return `G${gen}`;
+      });
+
+      const bestScores = history.map((item: any) => {
+        if (typeof item === 'object' && item !== null && item.best_fitness !== undefined) {
+          return item.best_fitness;
+        }
+        return typeof item === 'number' ? item : null;
+      });
+
+      const avgScores = history.map((item: any) => {
+        if (typeof item === 'object' && item !== null && item.avg_fitness !== undefined) {
+          return item.avg_fitness;
+        }
+        return null;
+      });
+
+      const hasAvg = avgScores.some((v) => v !== null);
+
+      const datasets: any[] = [
+        {
+          label: 'Điểm thích nghi tốt nhất (Best Fitness)',
+          data: bestScores,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: history.length > 40 ? 0 : 3,
+          pointHoverRadius: 5,
+        },
+      ];
+
+      if (hasAvg) {
+        datasets.push({
+          label: 'Điểm thích nghi trung bình (Avg Fitness)',
+          data: avgScores,
+          borderColor: '#9333ea',
+          backgroundColor: 'transparent',
+          fill: false,
+          borderDash: [5, 5],
+          tension: 0.25,
+          pointRadius: history.length > 40 ? 0 : 2,
+          pointHoverRadius: 4,
+        });
+      }
+
+      this.fitnessChartData = {
+        labels,
+        datasets,
+      };
+
+      this.fitnessChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top' as const,
+            labels: { font: { size: 12 }, usePointStyle: true },
+          },
+          tooltip: {
+            mode: 'index' as const,
+            intersect: false,
+          },
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Thế hệ tiến hóa (Generations)', font: { size: 11, weight: '500' } },
+            grid: { display: false },
+            ticks: { maxTicksLimit: 12 },
+          },
+          y: {
+            title: { display: true, text: 'Hàm mục tiêu / Điểm phạt (Fitness - thấp hơn là tốt hơn)', font: { size: 11, weight: '500' } },
+            beginAtZero: false,
+            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+          },
+        },
+      };
+    } else {
+      this.fitnessChartData = null;
+      this.fitnessChartOptions = null;
+    }
   }
 
   loadAssignments(planId: number): void {
