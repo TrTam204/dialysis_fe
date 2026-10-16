@@ -288,9 +288,15 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
   }
 
   getScoreLabel(score: number): string {
-    if (score >= 0.6) return 'Thứ hạng ưu tiên cao trong mô hình';
-    if (score >= 0.4) return 'Thứ hạng trung bình trong mô hình';
-    return 'Thứ hạng thấp hơn trong mô hình';
+    if (score >= 0.6) return 'Ưu tiên cao';
+    if (score >= 0.4) return 'Ưu tiên vừa';
+    return 'Ưu tiên thấp';
+  }
+
+  getScoreTooltip(score: number): string {
+    if (score >= 0.6) return 'Thứ hạng ưu tiên cao trong mô hình TOPSIS';
+    if (score >= 0.4) return 'Thứ hạng trung bình trong mô hình TOPSIS';
+    return 'Thứ hạng thấp hơn trong mô hình TOPSIS';
   }
 
   getRankBadgeClass(rank: number): string {

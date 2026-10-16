@@ -183,9 +183,9 @@ describe('TopsisTriageComponent', () => {
     expect(component.getScoreSeverity(0.5)).toBe('info');
     expect(component.getScoreSeverity(0.3)).toBe('success');
 
-    expect(component.getScoreLabel(0.7)).toBe('Thứ hạng ưu tiên cao trong mô hình');
-    expect(component.getScoreLabel(0.5)).toBe('Thứ hạng trung bình trong mô hình');
-    expect(component.getScoreLabel(0.3)).toBe('Thứ hạng thấp hơn trong mô hình');
+    expect(component.getScoreLabel(0.7)).toBe('Ưu tiên cao');
+    expect(component.getScoreLabel(0.5)).toBe('Ưu tiên vừa');
+    expect(component.getScoreLabel(0.3)).toBe('Ưu tiên thấp');
 
     expect(component.getRankBadgeClass(1)).toBe('rank-badge rank-first');
     expect(component.getRankBadgeClass(2)).toBe('rank-badge rank-second');

@@ -1,24 +1,28 @@
-.topsis-container {
-  max-width: 1400px;
+/* TOPSIS Triage Component SCSS - LocMau Design Standard */
+
+.page-shell {
+  padding: 20px 24px;
+  max-width: 1440px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
-/* Disclaimer Banner */
+/* 1. Clinical Disclaimer Banner */
 .disclaimer-banner {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  background-color: #fff8e1;
-  border-left: 5px solid #f59e0b;
+  gap: 14px;
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b;
   border-radius: 6px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
   .disclaimer-icon {
     i {
-      font-size: 1.75rem;
+      font-size: 1.4rem;
       color: #d97706;
-      margin-top: 0.125rem;
+      margin-top: 2px;
     }
   }
 
@@ -26,53 +30,295 @@
     flex: 1;
 
     .disclaimer-title {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       font-weight: 700;
       color: #92400e;
-      margin: 0 0 0.35rem 0;
-      letter-spacing: 0.025em;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
     }
 
     .disclaimer-text {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #78350f;
-      line-height: 1.5;
-      margin: 0;
+      line-height: 1.45;
 
       code {
         background-color: #fef3c7;
-        padding: 0.1rem 0.35rem;
+        padding: 2px 6px;
         border-radius: 4px;
         font-family: monospace;
+        font-weight: 600;
         color: #b45309;
       }
     }
   }
 }
 
-/* Page Header */
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
+/* 2. Header Section */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  .page-title {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+  }
+
+  .page-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .record-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #334155;
+  }
 }
 
-/* Weight Chip */
+/* 3. KPI Summary Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 3px 6px rgba(15, 23, 42, 0.08);
+  }
+}
+
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.kpi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.kpi-val.time-val {
+  font-size: 1.05rem;
+  font-family: monospace;
+}
+
+.kpi-val.dept-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.imputed-star {
+  font-weight: 700;
+  color: #94a3b8;
+  margin-left: 2px;
+  cursor: help;
+}
+
+.kpi-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 4. Sheet Card & Toolbar */
+.sheet-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.lock-indicator {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-left: -4px;
+}
+
+.weight-chips-group {
+  flex: 1;
+  min-width: 300px;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .weight-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  background-color: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  gap: 4px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 16px;
-  padding: 0.25rem 0.65rem;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  font-size: 0.78rem;
   color: #334155;
   cursor: help;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 
   &:hover {
-    background-color: #e2e8f0;
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+  }
+}
+
+/* 5. Main Rankings Table */
+.table-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+
+  .table-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .table-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .table-meta-note {
+    font-size: 12px;
+  }
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sheet-table {
+  width: 100%;
+
+  th {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 13px !important;
+    color: #1e293b;
+    vertical-align: middle;
+  }
+
+  tr:hover td {
+    background: #f8fafc !important;
   }
 }
 
@@ -81,52 +327,85 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
+  min-width: 26px;
+  height: 26px;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .rank-first {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #ef4444;
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.35);
 }
 
 .rank-second {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: #f97316;
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
 }
 
 .rank-third {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
 }
 
 .rank-normal {
-  background-color: #e2e8f0;
+  background: #e2e8f0;
   color: #475569;
 }
 
-/* Patient Link */
-.patient-link {
-  color: #2563eb;
-  text-decoration: none;
+/* Patient Cell */
+.patient-name {
   font-weight: 600;
+  line-height: 1.3;
 
-  &:hover {
-    text-decoration: underline;
-    color: #1d4ed8;
+  .patient-link {
+    color: #2563eb;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      color: #1d4ed8;
+    }
   }
 }
 
-/* Score Progress Bar */
+.patient-code {
+  font-size: 11px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.dept-badge {
+  font-size: 12px;
+  color: #475569;
+}
+
+/* Score Column */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+
+  .score-number {
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  p-tag {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
+
 .score-bar-bg {
   width: 100%;
-  height: 6px;
+  max-width: 150px;
+  height: 5px;
   background-color: #e2e8f0;
   border-radius: 3px;
   overflow: hidden;
@@ -137,10 +416,6 @@
   border-radius: 3px;
   transition: width 0.3s ease;
 
-  &.danger {
-    background-color: #ef4444;
-  }
-
   &.warning {
     background-color: #f59e0b;
   }
@@ -148,16 +423,178 @@
   &.info {
     background-color: #3b82f6;
   }
+
+  &.success {
+    background-color: #10b981;
+  }
 }
 
-/* Explain Table */
-.explain-table {
+.distance-col {
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+/* State Panels */
+.state-box {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+
+  .state-spinner {
+    font-size: 2rem;
+    color: #2563eb;
+    margin-bottom: 12px;
+  }
+
+  .state-text {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.error-box {
+  .state-icon-error {
+    font-size: 2.5rem;
+    color: #ef4444;
+    margin-bottom: 8px;
+  }
+
+  .state-error-title {
+    margin: 0 0 6px;
+    color: #991b1b;
+    font-size: 16px;
+  }
+
+  .state-error-desc {
+    margin: 0 auto;
+    max-width: 450px;
+    font-size: 13px;
+    color: #64748b;
+  }
+}
+
+.empty-box {
+  .state-icon-empty {
+    font-size: 2.5rem;
+    color: #94a3b8;
+    margin-bottom: 8px;
+  }
+
+  .state-empty-title {
+    margin: 0 0 4px;
+    color: #334155;
+    font-size: 15px;
+  }
+
+  .state-empty-desc {
+    margin: 0 auto;
+    max-width: 450px;
+    font-size: 13px;
+    color: #64748b;
+  }
+}
+
+/* 6. Explanation Dialog */
+.dialog-body {
+  padding: 4px 0;
+}
+
+.modal-patient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
+  margin-bottom: 14px;
 
-  th,
+  .modal-patient-name {
+    margin: 0 0 2px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .modal-patient-sub {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .modal-ci-badge {
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 15px;
+    color: #2563eb;
+  }
+}
+
+.formula-card {
+  padding: 12px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  margin-bottom: 14px;
+
+  .formula-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+
+  .formula-code {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px 12px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .formula-meta {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 6px;
+    text-align: center;
+  }
+}
+
+.table-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.explain-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+
+  th {
+    background: #f8fafc;
+    padding: 8px 10px;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
   td {
+    padding: 8px 10px;
     border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
   }
 
   tr:last-child td {
@@ -165,8 +602,151 @@
   }
 }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.direction-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+
+  &.benefit {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &.cost {
+    background: #fef3c7;
+    color: #b45309;
+  }
+}
+
+/* 7. Weights Dialog */
+.weight-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.weight-control-info {
+  flex: 1;
+
+  .weight-control-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .weight-control-type {
+    font-size: 11px;
+    color: #64748b;
+  }
+}
+
+.weight-control-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .weight-input {
+    width: 72px;
+    text-align: right;
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  .weight-pct {
+    font-size: 12px;
+    font-family: monospace;
+    color: #475569;
+    width: 44px;
+    text-align: right;
+  }
+}
+
+.total-weight-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  margin-top: 14px;
+
+  .total-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .total-val {
+    font-size: 15px;
+    font-weight: 800;
+    font-family: monospace;
+  }
+}
+
+.dialog-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  .footer-btn-group {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+/* Responsive Media Queries */
+@media (max-width: 960px) {
+  .page-shell {
+    padding: 14px 16px;
+  }
+
+  .header-section {
+    flex-direction: column;
+    align-items: stretch;
+
+    .header-actions {
+      justify-content: flex-start;
+    }
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    .filter-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  .dialog-footer-actions {
+    flex-direction: column;
+    gap: 10px;
+
+    .footer-btn-group {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
 }
