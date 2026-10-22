@@ -67,6 +67,7 @@ export const routes: Routes = [
       { path: 'schedule-plans/:id', loadComponent: () => import('./features/schedule-plans/schedule-plan-detail.component').then((m) => m.SchedulePlanDetailComponent) },
       { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then((m) => m.ScheduleComponent) },
       { path: 'topsis', loadComponent: () => import('./features/topsis/topsis-triage.component').then((m) => m.TopsisTriageComponent) },
+      { path: 'clustering', loadComponent: () => import('./features/clustering/kmeans-clustering.component').then((m) => m.KMeansClusteringComponent) },
       { path: 'sessions', loadComponent: () => import('./features/sessions/session-list.component').then((m) => m.SessionListComponent) },
       {
         path: 'sessions/new',

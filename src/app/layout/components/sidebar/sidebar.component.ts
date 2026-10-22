@@ -50,6 +50,7 @@ export class SidebarComponent {
       label: 'Hỗ trợ quyết định',
       items: [
         { label: 'Phân loại TOPSIS', route: '/topsis', icon: 'pi pi-sort-amount-down' },
+        { label: 'Phân cụm bệnh nhân (K-Means)', route: '/clustering', icon: 'pi pi-chart-scatter' },
       ],
     },
     {

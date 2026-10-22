@@ -212,3 +212,4 @@ export interface MachineUtilizationReport {
 export * from './audit-log.model';
 export * from './schedule-plan.model';
 export * from './topsis.model';
+export * from './kmeans.model';

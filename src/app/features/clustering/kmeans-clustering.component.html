@@ -1,0 +1,392 @@
+<div class="page-shell">
+  <p-toast></p-toast>
+
+  <!-- 1. MANDATORY CLINICAL DISCLAIMER BANNER -->
+  <div class="disclaimer-banner mb-3">
+    <div class="disclaimer-icon">
+      <i class="pi pi-exclamation-triangle"></i>
+    </div>
+    <div class="disclaimer-content">
+      <div class="disclaimer-title">
+        LƯU Ý Y KHOA: MÔ HÌNH HỌC MÁY KHÔNG GIÁM SÁT HỖ TRỢ RA QUYẾT ĐỊNH
+      </div>
+      <div class="disclaimer-text">
+        Kết quả phân cụm K-Means chỉ đóng vai trò <strong>công cụ hỗ trợ</strong> nhận diện các nhóm bệnh nhân có đặc điểm lâm sàng tương đồng,
+        <strong>KHÔNG THAY THẾ</strong> chẩn đoán y khoa và phác đồ điều trị của Bác sĩ chuyên khoa Thận - Lọc Máu.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PAGE HEADER -->
+  <div class="header-section">
+    <div>
+      <h2 class="page-title">Phân cụm bệnh nhân lọc máu (K-Means V1)</h2>
+      <p class="page-subtitle">
+        Thuật toán phân cụm học máy không giám sát tự cài đặt (Pure Python) — Phân tích tương đồng 4 đặc trưng: Tuổi, Hemoglobin, Kali máu, và Siêu lọc UF.
+      </p>
+    </div>
+  </div>
+
+  <!-- 3. CONTROL PANEL -->
+  <div class="control-panel-card mb-4">
+    <div class="control-grid">
+      <div class="control-group">
+        <label for="kSelect">Số cụm phân tích (K):</label>
+        <p-dropdown
+          id="kSelect"
+          [options]="kOptions"
+          [(ngModel)]="kValue"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        ></p-dropdown>
+      </div>
+
+      <div class="control-group">
+        <label for="deptSelect">Khoa / Đơn nguyên:</label>
+        <p-dropdown
+          id="deptSelect"
+          [options]="departmentOptions"
+          [(ngModel)]="selectedDepartment"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        ></p-dropdown>
+      </div>
+
+      <div class="control-group">
+        <label for="seedInput">Hạt giống ngẫu nhiên (Seed):</label>
+        <p-inputNumber
+          id="seedInput"
+          [(ngModel)]="seed"
+          [min]="0"
+          [max]="9999"
+          styleClass="w-full"
+        ></p-inputNumber>
+      </div>
+
+      <div class="control-action">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-play"
+          label="Chạy phân cụm K-Means"
+          class="p-button-primary w-full"
+          [loading]="loading"
+          (click)="runClustering()"
+        ></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ALGORITHM KPI SUMMARY CARDS -->
+  <div class="kpi-grid mb-4" *ngIf="result">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-blue-50 text-blue-600">
+        <i class="pi pi-users text-xl"></i>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Số bệnh nhân phân tích</div>
+        <div class="kpi-value">{{ result.patients.length }}</div>
+        <div class="kpi-sub">Đoàn hệ đang quản lý</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-indigo-50 text-indigo-600">
+        <i class="pi pi-objects-column text-xl"></i>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Số cụm tạo thành (K)</div>
+        <div class="kpi-value">{{ result.k_value }}</div>
+        <div class="kpi-sub">K mục tiêu: {{ kValue }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-emerald-50 text-emerald-600">
+        <i class="pi pi-sync text-xl"></i>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Vòng lặp hội tụ</div>
+        <div class="kpi-value">{{ result.iterations }}</div>
+        <div class="kpi-sub">Trạng thái: {{ result.converged ? 'Đã hội tụ' : 'Chưa hội tụ' }}</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-amber-50 text-amber-600">
+        <i class="pi pi-chart-line text-xl"></i>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">WCSS (Inertia)</div>
+        <div class="kpi-value">{{ result.wcss | number : '1.4-4' }}</div>
+        <div class="kpi-sub">Tổng bình phương sai số nội cụm</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-purple-50 text-purple-600">
+        <i class="pi pi-compass text-xl"></i>
+      </div>
+      <div class="kpi-info">
+        <div class="kpi-label">Hệ số Silhouette</div>
+        <div class="kpi-value">{{ result.silhouette_score | number : '1.4-4' }}</div>
+        <div class="kpi-sub">
+          <p-tag
+            [value]="getSilhouetteQuality(result.silhouette_score).text"
+            [severity]="getSilhouetteQuality(result.silhouette_score).severity"
+          ></p-tag>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. VISUALIZATION SECTION: CHARTS GRID -->
+  <div class="charts-grid mb-4" *ngIf="result">
+    <!-- Chart 1: 2D Scatter Chart with Axis Selectors -->
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <h3 class="chart-card-title">
+            <i class="pi pi-chart-scatter text-primary mr-2"></i>
+            Phân bố không gian cụm bệnh nhân (2D Scatter)
+          </h3>
+          <p class="chart-card-desc">
+            Chọn hai trục đặc trưng lâm sàng để trực quan hóa sự phân tách giữa các nhóm bệnh nhân và vị trí các Tâm cụm (Centroids).
+          </p>
+        </div>
+
+        <div class="axis-selectors">
+          <div class="axis-select-item">
+            <span>Trục X:</span>
+            <p-dropdown
+              [options]="featureOptions"
+              [(ngModel)]="xAxisFeature"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="onAxisChange()"
+            ></p-dropdown>
+          </div>
+          <div class="axis-select-item">
+            <span>Trục Y:</span>
+            <p-dropdown
+              [options]="featureOptions"
+              [(ngModel)]="yAxisFeature"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="onAxisChange()"
+            ></p-dropdown>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-canvas-wrapper" style="height: 380px">
+        <p-chart
+          *ngIf="scatterChartData"
+          type="scatter"
+          [data]="scatterChartData"
+          [options]="scatterChartOptions"
+          height="100%"
+        ></p-chart>
+      </div>
+    </div>
+
+    <!-- Chart 2: Centroid Clinical Profile Comparison (Bar Chart) -->
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <h3 class="chart-card-title">
+            <i class="pi pi-chart-bar text-primary mr-2"></i>
+            Hồ sơ lâm sàng các Tâm cụm (Centroid Profiles)
+          </h3>
+          <p class="chart-card-desc">
+            So sánh giá trị trung bình thực tế (giải chuẩn hóa) của 4 chỉ số lâm sàng giữa các cụm.
+          </p>
+        </div>
+      </div>
+
+      <div class="chart-canvas-wrapper" style="height: 380px">
+        <p-chart
+          *ngIf="barChartData"
+          type="bar"
+          [data]="barChartData"
+          [options]="barChartOptions"
+          height="100%"
+        ></p-chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CLINICAL CLUSTER PROFILES (SUMMARIES) -->
+  <div class="cluster-cards-section mb-4" *ngIf="result?.cluster_summaries">
+    <h3 class="section-title mb-3">
+      <i class="pi pi-list text-primary mr-2"></i>
+      Đặc tính lâm sàng từng cụm & Định hướng can thiệp
+    </h3>
+
+    <div class="cluster-cards-grid">
+      <div
+        class="cluster-summary-card"
+        *ngFor="let summary of result!.cluster_summaries; let i = index"
+      >
+        <div class="cluster-summary-top">
+          <div class="cluster-badge-group">
+            <span
+              class="cluster-color-pill"
+              [style.backgroundColor]="clusterColors[i % clusterColors.length].border"
+            ></span>
+            <span class="cluster-name">{{ summary.cluster_label }}</span>
+            <span class="patient-count-badge">({{ summary.patient_count }} BN)</span>
+          </div>
+          <p-tag
+            [value]="summary.risk_level + ' RISK'"
+            [severity]="getRiskSeverity(summary.risk_level)"
+          ></p-tag>
+        </div>
+
+        <div class="cluster-tags mb-2">
+          <span class="tag-item" *ngFor="let tag of summary.tags">
+            <i class="pi pi-tag mr-1"></i>{{ tag }}
+          </span>
+        </div>
+
+        <div class="cluster-centroid-metrics mb-3">
+          <div class="metric-row">
+            <span class="metric-key">Tuổi TB:</span>
+            <span class="metric-val"><strong>{{ summary.centroid.age }}</strong> tuổi</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-key">Hemoglobin TB:</span>
+            <span class="metric-val"><strong>{{ summary.centroid.avg_hemoglobin }}</strong> g/dL</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-key">Kali máu TB:</span>
+            <span class="metric-val"><strong>{{ summary.centroid.avg_potassium }}</strong> mEq/L</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-key">Siêu lọc UF TB:</span>
+            <span class="metric-val"><strong>{{ summary.centroid.avg_uf }}</strong> L</span>
+          </div>
+        </div>
+
+        <div class="cluster-recommendation">
+          <i class="pi pi-info-circle mr-1 text-primary"></i>
+          <span>{{ summary.recommendation }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. PATIENT CLUSTERING TABLE -->
+  <div class="table-card" *ngIf="result">
+    <div class="table-card-header">
+      <div class="table-card-header-left">
+        <h3 class="table-card-title">
+          <i class="pi pi-table text-primary mr-2"></i>
+          Danh sách bệnh nhân theo cụm phân loại
+        </h3>
+        <span class="table-card-subtitle">
+          Hiển thị {{ getFilteredPatients().length }} / {{ result.patients.length }} bệnh nhân
+        </span>
+      </div>
+
+      <div class="table-filter-group">
+        <span>Lọc cụm:</span>
+        <button
+          pButton
+          type="button"
+          label="Tất cả"
+          class="p-button-sm mr-2"
+          [class.p-button-outlined]="selectedClusterFilter !== null"
+          (click)="selectedClusterFilter = null"
+        ></button>
+        <button
+          *ngFor="let summary of result.cluster_summaries; let c = index"
+          pButton
+          type="button"
+          [label]="'Cụm ' + (c + 1)"
+          class="p-button-sm mr-1"
+          [class.p-button-outlined]="selectedClusterFilter !== c"
+          (click)="selectedClusterFilter = c"
+        ></button>
+      </div>
+    </div>
+
+    <p-table
+      [value]="getFilteredPatients()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      styleClass="p-datatable-sm p-datatable-striped"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Mã BN</th>
+          <th>Họ và tên</th>
+          <th style="width: 120px">Phân cụm</th>
+          <th>Tuổi</th>
+          <th>Hb TB (g/dL)</th>
+          <th>Kali TB (mEq/L)</th>
+          <th>UF TB (Lít)</th>
+          <th>Trạng thái</th>
+          <th style="width: 100px; text-align: center">Thao tác</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-p>
+        <tr>
+          <td>
+            <strong>{{ p.patient_id }}</strong>
+          </td>
+          <td>{{ p.full_name }}</td>
+          <td>
+            <span
+              class="cluster-table-pill"
+              [style.backgroundColor]="clusterColors[p.cluster_id % clusterColors.length].border"
+            >
+              Cụm {{ p.cluster_id + 1 }}
+            </span>
+          </td>
+          <td>{{ p.features.age }}</td>
+          <td>
+            <span [class.text-danger]="p.features.avg_hemoglobin < 9.5">
+              {{ p.features.avg_hemoglobin }}
+            </span>
+          </td>
+          <td>
+            <span [class.text-danger]="p.features.avg_potassium > 5.5">
+              {{ p.features.avg_potassium }}
+            </span>
+          </td>
+          <td>
+            <span [class.text-warning]="p.features.avg_uf > 3.5">
+              {{ p.features.avg_uf }}
+            </span>
+          </td>
+          <td>
+            <p-tag [value]="p.status" severity="info"></p-tag>
+          </td>
+          <td style="text-align: center">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-external-link"
+              class="p-button-text p-button-sm"
+              pTooltip="Xem hồ sơ bệnh nhân"
+              (click)="viewPatient(p.patient_id)"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="text-center p-4 text-muted">
+            Không có dữ liệu bệnh nhân cho bộ lọc này.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

@@ -1,0 +1,382 @@
+.page-shell {
+  padding: 20px 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* 1. Clinical Disclaimer Banner */
+.disclaimer-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  .disclaimer-icon {
+    i {
+      font-size: 1.4rem;
+      color: #d97706;
+      margin-top: 2px;
+    }
+  }
+
+  .disclaimer-content {
+    flex: 1;
+
+    .disclaimer-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .disclaimer-text {
+      font-size: 0.8rem;
+      color: #78350f;
+      line-height: 1.45;
+    }
+  }
+}
+
+/* 2. Header Section */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  .page-title {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .page-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+}
+
+/* 3. Control Panel Card */
+.control-panel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: flex-end;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+    }
+  }
+
+  .control-action {
+    display: flex;
+    align-items: flex-end;
+  }
+}
+
+/* 4. KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+
+  .kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    .kpi-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-info {
+      flex: 1;
+
+      .kpi-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 2px;
+      }
+
+      .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+      }
+
+      .kpi-sub {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 3px;
+      }
+    }
+  }
+}
+
+/* 5. Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 18px;
+
+  .chart-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    .chart-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .chart-card-title {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .chart-card-desc {
+        margin: 0;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .axis-selectors {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+
+        .axis-select-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #475569;
+        }
+      }
+    }
+  }
+}
+
+/* 6. Cluster Summary Cards Section */
+.cluster-cards-section {
+  .section-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .cluster-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 14px;
+  }
+
+  .cluster-summary-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+
+    .cluster-summary-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .cluster-badge-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .cluster-color-pill {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .cluster-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+
+        .patient-count-badge {
+          font-size: 12px;
+          color: #64748b;
+        }
+      }
+    }
+
+    .cluster-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      .tag-item {
+        font-size: 11px;
+        background-color: #f1f5f9;
+        color: #475569;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+      }
+    }
+
+    .cluster-centroid-metrics {
+      background-color: #f8fafc;
+      border: 1px solid #edf2f7;
+      border-radius: 6px;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+
+      .metric-row {
+        font-size: 12px;
+        color: #475569;
+
+        .metric-key {
+          margin-right: 4px;
+        }
+      }
+    }
+
+    .cluster-recommendation {
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.45;
+      background-color: #f0fdf4;
+      border-left: 3px solid #10b981;
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin-top: auto;
+    }
+  }
+}
+
+/* 7. Patient Table Card */
+.table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  .table-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .table-card-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .table-card-subtitle {
+      font-size: 12px;
+      color: #64748b;
+      margin-left: 8px;
+    }
+
+    .table-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+    }
+  }
+
+  .cluster-table-pill {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+  .text-danger {
+    color: #ef4444;
+    font-weight: 700;
+  }
+
+  .text-warning {
+    color: #d97706;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-shell {
+    padding: 12px;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+}
