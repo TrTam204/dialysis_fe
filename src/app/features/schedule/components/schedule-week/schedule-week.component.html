@@ -14,6 +14,7 @@
           class="session-pill"
           *ngFor="let session of getSessionForDayAndMachine(day, machineName)"
           [routerLink]="['/sessions', session.session_id]"
+          [queryParams]="queryParams"
           [ngClass]="getStatusClass(session.status)"
         >
           <div class="pill-top">
@@ -41,7 +42,7 @@
 
       <div class="mobile-day-sessions" *ngIf="hasSessionsForDay(day); else noSessionForDay">
         <ng-container *ngFor="let session of getSessionsForDay(day)">
-          <a [routerLink]="['/sessions', session.session_id]" class="mobile-week-session {{ getStatusClass(session.status) }}">
+          <a [routerLink]="['/sessions', session.session_id]" [queryParams]="queryParams" class="mobile-week-session {{ getStatusClass(session.status) }}">
             <div class="mobile-week-top">
               <span>{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
               <span>{{ session.status }}</span>

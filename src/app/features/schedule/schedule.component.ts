@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, Observable, of, Subscription } from 'rxjs';
 import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
@@ -41,7 +42,7 @@ export class ScheduleComponent implements OnInit, OnDestroy {
 
   statusFilter: string | null = null;
   machineFilter: string | null = null;
-  nurseFilter: string | null = null;
+  nurseFilter: string | number | null = null;
 
   statusOptions = [
     { label: 'Tất cả trạng thái', value: null },
@@ -85,9 +86,11 @@ export class ScheduleComponent implements OnInit, OnDestroy {
     private sessionService: SessionService,
     private machineService: MachineService,
     private staffService: StaffService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.applyQueryParams(this.route.snapshot.queryParams);
     this.loadReferenceData();
 
     this.refreshTrigger$
@@ -98,6 +101,56 @@ export class ScheduleComponent implements OnInit, OnDestroy {
       .subscribe();
 
     this.refreshTrigger$.next();
+  }
+
+  getScheduleNavigationParams(): Record<string, string> {
+    const params: Record<string, string> = {
+      from: 'schedule',
+      viewMode: this.viewMode,
+      date: this.selectedDateIso,
+    };
+    if (this.shiftGroupFilter && this.shiftGroupFilter !== 'ALL') {
+      params['shiftGroup'] = this.shiftGroupFilter;
+    }
+    if (this.statusFilter) {
+      params['status'] = this.statusFilter;
+    }
+    if (this.machineFilter) {
+      params['machine'] = this.machineFilter;
+    }
+    if (this.nurseFilter !== null && this.nurseFilter !== undefined) {
+      params['nurse'] = String(this.nurseFilter);
+    }
+    return params;
+  }
+
+  private applyQueryParams(params: Record<string, any>): void {
+    if (params['viewMode'] === 'day' || params['viewMode'] === 'week') {
+      this.viewMode = params['viewMode'];
+    }
+    if (params['date'] && /^\d{4}-\d{2}-\d{2}$/.test(params['date'])) {
+      const parts = params['date'].split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const parsedDate = new Date(year, month, day);
+      if (!isNaN(parsedDate.getTime())) {
+        this.selectedDate = parsedDate;
+      }
+    }
+    if (params['shiftGroup'] && ['ALL', '246', '357'].includes(params['shiftGroup'])) {
+      this.shiftGroupFilter = params['shiftGroup'] as 'ALL' | '246' | '357';
+    }
+    if (params['status']) {
+      this.statusFilter = params['status'];
+    }
+    if (params['machine']) {
+      this.machineFilter = params['machine'];
+    }
+    if (params['nurse']) {
+      const parsedNurseId = parseInt(params['nurse'], 10);
+      this.nurseFilter = isNaN(parsedNurseId) ? params['nurse'] : parsedNurseId;
+    }
   }
 
   ngOnDestroy(): void {

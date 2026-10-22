@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -90,12 +90,33 @@ export class SessionListComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
     const role = this.authService.getUserRole();
     this.canWrite = role === 'ADMIN' || role === 'DOCTOR';
+
+    const qp = this.route.snapshot.queryParams;
+    if (qp['search']) {
+      this.searchText = qp['search'];
+    }
+    if (qp['status']) {
+      this.statusFilter = qp['status'];
+    }
+    if (qp['patient']) {
+      this.patientFilter = qp['patient'];
+    }
+    if (qp['machine']) {
+      this.machineFilter = qp['machine'];
+    }
+    if (qp['page']) {
+      const p = parseInt(qp['page'], 10);
+      if (!isNaN(p) && p > 1) {
+        this.first = (p - 1) * this.rows;
+      }
+    }
 
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -135,8 +156,34 @@ export class SessionListComponent implements OnInit, OnDestroy {
     return idx < 10 ? `0${idx}` : `${idx}`;
   }
 
+  getSessionNavigationParams(): Record<string, string> {
+    const params: Record<string, string> = {
+      from: 'sessions',
+    };
+    const page = Math.floor(this.first / this.rows) + 1;
+    if (page > 1) {
+      params['page'] = String(page);
+    }
+    const search = this.searchText.trim();
+    if (search) {
+      params['search'] = search;
+    }
+    if (this.statusFilter !== null) {
+      params['status'] = this.statusFilter;
+    }
+    if (this.patientFilter !== null) {
+      params['patient'] = this.patientFilter;
+    }
+    if (this.machineFilter !== null) {
+      params['machine'] = this.machineFilter;
+    }
+    return params;
+  }
+
   navigateToSession(session: DialysisSession) {
-    this.router.navigate(['/sessions', session.session_id]);
+    this.router.navigate(['/sessions', session.session_id], {
+      queryParams: this.getSessionNavigationParams(),
+    });
   }
 
   onLazyLoad(event: TableLazyLoadEvent) {

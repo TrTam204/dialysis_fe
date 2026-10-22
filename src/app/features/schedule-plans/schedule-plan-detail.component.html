@@ -175,9 +175,9 @@
             <span class="meta-key">Quần thể:</span>
             <strong>{{ plan.algorithm_metadata['population_size'] }} cá thể</strong>
           </span>
-          <span class="meta-pill" *ngIf="plan.algorithm_metadata['max_generations'] || plan.algorithm_metadata['generations']">
+          <span class="meta-pill" *ngIf="plan.algorithm_metadata['generations_run'] || plan.algorithm_metadata['generations'] || plan.algorithm_metadata['max_generations']">
             <span class="meta-key">Số thế hệ:</span>
-            <strong>{{ plan.algorithm_metadata['generations'] || plan.algorithm_metadata['max_generations'] }}</strong>
+            <strong>{{ plan.algorithm_metadata['generations_run'] || plan.algorithm_metadata['generations'] || plan.algorithm_metadata['max_generations'] }}</strong>
           </span>
           <span class="meta-pill" *ngIf="plan.algorithm_metadata['elapsed_time_sec'] !== undefined || plan.algorithm_metadata['elapsed_seconds'] !== undefined">
             <span class="meta-key">Thời gian chạy:</span>
@@ -190,9 +190,25 @@
         </div>
       </div>
 
-      <div *ngIf="fitnessChartData" class="chart-wrapper">
+      <div *ngIf="fitnessChartData; else noFitnessHistory" class="chart-wrapper">
         <p-chart type="line" [data]="fitnessChartData" [options]="fitnessChartOptions" height="260px"></p-chart>
       </div>
+
+      <ng-template #noFitnessHistory>
+        <div class="empty-fitness-history">
+          <div class="empty-fitness-icon">
+            <i class="pi pi-chart-line"></i>
+          </div>
+          <div class="empty-fitness-body">
+            <h5 class="empty-fitness-title">Không có dữ liệu lịch sử hội tụ qua từng thế hệ (Fitness History)</h5>
+            <p class="empty-fitness-desc">
+              Kế hoạch này được tạo từ phiên bản GA ban đầu trước khi tính năng ghi nhận vết hội tụ thế hệ (Fitness History tracking) được kích hoạt.
+              Kết quả tối ưu hóa cuối cùng vẫn được bảo toàn với <strong>Best Fitness = {{ plan.fitness_score | number:'1.2-2' }}</strong>
+              (chạy qua <strong>{{ plan.algorithm_metadata['generations_run'] || plan.algorithm_metadata['generations'] || plan.algorithm_metadata['max_generations'] }} thế hệ</strong>).
+            </p>
+          </div>
+        </div>
+      </ng-template>
     </div>
 
     <!-- Assignments Section -->

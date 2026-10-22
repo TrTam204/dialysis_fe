@@ -72,6 +72,8 @@
       [rows]="rows"
       [first]="first"
       [totalRecords]="totalRecords"
+      [sortField]="sortField"
+      [sortOrder]="sortOrder"
       dataKey="patient_id"
       responsiveLayout="scroll"
       styleClass="p-datatable-gridlines sheet-table"
@@ -92,7 +94,7 @@
 
       <ng-template pTemplate="body" let-patient let-rowIndex="rowIndex">
         <tr (click)="navigateToPatient(patient)" class="clickable-row">
-          <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
+          <td class="text-center font-mono col-stt">{{ formatIndex(rowIndex + 1) }}</td>
           <td>
             <span class="code-badge">{{ patient.patient_id }}</span>
           </td>
@@ -139,6 +141,7 @@
                 icon="pi pi-eye"
                 class="p-button-text p-button-rounded p-button-sm"
                 [routerLink]="['/patients', patient.patient_id]"
+                [queryParams]="getPatientNavigationParams()"
                 [attr.aria-label]="'Xem ' + patient.full_name"
                 pTooltip="Xem hồ sơ"
                 tooltipPosition="top"

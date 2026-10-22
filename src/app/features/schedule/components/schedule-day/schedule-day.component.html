@@ -19,6 +19,7 @@
           <a
             *ngFor="let session of getMachineSessions(machineName)"
             [routerLink]="['/sessions', session.session_id]"
+            [queryParams]="queryParams"
             class="session-block {{ getStatusClass(session.status) }}"
             [ngStyle]="getSessionStyle(session)"
           >
@@ -36,6 +37,7 @@
     <a
       *ngFor="let session of mobileSessions"
       [routerLink]="['/sessions', session.session_id]"
+      [queryParams]="queryParams"
       class="mobile-session-card {{ getStatusClass(session.status) }}"
     >
       <div class="mobile-session-top">

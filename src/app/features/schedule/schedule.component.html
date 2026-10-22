@@ -86,12 +86,14 @@
       *ngIf="viewMode === 'day'"
       [sessions]="filteredScheduleSessions"
       [selectedDate]="selectedDate"
+      [queryParams]="getScheduleNavigationParams()"
     ></app-schedule-day>
 
     <app-schedule-week
       *ngIf="viewMode === 'week'"
       [sessions]="filteredScheduleSessions"
       [selectedDate]="selectedDate"
+      [queryParams]="getScheduleNavigationParams()"
     ></app-schedule-week>
   </div>
 </div>

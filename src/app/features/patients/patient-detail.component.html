@@ -6,7 +6,7 @@
 
   <div *ngIf="!patientLoading && patient" class="detail-shell">
     <div class="top-bar">
-      <button pButton type="button" icon="pi pi-arrow-left" label="Quay lại" class="p-button-text" routerLink="/patients"></button>
+      <button pButton type="button" icon="pi pi-arrow-left" label="Quay lại danh sách" class="p-button-text" (click)="navigateBack()"></button>
 
       <div class="title-wrap">
         <div class="title-main">
@@ -246,7 +246,7 @@
   <div *ngIf="!patientLoading && !patient" class="error-box">
     <p-card>
       <p>Không tìm thấy bệnh nhân.</p>
-      <a pButton type="button" label="Quay lại danh sách" routerLink="/patients"></a>
+      <button pButton type="button" icon="pi pi-arrow-left" label="Quay lại danh sách" class="p-button-text" (click)="navigateBack()"></button>
     </p-card>
   </div>
 </div>

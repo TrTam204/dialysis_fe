@@ -13,6 +13,7 @@ import { DialysisSession } from '../../../../core/models';
 export class ScheduleWeekComponent {
   @Input() sessions: DialysisSession[] = [];
   @Input() selectedDate = new Date();
+  @Input() queryParams: Record<string, any> = {};
 
   get weekDays(): Date[] {
     return Array.from({ length: 7 }, (_, index) => this.getDateForDay(index));

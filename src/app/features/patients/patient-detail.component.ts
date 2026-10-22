@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -6,7 +6,8 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { MessageService } from 'primeng/api';
-import { catchError, of } from 'rxjs';
+import { Subject, catchError, of } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { SessionService } from '../../core/services/session.service';
 import { BloodSampleService } from '../../core/services/blood-sample.service';
 import { PatientService } from '../../core/services/patient.service';
@@ -27,7 +28,7 @@ import { BloodSample, DialysisSession, Patient } from '../../core/models';
   templateUrl: './patient-detail.component.html',
   styleUrls: ['./patient-detail.component.scss'],
 })
-export class PatientDetailComponent implements OnInit {
+export class PatientDetailComponent implements OnInit, OnDestroy {
   patient: Patient | null = null;
   patientLoading = false;
   sessions: DialysisSession[] = [];
@@ -47,6 +48,9 @@ export class PatientDetailComponent implements OnInit {
   canEdit = false;
   canDelete = false;
 
+  returnQueryParams: Record<string, string> = {};
+  private destroy$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -65,6 +69,30 @@ export class PatientDetailComponent implements OnInit {
     if (patientId) {
       this.loadPatient(patientId);
     }
+
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      const cleanParams: Record<string, string> = {};
+      if (params['search']) cleanParams['search'] = params['search'];
+      if (params['status']) cleanParams['status'] = params['status'];
+      if (params['gender']) cleanParams['gender'] = params['gender'];
+      if (params['page']) cleanParams['page'] = params['page'];
+      if (params['rows']) cleanParams['rows'] = params['rows'];
+      if (params['sort']) cleanParams['sort'] = params['sort'];
+      if (params['order']) cleanParams['order'] = params['order'];
+      if (params['ordering']) cleanParams['ordering'] = params['ordering'];
+      this.returnQueryParams = cleanParams;
+    });
+  }
+
+  navigateBack(): void {
+    this.router.navigate(['/patients'], {
+      queryParams: Object.keys(this.returnQueryParams).length > 0 ? this.returnQueryParams : undefined,
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadPatient(patientId: string) {

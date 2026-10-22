@@ -93,8 +93,8 @@
       </div>
       <div class="kpi-info">
         <span class="kpi-label">Khoa / Đơn nguyên</span>
-        <span class="kpi-val dept-val" [title]="rankResponse.department_name || 'Toàn trung tâm'">
-          {{ rankResponse.department_name || 'Toàn trung tâm' }}
+        <span class="kpi-val dept-val" [title]="getDepartmentFullTitle()" [pTooltip]="getDepartmentFullTitle()" tooltipPosition="top">
+          {{ getDepartmentDisplayLabel() }}
         </span>
         <span class="kpi-sub">
           <i class="pi pi-shield mr-1"></i>Hệ thống phân quyền RBAC
@@ -132,7 +132,8 @@
           optionValue="value"
           placeholder="Chọn khoa lọc máu"
           [disabled]="isDepartmentLocked"
-          [style]="{ minWidth: '220px' }"
+          [style]="{ width: '100%', minWidth: '220px' }"
+          appendTo="body"
           (onChange)="calculateRanking()"
         ></p-dropdown>
         <span *ngIf="isDepartmentLocked" class="lock-indicator" title="Tự động cố định theo khoa của Bác sĩ / Điều dưỡng">
@@ -145,19 +146,19 @@
         <label class="filter-label">Trọng số 5 tiêu chí:</label>
         <div class="chips-row">
           <span class="weight-chip" pTooltip="C1: Kali máu (Cực đại hóa)" tooltipPosition="top">
-            <strong>C1 (K⁺):</strong> {{ (customWeights['C1'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-green"></i>
+            <strong>C1 (K⁺):</strong> {{ getWeightPercent('C1') }}% <i class="pi pi-arrow-up text-green"></i>
           </span>
           <span class="weight-chip" pTooltip="C2: Hemoglobin (Cực tiểu hóa để ưu tiên thiếu máu)" tooltipPosition="top">
-            <strong>C2 (Hb):</strong> {{ (customWeights['C2'] * 100).toFixed(0) }}% <i class="pi pi-arrow-down text-amber"></i>
+            <strong>C2 (Hb):</strong> {{ getWeightPercent('C2') }}% <i class="pi pi-arrow-down text-amber"></i>
           </span>
           <span class="weight-chip" pTooltip="C3: Số ngày chưa lọc (Cực đại hóa)" tooltipPosition="top">
-            <strong>C3 (Ngày):</strong> {{ (customWeights['C3'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-green"></i>
+            <strong>C3 (Ngày):</strong> {{ getWeightPercent('C3') }}% <i class="pi pi-arrow-up text-green"></i>
           </span>
           <span class="weight-chip" pTooltip="C4: Tăng cân gian lọc (Cực đại hóa)" tooltipPosition="top">
-            <strong>C4 (IDWG):</strong> {{ (customWeights['C4'] * 100).toFixed(0) }}% <i class="pi pi-arrow-up text-green"></i>
+            <strong>C4 (IDWG):</strong> {{ getWeightPercent('C4') }}% <i class="pi pi-arrow-up text-green"></i>
           </span>
           <span class="weight-chip" pTooltip="C5: Khoảng cách di chuyển (Cực tiểu hóa)" tooltipPosition="top">
-            <strong>C5 (Khoảng cách):</strong> {{ (customWeights['C5'] * 100).toFixed(0) }}% <i class="pi pi-arrow-down text-amber"></i>
+            <strong>C5 (Khoảng cách):</strong> {{ getWeightPercent('C5') }}% <i class="pi pi-arrow-down text-amber"></i>
           </span>
         </div>
       </div>
@@ -398,14 +399,14 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of criteria; let j = index">
+            <tr *ngFor="let c of (rankResponse?.criteria || criteria); let j = index">
               <td class="font-medium">{{ c.name }} ({{ c.code }})</td>
               <td class="text-center">
                 <span class="direction-tag" [ngClass]="c.type === 'benefit' ? 'benefit' : 'cost'">
                   {{ c.type === 'benefit' ? 'Max (+)' : 'Min (-)' }}
                 </span>
               </td>
-              <td class="text-right font-mono">{{ (customWeights[c.code] || c.weight).toFixed(2) }}</td>
+              <td class="text-right font-mono">{{ (c.weight !== undefined ? c.weight : getWeight(c.code)).toFixed(4) }}</td>
               <td class="text-right font-mono font-bold">{{ selectedAlternative.raw_values[j].toFixed(2) }} {{ c.unit }}</td>
               <td class="text-right font-mono text-muted">{{ getNormalizedValue(j, selectedAlternative.raw_values[j]).toFixed(4) }}</td>
               <td class="text-right font-mono font-bold text-primary">{{ getWeightedValue(j, selectedAlternative.raw_values[j], c.code).toFixed(4) }}</td>
@@ -447,12 +448,12 @@
           <input
             type="number"
             step="0.05"
-            min="0.01"
-            max="1.0"
+            min="0"
+            max="10.0"
             [(ngModel)]="item.weight"
             class="p-inputtext p-inputtext-sm weight-input"
           />
-          <span class="weight-pct">({{ (item.weight * 100).toFixed(0) }}%)</span>
+          <span class="weight-pct">({{ formatWeightPct(item.weight) }}%)</span>
         </div>
       </div>
 

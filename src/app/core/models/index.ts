@@ -36,8 +36,10 @@ export interface Patient {
   phone_number?: string | null;
   medical_history?: string;
   dry_weight?: number | null;
-  location?: string | null; // GeoJSON - do not parse in Phase 1
+  location?: string | { type: string; coordinates: [number, number] } | null;
   status: 'ACTIVE' | 'IN_TREATMENT' | 'STABLE' | 'DISCHARGED';
+  department?: number | null;
+  department_name?: string | null;
   preferred_shift?: ShiftType | null;
   treatment_pattern?: TreatmentPatternType | null;
   created_at?: string;

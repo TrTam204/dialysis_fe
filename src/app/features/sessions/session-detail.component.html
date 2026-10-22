@@ -12,7 +12,14 @@
     <!-- Header Card -->
     <div class="header-card">
       <div class="header-left">
-        <a pButton icon="pi pi-arrow-left" label="Quay lại danh sách" class="p-button-text p-button-sm back-btn" routerLink="/sessions"></a>
+        <button
+          pButton
+          type="button"
+          [icon]="backButtonIcon"
+          [label]="backButtonLabel"
+          class="p-button-text p-button-sm back-btn"
+          (click)="navigateBack()"
+        ></button>
         <div class="title-row">
           <h1 class="record-title">Phiếu lọc máu điện tử: {{ session.session_id }}</h1>
           <p-tag [value]="getStatusLabel(session.status)" [severity]="getStatusSeverity(session.status)" class="status-tag"></p-tag>
@@ -452,7 +459,13 @@
         <i class="pi pi-exclamation-circle text-warning text-4xl mb-3"></i>
         <h3>Không tìm thấy phiên lọc máu</h3>
         <p class="text-muted mb-4">Phiên lọc không tồn tại hoặc đã bị xóa.</p>
-        <a pButton type="button" label="Quay lại danh sách phiên" icon="pi pi-arrow-left" routerLink="/sessions"></a>
+        <button
+          pButton
+          type="button"
+          [icon]="backButtonIcon"
+          [label]="backButtonLabel"
+          (click)="navigateBack()"
+        ></button>
       </div>
     </p-card>
   </div>

@@ -13,6 +13,7 @@ import { DialysisSession } from '../../../../core/models';
 export class ScheduleDayComponent {
   @Input() sessions: DialysisSession[] = [];
   @Input() selectedDate = new Date();
+  @Input() queryParams: Record<string, any> = {};
 
   readonly dayStartHour = 0;
   readonly dayEndHour = 24;

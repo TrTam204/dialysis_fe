@@ -82,6 +82,11 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
     C3: 0.25,
     C4: 0.15,
     C5: 0.10,
+    C1_POTASSIUM: 0.30,
+    C2_HEMOGLOBIN: 0.20,
+    C3_DAYS_SINCE_SESSION: 0.25,
+    C4_FLUID_OVERLOAD: 0.15,
+    C5_DISTANCE_KM: 0.10,
   };
   customWeights: Record<string, number> = { ...this.defaultWeights };
   editableWeights: WeightItem[] = [];
@@ -171,13 +176,65 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
   }
 
   private initEditableWeights(): void {
-    this.editableWeights = this.criteria.map((c) => ({
-      code: c.code,
-      name: c.name,
-      weight: this.customWeights[c.code] ?? c.weight,
-      type: c.type,
-      unit: c.unit,
-    }));
+    this.editableWeights = this.criteria.map((c, idx) => {
+      const shortCode = `C${idx + 1}`;
+      const existing = this.customWeights[c.code] ?? this.customWeights[shortCode] ?? c.weight;
+      return {
+        code: c.code,
+        name: c.name,
+        weight: typeof existing === 'number' && !isNaN(existing) ? existing : c.weight,
+        type: c.type,
+        unit: c.unit,
+      };
+    });
+  }
+
+  getWeight(code: string | number): number {
+    if (typeof code === 'number') {
+      const crit = this.criteria[code];
+      if (crit && this.customWeights[crit.code] !== undefined && !isNaN(this.customWeights[crit.code])) {
+        return this.customWeights[crit.code];
+      }
+      const short = `C${code + 1}`;
+      return this.customWeights[short] ?? 0.2;
+    }
+    if (this.customWeights[code] !== undefined && !isNaN(this.customWeights[code])) {
+      return this.customWeights[code];
+    }
+    const short = code.split('_')[0];
+    if (this.customWeights[short] !== undefined && !isNaN(this.customWeights[short])) {
+      return this.customWeights[short];
+    }
+    for (let i = 0; i < this.criteria.length; i++) {
+      if (this.criteria[i].code === code) {
+        const s = `C${i + 1}`;
+        if (this.customWeights[s] !== undefined && !isNaN(this.customWeights[s])) {
+          return this.customWeights[s];
+        }
+      }
+    }
+    return 0.2;
+  }
+
+  getWeightPercent(code: string): string {
+    const w = this.getWeight(code);
+    return (w * 100).toFixed(0);
+  }
+
+  formatWeightPct(val: any): string {
+    const num = parseFloat(val);
+    if (isNaN(num) || num < 0) return '0';
+    return (num * 100).toFixed(0);
+  }
+
+  syncWeightsFromResponse(criteria: TopsisCriterion[]): void {
+    if (!criteria || criteria.length === 0) return;
+    for (let i = 0; i < criteria.length; i++) {
+      const c = criteria[i];
+      const shortCode = `C${i + 1}`;
+      this.customWeights[c.code] = c.weight;
+      this.customWeights[shortCode] = c.weight;
+    }
   }
 
   calculateRanking(): void {
@@ -200,6 +257,9 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
           this.rankings = res.rankings;
           this.idealPositive = res.ideal_positive;
           this.idealNegative = res.ideal_negative;
+          if (res.criteria && res.criteria.length > 0) {
+            this.syncWeightsFromResponse(res.criteria);
+          }
           this.calculateVectorNorms();
 
           this.messageService.add({
@@ -226,7 +286,6 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
   }
 
   private calculateVectorNorms(): void {
-    // Calculate Euclidean column norms: norm_j = sqrt(sum(x_kj^2))
     if (!this.rankings || this.rankings.length === 0) {
       this.vectorNorms = [];
       return;
@@ -248,10 +307,25 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
   }
 
   get totalEditableWeight(): number {
-    return this.editableWeights.reduce((acc, curr) => acc + (Number(curr.weight) || 0), 0);
+    return this.editableWeights.reduce((acc, curr) => {
+      const val = parseFloat(curr.weight as any);
+      return acc + (isNaN(val) || val < 0 ? 0 : val);
+    }, 0);
   }
 
   applyWeights(): void {
+    for (const item of this.editableWeights) {
+      const val = parseFloat(item.weight as any);
+      if (isNaN(val) || val < 0) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Trọng số không hợp lệ',
+          detail: `Trọng số của tiêu chí '${item.name}' phải là số không âm.`,
+        });
+        return;
+      }
+    }
+
     const total = this.totalEditableWeight;
     if (total <= 0) {
       this.messageService.add({
@@ -263,8 +337,14 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
     }
 
     const newWeights: Record<string, number> = {};
-    for (const item of this.editableWeights) {
-      newWeights[item.code] = Number(item.weight);
+    for (let i = 0; i < this.editableWeights.length; i++) {
+      const item = this.editableWeights[i];
+      const rawVal = parseFloat(item.weight as any);
+      const safeVal = isNaN(rawVal) || rawVal < 0 ? 0 : rawVal;
+      const normalized = safeVal / total;
+      const shortCode = `C${i + 1}`;
+      newWeights[item.code] = normalized;
+      newWeights[shortCode] = normalized;
     }
     this.customWeights = newWeights;
     this.showWeightModal = false;
@@ -314,7 +394,22 @@ export class TopsisTriageComponent implements OnInit, OnDestroy {
 
   getWeightedValue(colIdx: number, rawVal: number, criterionCode: string): number {
     const r = this.getNormalizedValue(colIdx, rawVal);
-    const w = this.customWeights[criterionCode] ?? 0.2;
+    const w = this.rankResponse?.criteria?.[colIdx]?.weight ?? this.getWeight(criterionCode);
     return r * w;
+  }
+
+  getDepartmentDisplayLabel(): string {
+    if (!this.selectedDepartmentId || !this.rankResponse?.department_name) {
+      return 'Toàn trung tâm';
+    }
+    const name = this.rankResponse.department_name;
+    if (name.includes('Tất cả') || name.includes('Trung tâm')) {
+      return 'Toàn trung tâm';
+    }
+    return name;
+  }
+
+  getDepartmentFullTitle(): string {
+    return this.rankResponse?.department_name || 'Toàn trung tâm (Tất cả khoa)';
   }
 }

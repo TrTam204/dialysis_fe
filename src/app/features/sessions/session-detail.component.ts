@@ -64,6 +64,20 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private pollingSub?: Subscription;
 
+  // Navigation Origin & Safe Return
+  returnOrigin: 'schedule' | 'sessions' = 'sessions';
+  returnQueryParams: Record<string, string> = {};
+
+  get backButtonLabel(): string {
+    return this.returnOrigin === 'schedule'
+      ? 'Quay lại Lịch lọc máu'
+      : 'Quay lại danh sách ca lọc';
+  }
+
+  get backButtonIcon(): string {
+    return 'pi pi-arrow-left';
+  }
+
   // Permissions
   canEditFull = false;      // ADMIN, DOCTOR
   canManageWorkflow = false; // ADMIN, DOCTOR, or ASSIGNED NURSE
@@ -203,6 +217,59 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
       this.loadSession(sessionId);
       this.loadVitalSigns(sessionId);
     }
+
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      const from = params['from'];
+      if (from === 'schedule') {
+        this.returnOrigin = 'schedule';
+        const cleanParams: Record<string, string> = {};
+        if (params['viewMode'] && (params['viewMode'] === 'day' || params['viewMode'] === 'week')) {
+          cleanParams['viewMode'] = params['viewMode'];
+        }
+        if (params['date'] && /^\d{4}-\d{2}-\d{2}$/.test(params['date'])) {
+          cleanParams['date'] = params['date'];
+        }
+        if (params['shiftGroup'] && ['ALL', '246', '357'].includes(params['shiftGroup'])) {
+          cleanParams['shiftGroup'] = params['shiftGroup'];
+        }
+        if (params['status']) {
+          cleanParams['status'] = params['status'];
+        }
+        if (params['machine']) {
+          cleanParams['machine'] = params['machine'];
+        }
+        if (params['nurse']) {
+          cleanParams['nurse'] = params['nurse'];
+        }
+        this.returnQueryParams = cleanParams;
+      } else {
+        this.returnOrigin = 'sessions';
+        const cleanParams: Record<string, string> = {};
+        if (params['page']) {
+          cleanParams['page'] = params['page'];
+        }
+        if (params['search']) {
+          cleanParams['search'] = params['search'];
+        }
+        if (params['status']) {
+          cleanParams['status'] = params['status'];
+        }
+        if (params['patient']) {
+          cleanParams['patient'] = params['patient'];
+        }
+        if (params['machine']) {
+          cleanParams['machine'] = params['machine'];
+        }
+        this.returnQueryParams = cleanParams;
+      }
+    });
+  }
+
+  navigateBack(): void {
+    const target = this.returnOrigin === 'schedule' ? '/schedule' : '/sessions';
+    this.router.navigate([target], {
+      queryParams: Object.keys(this.returnQueryParams).length > 0 ? this.returnQueryParams : undefined,
+    });
   }
 
   ngOnDestroy(): void {
