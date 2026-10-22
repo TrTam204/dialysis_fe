@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { DialysisSession } from '../models';
+import { DialysisSession, IdhPredictionResponse, LstmModelInfoResponse } from '../models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -34,5 +34,13 @@ export class SessionService {
 
   delete(sessionId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiBase}/sessions/${sessionId}/`);
+  }
+
+  getIdhPrediction(sessionId: string): Observable<IdhPredictionResponse> {
+    return this.http.get<IdhPredictionResponse>(`${this.apiBase}/sessions/${sessionId}/idh-prediction/`);
+  }
+
+  getLstmModelInfo(): Observable<LstmModelInfoResponse> {
+    return this.http.get<LstmModelInfoResponse>(`${this.apiBase}/ai/lstm-model-info/`);
   }
 }

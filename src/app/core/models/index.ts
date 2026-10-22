@@ -213,3 +213,4 @@ export * from './audit-log.model';
 export * from './schedule-plan.model';
 export * from './topsis.model';
 export * from './kmeans.model';
+export * from './idh-prediction.model';

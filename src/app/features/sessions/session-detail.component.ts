@@ -17,12 +17,13 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
+import { ProgressBarModule } from 'primeng/progressbar';
 import { Subject, Subscription, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { SessionService } from '../../core/services/session.service';
 import { VitalSignService } from '../../core/services/vital-sign.service';
 import { AuthService } from '../../core/services/auth.service';
-import { DialysisSession, VitalSign } from '../../core/models';
+import { DialysisSession, VitalSign, IdhPredictionResponse, LstmModelInfoResponse, LstmMetricsSet } from '../../core/models';
 
 @Component({
   selector: 'app-session-detail',
@@ -46,6 +47,7 @@ import { DialysisSession, VitalSign } from '../../core/models';
     ConfirmDialogModule,
     TooltipModule,
     ChartModule,
+    ProgressBarModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './session-detail.component.html',
@@ -57,6 +59,38 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
   loading = false;
   vitalSignsLoading = false;
   vitalSignsError = false;
+
+  // LSTM IDH Prediction state
+  idhPrediction: IdhPredictionResponse | null = null;
+  loadingIdh = false;
+  idhError = false;
+
+  // LSTM Model Info Modal state
+  showModelInfoModal = false;
+  modelInfo: LstmModelInfoResponse | null = null;
+  loadingModelInfo = false;
+  trainingCurvesChartData: any = null;
+  trainingCurvesChartOptions: any = null;
+
+  get testMetrics(): LstmMetricsSet | undefined {
+    return this.modelInfo?.metrics?.test;
+  }
+
+  get cmTN(): number {
+    return this.modelInfo?.metrics?.test?.confusion_matrix?.[0]?.[0] ?? 0;
+  }
+
+  get cmFP(): number {
+    return this.modelInfo?.metrics?.test?.confusion_matrix?.[0]?.[1] ?? 0;
+  }
+
+  get cmFN(): number {
+    return this.modelInfo?.metrics?.test?.confusion_matrix?.[1]?.[0] ?? 0;
+  }
+
+  get cmTP(): number {
+    return this.modelInfo?.metrics?.test?.confusion_matrix?.[1]?.[1] ?? 0;
+  }
 
   // Step 4: Quick Refresh & Safe Polling
   lastUpdated: Date = new Date();
@@ -216,6 +250,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
     if (sessionId) {
       this.loadSession(sessionId);
       this.loadVitalSigns(sessionId);
+      this.loadIdhPrediction(sessionId);
     }
 
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -315,6 +350,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
         this.vitalSignsError = false;
         this.lastUpdated = new Date();
         this.updateCharts();
+        this.loadIdhPrediction(sessionId);
       },
       error: () => {
         this.vitalSignsLoading = false;
@@ -844,5 +880,150 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  // LSTM IDH Prediction & Model Info Methods
+  loadIdhPrediction(sessionId: string): void {
+    this.loadingIdh = true;
+    this.idhError = false;
+    this.sessionService.getIdhPrediction(sessionId).subscribe({
+      next: (res: IdhPredictionResponse) => {
+        this.idhPrediction = res;
+        this.loadingIdh = false;
+      },
+      error: () => {
+        this.loadingIdh = false;
+        this.idhError = true;
+      },
+    });
+  }
+
+  openModelInfoModal(): void {
+    this.showModelInfoModal = true;
+    if (!this.modelInfo) {
+      this.loadModelInfo();
+    }
+  }
+
+  loadModelInfo(): void {
+    this.loadingModelInfo = true;
+    this.sessionService.getLstmModelInfo().subscribe({
+      next: (info: LstmModelInfoResponse) => {
+        this.modelInfo = info;
+        this.loadingModelInfo = false;
+        this.buildTrainingCurvesChart(info);
+      },
+      error: () => {
+        this.loadingModelInfo = false;
+      },
+    });
+  }
+
+  buildTrainingCurvesChart(info: LstmModelInfoResponse): void {
+    if (!info.training_history || !info.training_history.length) return;
+
+    const epochs = info.training_history.map((h) => `E${h.epoch}`);
+    const trainLoss = info.training_history.map((h) => h.train_loss);
+    const valLoss = info.training_history.map((h) => h.val_loss);
+    const trainAcc = info.training_history.map((h) => +(h.train_accuracy * 100).toFixed(1));
+    const valAcc = info.training_history.map((h) => +(h.val_accuracy * 100).toFixed(1));
+
+    this.trainingCurvesChartData = {
+      labels: epochs,
+      datasets: [
+        {
+          label: 'Train Loss',
+          data: trainLoss,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          yAxisID: 'y',
+          tension: 0.3,
+          pointRadius: 2,
+        },
+        {
+          label: 'Validation Loss',
+          data: valLoss,
+          borderColor: '#f97316',
+          borderDash: [5, 5],
+          yAxisID: 'y',
+          tension: 0.3,
+          pointRadius: 2,
+        },
+        {
+          label: 'Train Accuracy (%)',
+          data: trainAcc,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          yAxisID: 'y1',
+          tension: 0.3,
+          pointRadius: 2,
+        },
+        {
+          label: 'Validation Accuracy (%)',
+          data: valAcc,
+          borderColor: '#10b981',
+          borderDash: [5, 5],
+          yAxisID: 'y1',
+          tension: 0.3,
+          pointRadius: 2,
+        },
+      ],
+    };
+
+    this.trainingCurvesChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { boxWidth: 12, font: { size: 11 } },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Epoch', font: { size: 11 } },
+          ticks: { font: { size: 10 } },
+        },
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: { display: true, text: 'Loss', font: { size: 11 } },
+          ticks: { font: { size: 10 } },
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'Độ chính xác (%)', font: { size: 11 } },
+          ticks: { font: { size: 10 } },
+          min: 70,
+          max: 100,
+        },
+      },
+    };
+  }
+
+  getIdhRiskSeverity(level?: string): 'success' | 'warning' | 'danger' | 'info' {
+    switch (level) {
+      case 'LOW': return 'success';
+      case 'MEDIUM': return 'warning';
+      case 'HIGH': return 'danger';
+      default: return 'info';
+    }
+  }
+
+  getIdhRiskLabel(level?: string): string {
+    switch (level) {
+      case 'LOW': return 'Nguy cơ Thấp';
+      case 'MEDIUM': return 'Nguy cơ Trung bình';
+      case 'HIGH': return 'Nguy cơ Cao (Cảnh báo)';
+      default: return 'Chưa xác định';
+    }
   }
 }

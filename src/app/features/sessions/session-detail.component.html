@@ -275,6 +275,142 @@
         </div>
       </div>
 
+      <!-- LSTM IDH Early Warning Panel (Deep Learning Time-Series AI) -->
+      <div class="idh-card" [class.risk-high]="idhPrediction?.risk_level === 'HIGH'" [class.risk-medium]="idhPrediction?.risk_level === 'MEDIUM'" [class.risk-low]="idhPrediction?.risk_level === 'LOW'">
+        <div class="idh-header">
+          <div class="idh-header-left">
+            <span class="ai-badge">
+              <i class="pi pi-bolt"></i> AI LSTM IDH INFERENCE
+            </span>
+            <h3 class="idh-title">Cảnh báo sớm biến chứng Tụt huyết áp trong lọc máu (IDH)</h3>
+          </div>
+          <div class="idh-header-right">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-chart-pie"
+              label="Thông số & Đánh giá mô hình LSTM"
+              class="p-button-outlined p-button-sm p-button-info"
+              (click)="openModelInfoModal()"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div *ngIf="loadingIdh" class="idh-loading">
+          <i class="pi pi-spin pi-spinner"></i> Đang phân tích chuỗi thời gian sinh hiệu qua mô hình Học sâu LSTM...
+        </div>
+
+        <!-- IDH Content -->
+        <div *ngIf="!loadingIdh && idhPrediction" class="idh-body">
+          <!-- Insufficient Data case -->
+          <div *ngIf="!idhPrediction.has_prediction || idhPrediction.status === 'INSUFFICIENT_DATA'" class="insufficient-box">
+            <i class="pi pi-info-circle text-info"></i>
+            <div class="insufficient-text">
+              <strong>Chưa đủ dữ liệu chuỗi thời gian sinh hiệu</strong>
+              <p>{{ idhPrediction.message || 'Mô hình LSTM cần dữ liệu sinh hiệu trong ca lọc để phân tích xu hướng chuỗi thời gian và dự báo nguy cơ IDH.' }}</p>
+              <small class="text-muted">Hiện có: {{ idhPrediction.recorded_vitals_count || vitalSigns.length }} lần đo (Cần tối thiểu 1-3 lần đo).</small>
+            </div>
+          </div>
+
+          <!-- Active Prediction -->
+          <div *ngIf="idhPrediction.has_prediction && idhPrediction.status === 'READY'" class="prediction-container">
+            <div class="risk-overview-row">
+              <!-- Left: Risk Gauge / Metric Box -->
+              <div class="risk-meter-box">
+                <div class="meter-head">
+                  <span class="meter-caption">Xác suất nguy cơ tụt huyết áp (IDH):</span>
+                  <p-tag
+                    [value]="getIdhRiskLabel(idhPrediction.risk_level)"
+                    [severity]="getIdhRiskSeverity(idhPrediction.risk_level)"
+                    [rounded]="true"
+                    class="risk-tag"
+                  ></p-tag>
+                </div>
+                <div class="probability-display">
+                  <span class="probability-val" [class.val-danger]="idhPrediction.risk_level === 'HIGH'" [class.val-warning]="idhPrediction.risk_level === 'MEDIUM'" [class.val-success]="idhPrediction.risk_level === 'LOW'">
+                    {{ ((idhPrediction.risk_probability ?? 0) * 100).toFixed(1) }}%
+                  </span>
+                  <span class="threshold-note">(Ngưỡng cảnh báo: {{ ((idhPrediction.threshold_used ?? 0.5) * 100).toFixed(0) }}%)</span>
+                </div>
+                <p-progressBar
+                  [value]="+(((idhPrediction.risk_probability ?? 0) * 100).toFixed(0))"
+                  [showValue]="false"
+                  [style]="{ height: '10px' }"
+                  [styleClass]="'risk-progress-' + (idhPrediction.risk_level || 'low').toLowerCase()"
+                ></p-progressBar>
+                <div class="meter-meta">
+                  <span class="source-badge">
+                    <i class="pi pi-server"></i> Nguồn: {{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'FastAPI Microservice (Port 8001)' : 'Local PyTorch Engine' }}
+                  </span>
+                  <span *ngIf="idhPrediction.is_padded" class="padding-badge" pTooltip="Dữ liệu được left-padded từ {{ idhPrediction.recorded_vitals_count }} lần đo để đáp ứng chiều dài chuỗi đầu vào">
+                    <i class="pi pi-info-circle"></i> Chuỗi đệm (Padded)
+                  </span>
+                </div>
+              </div>
+
+              <!-- Right: Alert & Recommendations / Clinical Guidance -->
+              <div class="risk-guidance-box">
+                <!-- High Risk Alert -->
+                <div *ngIf="idhPrediction.risk_level === 'HIGH'" class="alert-box alert-box-high">
+                  <div class="alert-box-icon">
+                    <i class="pi pi-exclamation-triangle"></i>
+                  </div>
+                  <div class="alert-box-content">
+                    <strong>CẢNH BÁO: NGUY CƠ CAO XẢY RA BIẾN CHỨNG TỤT HUYẾT ÁP</strong>
+                    <p>Mô hình LSTM phát hiện chuỗi động lực học huyết áp (HA tâm thu / MAP) đang giảm dốc hoặc dao động bất thường so với tốc độ siêu lọc chỉ định.</p>
+                  </div>
+                </div>
+
+                <!-- Medium Risk Alert -->
+                <div *ngIf="idhPrediction.risk_level === 'MEDIUM'" class="alert-box alert-box-medium">
+                  <div class="alert-box-icon">
+                    <i class="pi pi-exclamation-circle"></i>
+                  </div>
+                  <div class="alert-box-content">
+                    <strong>LƯU Ý THEO DÕI: NGUY CƠ TỤT HUYẾT ÁP Ở MỨC TRUNG BÌNH</strong>
+                    <p>Khuyến cáo điều dưỡng kiểm tra huyết áp mỗi 15-30 phút và theo dõi sát triệu chứng hoa mắt, vã mồ hôi, chuột rút.</p>
+                  </div>
+                </div>
+
+                <!-- Low Risk Alert -->
+                <div *ngIf="idhPrediction.risk_level === 'LOW'" class="alert-box alert-box-low">
+                  <div class="alert-box-icon">
+                    <i class="pi pi-check-circle"></i>
+                  </div>
+                  <div class="alert-box-content">
+                    <strong>NGUY CƠ IDH THẤP - DIỄN BIẾN LÂM SÀNG ỔN ĐỊNH</strong>
+                    <p>Các chỉ số sinh hiệu và diễn biến siêu lọc hiện tại nằm trong ngưỡng thích ứng tốt của bệnh nhân.</p>
+                  </div>
+                </div>
+
+                <!-- Factors & Recommendations Grid -->
+                <div class="factors-grid" *ngIf="(idhPrediction.contributing_factors && idhPrediction.contributing_factors.length) || (idhPrediction.clinical_recommendations && idhPrediction.clinical_recommendations.length)">
+                  <div class="factors-col" *ngIf="idhPrediction.contributing_factors && idhPrediction.contributing_factors.length">
+                    <span class="col-heading"><i class="pi pi-list"></i> Yếu tố nguy cơ chính:</span>
+                    <ul>
+                      <li *ngFor="let factor of idhPrediction.contributing_factors">{{ factor }}</li>
+                    </ul>
+                  </div>
+                  <div class="recs-col" *ngIf="idhPrediction.clinical_recommendations && idhPrediction.clinical_recommendations.length">
+                    <span class="col-heading"><i class="pi pi-shield"></i> Khuyến nghị can thiệp điều dưỡng:</span>
+                    <ul>
+                      <li *ngFor="let rec of idhPrediction.clinical_recommendations">{{ rec }}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Medical Disclaimer -->
+            <div class="medical-disclaimer">
+              <i class="pi pi-shield text-muted"></i>
+              <span>Cảnh báo từ mô hình Học sâu LSTM chỉ mang tính chất hỗ trợ phát hiện sớm, không thay thế quyết định chuyên môn và chẩn đoán của bác sĩ / điều dưỡng lâm sàng.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Vital Signs Charts (Step 2: >= 2 records) -->
       <div *ngIf="!vitalSignsLoading && !vitalSignsError && vitalSigns.length >= 2" class="vitals-chart-card">
         <div class="chart-toolbar">
@@ -691,5 +827,129 @@
         <button pButton type="submit" [label]="editingVitalSign ? 'Cập nhật' : 'Lưu sinh hiệu'" icon="pi pi-save" class="p-button-success" [disabled]="vitalSignForm.invalid || vitalSignSaving" [loading]="vitalSignSaving"></button>
       </div>
     </form>
+  </p-dialog>
+
+  <!-- Modal 5: Đánh giá mô hình Học sâu LSTM -->
+  <p-dialog
+    [(visible)]="showModelInfoModal"
+    [modal]="true"
+    [style]="{ width: '880px', maxWidth: '95vw' }"
+    [header]="'Đánh giá Mô hình Học sâu LSTM Dự báo IDH'"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="model-eval-dialog"
+  >
+    <div *ngIf="loadingModelInfo" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải thông số và độ đo đánh giá mô hình...
+    </div>
+
+    <div *ngIf="!loadingModelInfo && modelInfo" class="model-modal-content">
+      <!-- Architecture summary banner -->
+      <div class="model-summary-bar">
+        <div class="summary-item">
+          <span class="s-label">Mô hình:</span>
+          <span class="s-val">{{ modelInfo.model_name || 'IDHLSTMNet' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="s-label">Kiến trúc:</span>
+          <span class="s-val">{{ modelInfo.architecture || '2-layer Bidirectional LSTM + Linear + Sigmoid' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="s-label">Framework:</span>
+          <span class="s-val">{{ modelInfo.framework || 'PyTorch' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="s-label">Chuỗi đầu vào:</span>
+          <span class="s-val">{{ modelInfo.sequence_length || 3 }} bước</span>
+        </div>
+        <div class="summary-item full-width">
+          <span class="s-label">Đặc trưng đầu vào (6 features):</span>
+          <span class="s-val">{{ (modelInfo.input_features || ['systolic_bp', 'diastolic_bp', 'map', 'heart_rate', 'uf_rate', 'cumulative_uf']).join(', ') }}</span>
+        </div>
+      </div>
+
+      <!-- 5 Test Metrics Cards -->
+      <h4 class="section-title"><i class="pi pi-sliders-h"></i> Hiệu năng Đánh giá trên Tập Kiểm thử Độc lập (Test Set)</h4>
+      <div class="test-metrics-grid" *ngIf="testMetrics as tm">
+        <div class="metric-card card-acc">
+          <span class="m-title">Accuracy</span>
+          <span class="m-number">{{ (tm.accuracy * 100).toFixed(1) }}%</span>
+          <span class="m-desc">Độ chính xác phân loại tổng thể</span>
+        </div>
+        <div class="metric-card card-prec">
+          <span class="m-title">Precision</span>
+          <span class="m-number">{{ (tm.precision * 100).toFixed(1) }}%</span>
+          <span class="m-desc">Độ chuẩn xác khi dự báo IDH</span>
+        </div>
+        <div class="metric-card card-rec">
+          <span class="m-title">Recall (Sensitivity)</span>
+          <span class="m-number">{{ (tm.recall * 100).toFixed(1) }}%</span>
+          <span class="m-desc">Độ nhạy bắt trúng ca IDH</span>
+        </div>
+        <div class="metric-card card-f1">
+          <span class="m-title">F1-Score</span>
+          <span class="m-number">{{ (tm.f1_score * 100).toFixed(1) }}%</span>
+          <span class="m-desc">Cân bằng Precision - Recall</span>
+        </div>
+        <div class="metric-card card-loss">
+          <span class="m-title">Test Loss</span>
+          <span class="m-number">{{ tm.loss.toFixed(4) }}</span>
+          <span class="m-desc">BCE With Logits Loss</span>
+        </div>
+        <div class="metric-card card-auc" *ngIf="tm.roc_auc !== undefined">
+          <span class="m-title">ROC-AUC</span>
+          <span class="m-number">{{ (tm.roc_auc * 100).toFixed(1) }}%</span>
+          <span class="m-desc">Khả năng phân biệt biến chứng</span>
+        </div>
+      </div>
+
+      <!-- Confusion Matrix -->
+      <h4 class="section-title"><i class="pi pi-table"></i> Ma trận nhầm lẫn (Confusion Matrix - Test Set)</h4>
+      <div class="confusion-matrix-wrapper" *ngIf="testMetrics">
+        <table class="confusion-table">
+          <thead>
+            <tr>
+              <th class="diagonal-header">Thực tế \ Dự báo</th>
+              <th>Dự báo Không IDH (Âm tính)</th>
+              <th>Dự báo Có IDH (Dương tính)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="actual-header">Thực tế Không IDH</th>
+              <td class="cell-tn">
+                <span class="cell-count">{{ cmTN }}</span>
+                <span class="cell-lbl">Đúng âm tính (TN)</span>
+              </td>
+              <td class="cell-fp">
+                <span class="cell-count">{{ cmFP }}</span>
+                <span class="cell-lbl">Dương tính giả (FP)</span>
+              </td>
+            </tr>
+            <tr>
+              <th class="actual-header">Thực tế Có IDH</th>
+              <td class="cell-fn">
+                <span class="cell-count">{{ cmFN }}</span>
+                <span class="cell-lbl">Âm tính giả (FN)</span>
+              </td>
+              <td class="cell-tp">
+                <span class="cell-count">{{ cmTP }}</span>
+                <span class="cell-lbl">Đúng dương tính (TP)</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Training & Validation Curves Chart -->
+      <h4 class="section-title"><i class="pi pi-chart-line"></i> Biểu đồ Tiến trình Huấn luyện (Loss & Accuracy qua 30 Epochs)</h4>
+      <div class="training-chart-wrapper" *ngIf="trainingCurvesChartData">
+        <p-chart type="line" [data]="trainingCurvesChartData" [options]="trainingCurvesChartOptions" height="280px"></p-chart>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton type="button" icon="pi pi-check" label="Đóng" class="p-button-secondary" (click)="showModelInfoModal = false"></button>
+    </ng-template>
   </p-dialog>
 </div>
