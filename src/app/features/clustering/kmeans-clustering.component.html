@@ -11,8 +11,7 @@
         LƯU Ý Y KHOA: MÔ HÌNH HỌC MÁY KHÔNG GIÁM SÁT HỖ TRỢ RA QUYẾT ĐỊNH
       </div>
       <div class="disclaimer-text">
-        Kết quả phân cụm K-Means chỉ đóng vai trò <strong>công cụ hỗ trợ</strong> nhận diện các nhóm bệnh nhân có đặc điểm lâm sàng tương đồng,
-        <strong>KHÔNG THAY THẾ</strong> chẩn đoán y khoa và phác đồ điều trị của Bác sĩ chuyên khoa Thận - Lọc Máu.
+        {{ result?.disclaimer || 'Kết quả phân cụm K-Means chỉ phản ánh độ tương đồng dữ liệu thống kê, dùng để tham khảo phân nhóm quản lý, không thay thế chẩn đoán lâm sàng của bác sĩ.' }}
       </div>
     </div>
   </div>
@@ -48,6 +47,7 @@
           id="deptSelect"
           [options]="departmentOptions"
           [(ngModel)]="selectedDepartment"
+          [disabled]="isDepartmentLocked"
           optionLabel="label"
           optionValue="value"
           styleClass="w-full"
@@ -338,6 +338,15 @@
         <tr>
           <td>
             <strong>{{ p.patient_id }}</strong>
+            <p-tag
+              *ngIf="p.is_imputed"
+              value="Nội suy"
+              severity="warning"
+              [rounded]="true"
+              styleClass="text-xs ml-1"
+              pTooltip="Chỉ số sinh hóa/phiên lọc được gán giá trị mặc định do thiếu dữ liệu"
+              tooltipPosition="top"
+            ></p-tag>
           </td>
           <td>{{ p.full_name }}</td>
           <td>

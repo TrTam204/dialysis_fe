@@ -14,6 +14,8 @@ export interface ClusteredPatient {
   full_name: string;
   cluster_id: number;
   status: string;
+  is_imputed?: boolean;
+  imputed_fields?: string[];
   features: PatientClusterFeatures;
   normalized_features?: PatientClusterFeatures;
 }
@@ -36,6 +38,7 @@ export interface FeatureMinMax {
 export interface KMeansResponse {
   success: boolean;
   k_value: number;
+  seed?: number;
   wcss: number;
   silhouette_score: number;
   centroids: number[][];
@@ -46,4 +49,5 @@ export interface KMeansResponse {
   patients: ClusteredPatient[];
   iterations: number;
   converged: boolean;
+  disclaimer?: string;
 }

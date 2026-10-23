@@ -343,6 +343,12 @@
                   <span class="source-badge">
                     <i class="pi pi-server"></i> Nguồn: {{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'FastAPI Microservice (Port 8001)' : 'Local PyTorch Engine' }}
                   </span>
+                  <span *ngIf="idhPrediction.model_version" class="source-badge">
+                    <i class="pi pi-tag"></i> Phiên bản: v{{ idhPrediction.model_version }}
+                  </span>
+                  <span *ngIf="idhPrediction.predicted_at" class="source-badge">
+                    <i class="pi pi-clock"></i> {{ idhPrediction.predicted_at | date : 'HH:mm dd/MM/yyyy' }}
+                  </span>
                   <span *ngIf="idhPrediction.is_padded" class="padding-badge" pTooltip="Dữ liệu được left-padded từ {{ idhPrediction.recorded_vitals_count }} lần đo để đáp ứng chiều dài chuỗi đầu vào">
                     <i class="pi pi-info-circle"></i> Chuỗi đệm (Padded)
                   </span>
@@ -405,7 +411,7 @@
             <!-- Medical Disclaimer -->
             <div class="medical-disclaimer">
               <i class="pi pi-shield text-muted"></i>
-              <span>Cảnh báo từ mô hình Học sâu LSTM chỉ mang tính chất hỗ trợ phát hiện sớm, không thay thế quyết định chuyên môn và chẩn đoán của bác sĩ / điều dưỡng lâm sàng.</span>
+              <span>{{ idhPrediction.disclaimer || 'Cảnh báo từ mô hình AI chỉ mang tính chất hỗ trợ theo dõi sớm, không thay thế quyết định chuyên môn của bác sĩ.' }}</span>
             </div>
           </div>
         </div>

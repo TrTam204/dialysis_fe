@@ -19,6 +19,7 @@ import { KMeansService } from '../../core/services/kmeans.service';
 import {
   ClusteredPatient,
   ClusterSummary,
+  CustomUser,
   Department,
   KMeansResponse,
   PatientClusterFeatures,
@@ -55,6 +56,8 @@ export class KMeansClusteringComponent implements OnInit {
   seed = 42;
   selectedDepartment: number | null = null;
   includeDischarged = false;
+  currentUser: CustomUser | null = null;
+  isDepartmentLocked = false;
 
   kOptions: SelectOption<number>[] = [
     { label: '2 cụm (K = 2)', value: 2 },
@@ -103,6 +106,16 @@ export class KMeansClusteringComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.currentUser = this.authService.getCurrentUser();
+    const userRole = this.currentUser?.role;
+
+    if (userRole === 'DOCTOR' || userRole === 'NURSE') {
+      this.selectedDepartment = this.currentUser?.department || null;
+      this.isDepartmentLocked = true;
+    } else {
+      this.isDepartmentLocked = false;
+    }
+
     this.initChartOptions();
     this.loadDepartments();
     this.runClustering();
@@ -116,10 +129,17 @@ export class KMeansClusteringComponent implements OnInit {
           label: `${d.name} (${d.code})`,
           value: d.id ?? null,
         }));
-        this.departmentOptions = [
-          { label: 'Tất cả khoa phòng', value: null },
-          ...list,
-        ];
+        if (this.isDepartmentLocked && this.selectedDepartment) {
+          const userDept = depts.find((d) => d.id === this.selectedDepartment);
+          this.departmentOptions = userDept
+            ? [{ label: `${userDept.name} (${userDept.code})`, value: userDept.id ?? null }]
+            : list;
+        } else {
+          this.departmentOptions = [
+            { label: 'Tất cả khoa phòng', value: null },
+            ...list,
+          ];
+        }
       },
       error: () => {
         // Non-blocking department loading

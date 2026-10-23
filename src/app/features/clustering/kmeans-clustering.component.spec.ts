@@ -126,7 +126,17 @@ describe('KMeansClusteringComponent', () => {
   beforeEach(async () => {
     mockKMeansService = jasmine.createSpyObj('KMeansService', ['getClusters']);
     mockDepartmentService = jasmine.createSpyObj('DepartmentService', ['getAll']);
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getUser']);
+    mockAuthService = jasmine.createSpyObj('AuthService', ['getCurrentUser', 'getUser']);
+    mockAuthService.getCurrentUser.and.returnValue({
+      id: 1,
+      username: 'admin',
+      role: 'ADMIN',
+      email: 'admin@example.com',
+      first_name: 'Admin',
+      last_name: 'User',
+      is_active: true,
+      department: 1,
+    });
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
 
     mockDepartmentService.getAll.and.returnValue(
@@ -208,5 +218,23 @@ describe('KMeansClusteringComponent', () => {
     );
     component.runClustering();
     expect(component.loading).toBeFalse();
+  });
+
+  it('should lock department dropdown for DOCTOR role', () => {
+    mockAuthService.getCurrentUser.and.returnValue({
+      id: 2,
+      username: 'doctor',
+      role: 'DOCTOR',
+      email: 'doc@example.com',
+      first_name: 'Doc',
+      last_name: 'Tor',
+      is_active: true,
+      department: 5,
+    });
+    const docFixture = TestBed.createComponent(KMeansClusteringComponent);
+    const docComp = docFixture.componentInstance;
+    docFixture.detectChanges();
+    expect(docComp.isDepartmentLocked).toBeTrue();
+    expect(docComp.selectedDepartment).toBe(5);
   });
 });

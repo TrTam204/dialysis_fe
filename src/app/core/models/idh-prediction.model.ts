@@ -15,6 +15,9 @@ export interface IdhPredictionResponse {
   inference_source?: 'FASTAPI_MICROSERVICE' | 'LOCAL_LSTM_ENGINE';
   is_padded?: boolean;
   recorded_vitals_count?: number;
+  model_version?: string;
+  predicted_at?: string;
+  disclaimer?: string;
 }
 
 export interface LstmTrainingEpoch {
