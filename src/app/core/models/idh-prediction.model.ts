@@ -13,8 +13,10 @@ export interface IdhPredictionResponse {
   clinical_recommendations?: string[];
   sequence_length_received?: number;
   inference_source?: 'FASTAPI_MICROSERVICE' | 'LOCAL_LSTM_ENGINE';
+  is_interpolated?: boolean;
   is_padded?: boolean;
   recorded_vitals_count?: number;
+  dry_weight?: number;
   model_version?: string;
   predicted_at?: string;
   disclaimer?: string;
@@ -47,6 +49,8 @@ export interface LstmModelInfoResponse {
   architecture?: string;
   input_features?: string[];
   sequence_length?: number;
+  split_strategy?: string;
+  dataset_splits?: Record<string, any>;
   metrics?: {
     train?: LstmMetricsSet;
     validation?: LstmMetricsSet;
