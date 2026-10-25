@@ -64,6 +64,7 @@ export class KMeansClusteringComponent implements OnInit {
     { label: '3 cụm (K = 3 - Mặc định)', value: 3 },
     { label: '4 cụm (K = 4)', value: 4 },
     { label: '5 cụm (K = 5)', value: 5 },
+    { label: '6 cụm (K = 6)', value: 6 },
   ];
 
   departmentOptions: SelectOption<number | null>[] = [
@@ -71,8 +72,8 @@ export class KMeansClusteringComponent implements OnInit {
   ];
 
   featureOptions: SelectOption<keyof PatientClusterFeatures>[] = [
-    { label: 'Kali máu (mEq/L)', value: 'avg_potassium' },
-    { label: 'Siêu lọc UF (Lít)', value: 'avg_uf' },
+    { label: 'Kali máu (mmol/L)', value: 'avg_potassium' },
+    { label: 'Tăng cân gian lọc (% IDWG)', value: 'avg_uf' },
     { label: 'Hemoglobin (g/dL)', value: 'avg_hemoglobin' },
     { label: 'Tuổi (năm)', value: 'age' },
   ];
@@ -89,12 +90,16 @@ export class KMeansClusteringComponent implements OnInit {
   barChartData: any = null;
   barChartOptions: any = null;
 
+  elbowChartData: any = null;
+  elbowChartOptions: any = null;
+
   readonly clusterColors = [
     { bg: 'rgba(59, 130, 246, 0.7)', border: '#2563eb' }, // Blue
     { bg: 'rgba(16, 185, 129, 0.7)', border: '#059669' }, // Green
     { bg: 'rgba(245, 158, 11, 0.7)', border: '#d97706' }, // Amber
     { bg: 'rgba(139, 92, 246, 0.7)', border: '#7c3aed' }, // Purple
     { bg: 'rgba(236, 72, 153, 0.7)', border: '#db2777' }, // Pink
+    { bg: 'rgba(14, 165, 233, 0.7)', border: '#0284c7' }, // Sky
   ];
 
   constructor(
@@ -162,6 +167,7 @@ export class KMeansClusteringComponent implements OnInit {
           this.loading = false;
           this.buildScatterChart();
           this.buildBarChart();
+          this.buildElbowChart();
           this.messageService.add({
             severity: 'success',
             summary: 'Thành công',
@@ -273,6 +279,59 @@ export class KMeansClusteringComponent implements OnInit {
         },
       },
     };
+
+    this.elbowChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            boxWidth: 8,
+            font: { size: 12 },
+          },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+        },
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Số cụm khảo sát (K)',
+            font: { weight: 'bold' },
+          },
+          grid: { display: false },
+        },
+        yWCSS: {
+          type: 'linear',
+          position: 'left',
+          title: {
+            display: true,
+            text: 'WCSS (Inertia - Độ phân tán nội cụm)',
+            font: { weight: 'bold' },
+          },
+          grid: { color: '#f1f5f9' },
+          beginAtZero: true,
+        },
+        ySilhouette: {
+          type: 'linear',
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Hệ số Silhouette (Chất lượng cụm)',
+            font: { weight: 'bold' },
+          },
+          min: 0.0,
+          max: 1.0,
+          grid: { drawOnChartArea: false },
+        },
+      },
+    };
   }
 
   private buildScatterChart(): void {
@@ -343,8 +402,8 @@ export class KMeansClusteringComponent implements OnInit {
     const labels = [
       'Tuổi (năm)',
       'Hemoglobin (g/dL)',
-      'Kali máu (mEq/L)',
-      'Siêu lọc UF (L)',
+      'Kali máu (mmol/L)',
+      'Tăng cân gian lọc (% IDWG)',
     ];
 
     const datasets = this.result.denormalized_centroids.map((centroid, idx) => {
@@ -366,6 +425,45 @@ export class KMeansClusteringComponent implements OnInit {
     this.barChartData = {
       labels,
       datasets,
+    };
+  }
+
+  private buildElbowChart(): void {
+    if (!this.result?.k_evaluation || this.result.k_evaluation.length === 0) {
+      this.elbowChartData = null;
+      return;
+    }
+
+    const labels = this.result.k_evaluation.map((item) => `K = ${item.k}`);
+    const wcssData = this.result.k_evaluation.map((item) => item.wcss);
+    const silhouetteData = this.result.k_evaluation.map((item) => item.silhouette_score);
+
+    this.elbowChartData = {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'WCSS (Đường cong Elbow)',
+          data: wcssData,
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b',
+          yAxisID: 'yWCSS',
+          tension: 0.3,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderWidth: 2,
+        },
+        {
+          type: 'bar',
+          label: 'Hệ số Silhouette',
+          data: silhouetteData,
+          backgroundColor: 'rgba(59, 130, 246, 0.6)',
+          borderColor: '#2563eb',
+          yAxisID: 'ySilhouette',
+          borderWidth: 1,
+          barPercentage: 0.5,
+        },
+      ],
     };
   }
 

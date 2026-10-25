@@ -19,9 +19,9 @@
   <!-- 2. PAGE HEADER -->
   <div class="header-section">
     <div>
-      <h2 class="page-title">Phân cụm bệnh nhân lọc máu (K-Means V1)</h2>
+      <h2 class="page-title">Phân cụm bệnh nhân lọc máu (K-Means++ Thuần Python)</h2>
       <p class="page-subtitle">
-        Thuật toán phân cụm học máy không giám sát tự cài đặt (Pure Python) — Phân tích tương đồng 4 đặc trưng: Tuổi, Hemoglobin, Kali máu, và Siêu lọc UF.
+        Thuật toán phân cụm học máy không giám sát chuẩn Đề cương (Không thư viện ML bên thứ ba) — Phân tích tương đồng 4 đặc trưng lâm sàng: Tuổi, Hemoglobin, Kali máu, và Tỷ lệ tăng cân gian lọc (% IDWG).
       </p>
     </div>
   </div>
@@ -70,7 +70,7 @@
           pButton
           type="button"
           icon="pi pi-play"
-          label="Chạy phân cụm K-Means"
+          label="Chạy phân cụm K-Means++"
           class="p-button-primary w-full"
           [loading]="loading"
           (click)="runClustering()"
@@ -88,7 +88,7 @@
       <div class="kpi-info">
         <div class="kpi-label">Số bệnh nhân phân tích</div>
         <div class="kpi-value">{{ result.patients.length }}</div>
-        <div class="kpi-sub">Đoàn hệ đang quản lý</div>
+        <div class="kpi-sub">Đoàn hệ lọc máu đang quản lý</div>
       </div>
     </div>
 
@@ -97,9 +97,14 @@
         <i class="pi pi-objects-column text-xl"></i>
       </div>
       <div class="kpi-info">
-        <div class="kpi-label">Số cụm tạo thành (K)</div>
+        <div class="kpi-label">Số cụm K hiện tại</div>
         <div class="kpi-value">{{ result.k_value }}</div>
-        <div class="kpi-sub">K mục tiêu: {{ kValue }}</div>
+        <div class="kpi-sub">
+          <span *ngIf="result.recommended_k" class="text-xs font-semibold text-emerald-600">
+            Khuyến nghị tối ưu: K = {{ result.recommended_k }}
+          </span>
+          <span *ngIf="!result.recommended_k">K chỉ định: {{ kValue }}</span>
+        </div>
       </div>
     </div>
 
@@ -110,7 +115,7 @@
       <div class="kpi-info">
         <div class="kpi-label">Vòng lặp hội tụ</div>
         <div class="kpi-value">{{ result.iterations }}</div>
-        <div class="kpi-sub">Trạng thái: {{ result.converged ? 'Đã hội tụ' : 'Chưa hội tụ' }}</div>
+        <div class="kpi-sub">Trạng thái: {{ result.converged ? 'Đã hội tụ tối ưu' : 'Dừng theo giới hạn' }}</div>
       </div>
     </div>
 
@@ -121,7 +126,7 @@
       <div class="kpi-info">
         <div class="kpi-label">WCSS (Inertia)</div>
         <div class="kpi-value">{{ result.wcss | number : '1.4-4' }}</div>
-        <div class="kpi-sub">Tổng bình phương sai số nội cụm</div>
+        <div class="kpi-sub">Tổng khoảng cách bình phương nội cụm</div>
       </div>
     </div>
 
@@ -142,7 +147,36 @@
     </div>
   </div>
 
-  <!-- 5. VISUALIZATION SECTION: CHARTS GRID -->
+  <!-- 5. OPTIMAL K SELECTION: ELBOW & SILHOUETTE DUAL CHART -->
+  <div class="chart-card mb-4" *ngIf="result?.k_evaluation && result!.k_evaluation!.length > 0">
+    <div class="chart-card-header">
+      <div>
+        <h3 class="chart-card-title">
+          <i class="pi pi-chart-line text-primary mr-2"></i>
+          Khảo sát số cụm tối ưu K (Đường cong Elbow WCSS & Hệ số Silhouette)
+        </h3>
+        <p class="chart-card-desc">
+          Cơ sở khoa học chọn K: Điểm gãy khuỷu tay (Elbow) giảm mạnh WCSS kết hợp với điểm đạt đỉnh hệ số Silhouette.
+          <span *ngIf="result?.recommended_k" class="badge-recommended ml-2">
+            <i class="pi pi-check-circle mr-1"></i>
+            Đề xuất tối ưu: K = {{ result?.recommended_k }} (Silhouette cao nhất)
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div class="chart-canvas-wrapper" style="height: 320px">
+      <p-chart
+        *ngIf="elbowChartData"
+        type="bar"
+        [data]="elbowChartData"
+        [options]="elbowChartOptions"
+        height="100%"
+      ></p-chart>
+    </div>
+  </div>
+
+  <!-- 6. VISUALIZATION SECTION: SCATTER & BAR CHARTS -->
   <div class="charts-grid mb-4" *ngIf="result">
     <!-- Chart 1: 2D Scatter Chart with Axis Selectors -->
     <div class="chart-card">
@@ -218,11 +252,11 @@
     </div>
   </div>
 
-  <!-- 6. CLINICAL CLUSTER PROFILES (SUMMARIES) -->
+  <!-- 7. CLINICAL CLUSTER PROFILES (SUMMARIES) -->
   <div class="cluster-cards-section mb-4" *ngIf="result?.cluster_summaries">
     <h3 class="section-title mb-3">
       <i class="pi pi-list text-primary mr-2"></i>
-      Đặc tính lâm sàng từng cụm & Định hướng can thiệp
+      Đặc tính lâm sàng từng cụm & Định hướng can thiệp y khoa
     </h3>
 
     <div class="cluster-cards-grid">
@@ -245,7 +279,7 @@
           ></p-tag>
         </div>
 
-        <div class="cluster-tags mb-2">
+        <div class="cluster-tags mb-2" *ngIf="summary.tags && summary.tags.length > 0">
           <span class="tag-item" *ngFor="let tag of summary.tags">
             <i class="pi pi-tag mr-1"></i>{{ tag }}
           </span>
@@ -262,11 +296,11 @@
           </div>
           <div class="metric-row">
             <span class="metric-key">Kali máu TB:</span>
-            <span class="metric-val"><strong>{{ summary.centroid.avg_potassium }}</strong> mEq/L</span>
+            <span class="metric-val"><strong>{{ summary.centroid.avg_potassium }}</strong> mmol/L</span>
           </div>
           <div class="metric-row">
-            <span class="metric-key">Siêu lọc UF TB:</span>
-            <span class="metric-val"><strong>{{ summary.centroid.avg_uf }}</strong> L</span>
+            <span class="metric-key">Tăng cân gian lọc (% IDWG):</span>
+            <span class="metric-val"><strong>{{ summary.centroid.avg_uf }}</strong>%</span>
           </div>
         </div>
 
@@ -278,8 +312,8 @@
     </div>
   </div>
 
-  <!-- 7. PATIENT CLUSTERING TABLE -->
-  <div class="table-card" *ngIf="result">
+  <!-- 8. PATIENT CLUSTERING TABLE -->
+  <div class="table-card mb-4" *ngIf="result">
     <div class="table-card-header">
       <div class="table-card-header-left">
         <h3 class="table-card-title">
@@ -327,8 +361,8 @@
           <th style="width: 120px">Phân cụm</th>
           <th>Tuổi</th>
           <th>Hb TB (g/dL)</th>
-          <th>Kali TB (mEq/L)</th>
-          <th>UF TB (Lít)</th>
+          <th>Kali TB (mmol/L)</th>
+          <th>% IDWG TB (%)</th>
           <th>Trạng thái</th>
           <th style="width: 100px; text-align: center">Thao tác</th>
         </tr>
@@ -369,8 +403,8 @@
             </span>
           </td>
           <td>
-            <span [class.text-warning]="p.features.avg_uf > 3.5">
-              {{ p.features.avg_uf }}
+            <span [class.text-warning]="p.features.avg_uf > 4.5">
+              {{ p.features.avg_uf }}%
             </span>
           </td>
           <td>
@@ -397,5 +431,41 @@
         </tr>
       </ng-template>
     </p-table>
+  </div>
+
+  <!-- 9. EDUCATIONAL METHODOLOGY CARD -->
+  <div class="methodology-card">
+    <div class="methodology-header">
+      <i class="pi pi-book text-primary mr-2"></i>
+      <strong>Phương pháp luận toán học K-Means++ thuần Python (Chuẩn đề tài tốt nghiệp)</strong>
+    </div>
+    <div class="methodology-grid">
+      <div class="methodology-col">
+        <h4>1. Chuẩn hóa Min-Max</h4>
+        <p>
+          Đặc trưng lâm sàng có đơn vị khác biệt lớn được đưa về khoảng [0, 1]:
+          <br>
+          <code>x' = (x - x_min) / (x_max - x_min)</code>
+        </p>
+      </div>
+      <div class="methodology-col">
+        <h4>2. Khởi tạo K-Means++</h4>
+        <p>
+          Tâm cụm đầu tiên chọn ngẫu nhiên. Các tâm kế tiếp được chọn với xác suất tỷ lệ thuận với bình phương khoảng cách gần nhất <code>D(x)^2</code>, tránh sụp đổ nghiệm cục bộ.
+        </p>
+      </div>
+      <div class="methodology-col">
+        <h4>3. Khoảng cách Euclid & Tiêu chí Dừng</h4>
+        <p>
+          Đo độ tương đồng vector 4 chiều bằng khoảng cách Euclid chuẩn. Thuật toán lặp Lloyd dừng khi tâm cụm dịch chuyển bé hơn <code>10^-7</code> hoặc đạt 100 vòng lặp.
+        </p>
+      </div>
+      <div class="methodology-col">
+        <h4>4. Ý nghĩa y khoa % IDWG</h4>
+        <p>
+          Tỷ lệ tăng cân gian lọc <code>% IDWG = (Cân nặng trước lọc - Cân nặng khô) / Cân nặng khô × 100%</code>, phản ánh chuẩn xác nguy cơ ứ dịch mà không bị thiên lệch theo thể trọng.
+        </p>
+      </div>
+    </div>
   </div>
 </div>

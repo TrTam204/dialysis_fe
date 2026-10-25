@@ -7,6 +7,7 @@ export interface PatientClusterFeatures {
   avg_hemoglobin: number;
   avg_potassium: number;
   avg_uf: number;
+  avg_idwg_pct?: number;
 }
 
 export interface ClusteredPatient {
@@ -35,6 +36,12 @@ export interface FeatureMinMax {
   max: number;
 }
 
+export interface KEvaluationItem {
+  k: number;
+  wcss: number;
+  silhouette_score: number;
+}
+
 export interface KMeansResponse {
   success: boolean;
   k_value: number;
@@ -49,5 +56,7 @@ export interface KMeansResponse {
   patients: ClusteredPatient[];
   iterations: number;
   converged: boolean;
+  k_evaluation?: KEvaluationItem[];
+  recommended_k?: number;
   disclaimer?: string;
 }

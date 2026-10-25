@@ -121,6 +121,11 @@ describe('KMeansClusteringComponent', () => {
     ],
     iterations: 3,
     converged: true,
+    recommended_k: 3,
+    k_evaluation: [
+      { k: 2, wcss: 0.8, silhouette_score: 0.4 },
+      { k: 3, wcss: 0.2451, silhouette_score: 0.5812 },
+    ],
   };
 
   beforeEach(async () => {
