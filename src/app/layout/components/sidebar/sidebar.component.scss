@@ -37,6 +37,7 @@
   place-items: center;
   background: rgba(59, 130, 246, 0.18);
   border: 1px solid rgba(96, 165, 250, 0.35);
+  flex-shrink: 0;
 }
 
 .brand-mark__icon {
@@ -61,57 +62,12 @@
   color: #94a3b8;
 }
 
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 14px 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #60a5fa, #2563eb);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.user-name {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #f8fafc;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-role {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
 .nav {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 14px;
-  padding: 12px 12px 20px;
+  padding: 12px 12px 16px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -171,6 +127,7 @@
   text-align: center;
   font-size: 0.92rem;
   color: inherit;
+  flex-shrink: 0;
 }
 
 .nav-item__label {
@@ -179,18 +136,138 @@
   white-space: nowrap;
 }
 
+/* Sidebar Footer (Bottom User Info + Logout) */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 14px 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.sidebar-logout-btn__icon {
+  font-size: 0.95rem;
+  color: inherit;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-logout-btn__label {
+  white-space: nowrap;
+}
+
+/* Collapsed mode rules */
 .sidebar.collapsed .nav-item {
   justify-content: center;
   padding: 0 10px;
 }
 
 .sidebar.collapsed .brand-copy,
-.sidebar.collapsed .user-card,
 .sidebar.collapsed .nav-group__label,
-.sidebar.collapsed .nav-item__label {
+.sidebar.collapsed .nav-item__label,
+.sidebar.collapsed .user-meta,
+.sidebar.collapsed .sidebar-logout-btn__label {
   display: none;
 }
 
+.sidebar.collapsed .sidebar-footer {
+  padding: 12px 8px 16px;
+  align-items: center;
+}
+
+.sidebar.collapsed .user-card {
+  padding: 4px;
+  justify-content: center;
+  background: transparent;
+  border: none;
+}
+
+.sidebar.collapsed .sidebar-logout-btn {
+  justify-content: center;
+  padding: 0;
+  width: 40px;
+  height: 38px;
+}
+
+/* Responsive Drawer for Tablet & Mobile */
 @media (max-width: 991px) {
   :host {
     position: fixed;
@@ -213,7 +290,7 @@
     min-width: 0;
     height: 100vh;
     border-right: none;
-    box-shadow: 12px 0 30px rgba(15, 23, 42, 0.25);
+    box-shadow: 12px 0 30px rgba(15, 23, 42, 0.3);
   }
 
   .sidebar.collapsed {
@@ -222,9 +299,32 @@
   }
 
   .sidebar.collapsed .brand-copy,
-  .sidebar.collapsed .user-card,
   .sidebar.collapsed .nav-group__label,
-  .sidebar.collapsed .nav-item__label {
+  .sidebar.collapsed .nav-item__label,
+  .sidebar.collapsed .user-meta,
+  .sidebar.collapsed .sidebar-logout-btn__label {
     display: block;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    padding: 12px 14px 16px;
+    align-items: stretch;
+  }
+
+  .sidebar.collapsed .user-card {
+    padding: 8px 10px;
+    justify-content: flex-start;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .sidebar.collapsed .sidebar-logout-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
+
+  .sidebar-footer {
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
   }
 }

@@ -90,20 +90,30 @@ export class HomeComponent implements OnInit {
 
   readonly statusDoughnutOptions = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        padding: 10,
+        cornerRadius: 8,
+      },
     },
-    cutout: '68%',
+    cutout: '72%',
   };
 
   readonly machineDoughnutOptions = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        padding: 10,
+        cornerRadius: 8,
+      },
     },
-    cutout: '68%',
+    cutout: '72%',
   };
 
   getMachineStatusColor(status: string): string {

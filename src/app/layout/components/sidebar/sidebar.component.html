@@ -9,14 +9,6 @@
     </div>
   </div>
 
-  <div class="user-card" *ngIf="!collapsed">
-    <div class="user-avatar">{{ currentUserName.charAt(0).toUpperCase() || 'U' }}</div>
-    <div class="user-meta">
-      <span class="user-name">{{ currentUserName }}</span>
-      <span class="user-role">{{ currentUserRole }}</span>
-    </div>
-  </div>
-
   <nav class="nav" aria-label="Sidebar navigation">
     <ng-container *ngFor="let group of navGroups">
       <div class="nav-group" *ngIf="isGroupVisible(group)">
@@ -39,4 +31,25 @@
       </div>
     </ng-container>
   </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card" [attr.title]="currentUserName + ' (' + currentUserRole + ')'">
+      <div class="user-avatar">{{ currentUserName.charAt(0).toUpperCase() || 'U' }}</div>
+      <div class="user-meta" *ngIf="!collapsed">
+        <span class="user-name">{{ currentUserName }}</span>
+        <span class="user-role">{{ currentUserRole }}</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="sidebar-logout-btn"
+      (click)="onLogout()"
+      [attr.title]="'Đăng xuất'"
+      aria-label="Đăng xuất"
+    >
+      <span class="sidebar-logout-btn__icon pi pi-sign-out"></span>
+      <span class="sidebar-logout-btn__label" *ngIf="!collapsed">Đăng xuất</span>
+    </button>
+  </div>
 </aside>

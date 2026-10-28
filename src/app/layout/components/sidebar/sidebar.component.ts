@@ -28,8 +28,9 @@ export class SidebarComponent {
   @Input() currentUserRole = 'NURSE';
 
   @Output() itemSelected = new EventEmitter<void>();
+  @Output() logout = new EventEmitter<void>();
 
-    readonly navGroups: NavGroup[] = [
+  readonly navGroups: NavGroup[] = [
     {
       label: 'Tổng quan',
       items: [
@@ -78,5 +79,9 @@ export class SidebarComponent {
 
   onNavigate(): void {
     this.itemSelected.emit();
+  }
+
+  onLogout(): void {
+    this.logout.emit();
   }
 }
