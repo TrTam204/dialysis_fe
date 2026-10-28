@@ -33,6 +33,16 @@
 
       <!-- Workflow Action Bar -->
       <div class="header-actions">
+        <!-- Quick add vitals button for Nurse/Doctor -->
+        <button
+          pButton
+          *ngIf="canWriteVitals && session.status !== 'CANCELLED'"
+          type="button"
+          icon="pi pi-plus"
+          label="+ Ghi nhận sinh hiệu"
+          class="p-button-success quick-vital-btn"
+          (click)="openAddVitalSign()"
+        ></button>
         <!-- Start session button -->
         <button
           pButton
@@ -284,7 +294,7 @@
             </span>
             <h3 class="idh-title">Cảnh báo sớm biến chứng Tụt huyết áp trong lọc máu (IDH)</h3>
           </div>
-          <div class="idh-header-right">
+          <div class="idh-header-right" *ngIf="canViewModelInfo">
             <button
               pButton
               type="button"
@@ -617,7 +627,7 @@
     [(visible)]="startSessionDialog"
     header="Bắt đầu phiên lọc máu"
     [modal]="true"
-    [style]="{ width: '480px' }"
+    [style]="{ width: '95vw', maxWidth: '520px' }"
   >
     <form [formGroup]="startForm" (ngSubmit)="submitStartSession()">
       <p class="dialog-desc">
@@ -671,7 +681,7 @@
     [(visible)]="endSessionDialog"
     header="Kết thúc phiên lọc máu"
     [modal]="true"
-    [style]="{ width: '520px' }"
+    [style]="{ width: '95vw', maxWidth: '520px' }"
   >
     <form [formGroup]="endForm" (ngSubmit)="submitEndSession()">
       <p class="dialog-desc">
@@ -736,7 +746,7 @@
     [(visible)]="clinicalParamsDialog"
     header="Cập nhật thông số điều trị"
     [modal]="true"
-    [style]="{ width: '520px' }"
+    [style]="{ width: '95vw', maxWidth: '520px' }"
   >
     <form [formGroup]="clinicalParamsForm" (ngSubmit)="submitClinicalParams()">
       <div class="form-row">
@@ -778,7 +788,7 @@
     [(visible)]="vitalSignDialog"
     [header]="editingVitalSign ? 'Sửa lần đo sinh hiệu' : 'Thêm lần đo sinh hiệu'"
     [modal]="true"
-    [style]="{ width: '480px' }"
+    [style]="{ width: '95vw', maxWidth: '520px' }"
   >
     <form [formGroup]="vitalSignForm" (ngSubmit)="saveVitalSign()">
       <div class="field">

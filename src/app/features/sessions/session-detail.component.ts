@@ -118,6 +118,10 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
   canCancel = false;        // ADMIN, DOCTOR
   canWriteVitals = false;   // ADMIN, DOCTOR, or ASSIGNED NURSE
   canDeleteVitals = false;  // ADMIN only (Rule 3: Nurse cannot delete vitals)
+  get canViewModelInfo(): boolean {
+    const role = this.authService.getUserRole();
+    return role === 'ADMIN' || role === 'DOCTOR';
+  }
 
   // Chart properties (Step 2)
   activeChartTab: 'bp' | 'vitals' = 'bp';

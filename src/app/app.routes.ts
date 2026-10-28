@@ -17,8 +17,8 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/home.component').then((m) => m.HomeComponent) },
-      { path: 'reports', loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent) },
-      { path: 'departments', loadComponent: () => import('./features/departments/department-list.component').then((m) => m.DepartmentListComponent) },
+      { path: 'reports', loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
+      { path: 'departments', loadComponent: () => import('./features/departments/department-list.component').then((m) => m.DepartmentListComponent), data: { roles: ['ADMIN'] } },
       {
         path: 'departments/new',
         loadComponent: () => import('./features/departments/department-form.component').then((m) => m.DepartmentFormComponent),
@@ -29,7 +29,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/departments/department-form.component').then((m) => m.DepartmentFormComponent),
         data: { roles: ['ADMIN'] },
       },
-      { path: 'staff', loadComponent: () => import('./features/staff/staff-list.component').then((m) => m.StaffListComponent) },
+      { path: 'staff', loadComponent: () => import('./features/staff/staff-list.component').then((m) => m.StaffListComponent), data: { roles: ['ADMIN'] } },
       {
         path: 'staff/new',
         loadComponent: () => import('./features/staff/staff-form.component').then((m) => m.StaffFormComponent),
@@ -63,11 +63,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/machines/machine-form.component').then((m) => m.MachineFormComponent),
         data: { roles: ['ADMIN'] },
       },
-      { path: 'schedule-plans', loadComponent: () => import('./features/schedule-plans/schedule-plan-list.component').then((m) => m.SchedulePlanListComponent) },
-      { path: 'schedule-plans/:id', loadComponent: () => import('./features/schedule-plans/schedule-plan-detail.component').then((m) => m.SchedulePlanDetailComponent) },
+      { path: 'schedule-plans', loadComponent: () => import('./features/schedule-plans/schedule-plan-list.component').then((m) => m.SchedulePlanListComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
+      { path: 'schedule-plans/:id', loadComponent: () => import('./features/schedule-plans/schedule-plan-detail.component').then((m) => m.SchedulePlanDetailComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
       { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then((m) => m.ScheduleComponent) },
-      { path: 'topsis', loadComponent: () => import('./features/topsis/topsis-triage.component').then((m) => m.TopsisTriageComponent) },
-      { path: 'clustering', loadComponent: () => import('./features/clustering/kmeans-clustering.component').then((m) => m.KMeansClusteringComponent) },
+      { path: 'topsis', loadComponent: () => import('./features/topsis/topsis-triage.component').then((m) => m.TopsisTriageComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
+      { path: 'clustering', loadComponent: () => import('./features/clustering/kmeans-clustering.component').then((m) => m.KMeansClusteringComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
       { path: 'sessions', loadComponent: () => import('./features/sessions/session-list.component').then((m) => m.SessionListComponent) },
       {
         path: 'sessions/new',
@@ -80,7 +80,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/sessions/session-form.component').then((m) => m.SessionFormComponent),
         data: { roles: ['ADMIN', 'DOCTOR'] },
       },
-      { path: 'blood-samples', loadComponent: () => import('./features/blood-samples/blood-sample-list.component').then((m) => m.BloodSampleListComponent) },
+      { path: 'blood-samples', loadComponent: () => import('./features/blood-samples/blood-sample-list.component').then((m) => m.BloodSampleListComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
       {
         path: 'blood-samples/new',
         loadComponent: () => import('./features/blood-samples/blood-sample-form.component').then((m) => m.BloodSampleFormComponent),

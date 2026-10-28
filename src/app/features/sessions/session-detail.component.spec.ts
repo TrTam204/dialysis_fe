@@ -91,8 +91,12 @@ describe('SessionDetailComponent - LSTM IDH Early Warning & Evaluation', () => {
     mockVitalSignService = jasmine.createSpyObj('VitalSignService', ['getBySession', 'createForSession', 'patch', 'delete']);
     mockVitalSignService.getBySession.and.returnValue(of([]));
 
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getUserRole', 'getCurrentUser']);
+    mockAuthService = jasmine.createSpyObj('AuthService', ['getUserRole', 'getCurrentUser', 'hasRole']);
     mockAuthService.getUserRole.and.returnValue('DOCTOR');
+    mockAuthService.hasRole.and.callFake((roles: any) => {
+      const r = mockAuthService.getUserRole();
+      return Array.isArray(roles) ? roles.includes(r) : roles === r;
+    });
     mockAuthService.getCurrentUser.and.returnValue({ id: 1, username: 'doctor1', email: 'doc@dialysis.vn', role: 'DOCTOR', department: 1, is_active: true });
 
     await TestBed.configureTestingModule({

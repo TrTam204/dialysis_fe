@@ -90,7 +90,7 @@ export class MainLayoutComponent implements OnInit {
   }
 
   toggleSidebar(): void {
-    const isMobile = window.innerWidth <= 960;
+    const isMobile = window.innerWidth <= 991;
 
     if (isMobile) {
       this.mobileSidebarOpen = !this.mobileSidebarOpen;

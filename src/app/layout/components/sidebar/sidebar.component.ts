@@ -29,37 +29,37 @@ export class SidebarComponent {
 
   @Output() itemSelected = new EventEmitter<void>();
 
-  readonly navGroups: NavGroup[] = [
+    readonly navGroups: NavGroup[] = [
     {
       label: 'Tổng quan',
       items: [
-        { label: 'Dashboard', route: '/dashboard', icon: 'pi pi-chart-bar' },
-        { label: 'Báo cáo', route: '/reports', icon: 'pi pi-chart-line' },
+        { label: 'Bảng điều khiển', route: '/dashboard', icon: 'pi pi-chart-bar' },
+        { label: 'Báo cáo', route: '/reports', icon: 'pi pi-chart-line', roles: ['ADMIN', 'DOCTOR'] },
       ],
     },
     {
       label: 'Vận hành',
       items: [
+        { label: 'Lịch lọc máu', route: '/schedule', icon: 'pi pi-calendar' },
+        { label: 'Phiên lọc máu', route: '/sessions', icon: 'pi pi-clock' },
         { label: 'Bệnh nhân', route: '/patients', icon: 'pi pi-user' },
-        { label: 'Kế hoạch tuần', route: '/schedule-plans', icon: 'pi pi-calendar-plus' },
-        { label: 'Lịch lọc', route: '/schedule', icon: 'pi pi-calendar' },
-        { label: 'Phiên lọc', route: '/sessions', icon: 'pi pi-clock' },
+        { label: 'Máy lọc máu', route: '/machines', icon: 'pi pi-cog' },
+        { label: 'Kế hoạch tuần', route: '/schedule-plans', icon: 'pi pi-calendar-plus', roles: ['ADMIN', 'DOCTOR'] },
       ],
     },
     {
       label: 'Hỗ trợ quyết định',
       items: [
-        { label: 'Phân loại TOPSIS', route: '/topsis', icon: 'pi pi-sort-amount-down' },
-        { label: 'Phân cụm bệnh nhân (K-Means)', route: '/clustering', icon: 'pi pi-chart-scatter' },
+        { label: 'Phân tầng TOPSIS', route: '/topsis', icon: 'pi pi-sort-amount-down', roles: ['ADMIN', 'DOCTOR'] },
+        { label: 'Phân cụm bệnh nhân (K-Means)', route: '/clustering', icon: 'pi pi-chart-scatter', roles: ['ADMIN', 'DOCTOR'] },
       ],
     },
     {
-      label: 'Quản lý',
+      label: 'Quản trị',
       items: [
-        { label: 'Nhân sự', route: '/staff', icon: 'pi pi-users' },
-        { label: 'Máy lọc', route: '/machines', icon: 'pi pi-cog' },
-        { label: 'Khoa / Phòng ban', route: '/departments', icon: 'pi pi-building' },
-        { label: 'Mẫu xét nghiệm', route: '/blood-samples', icon: 'pi pi-clipboard' },
+        { label: 'Mẫu xét nghiệm', route: '/blood-samples', icon: 'pi pi-clipboard', roles: ['ADMIN', 'DOCTOR'] },
+        { label: 'Nhân sự', route: '/staff', icon: 'pi pi-users', roles: ['ADMIN'] },
+        { label: 'Khoa / Phòng ban', route: '/departments', icon: 'pi pi-building', roles: ['ADMIN'] },
         { label: 'Nhật ký hệ thống', route: '/audit-logs', icon: 'pi pi-history', roles: ['ADMIN'] },
       ],
     },

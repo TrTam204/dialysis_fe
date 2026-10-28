@@ -499,3 +499,125 @@
   padding: 0.85rem;
   height: 290px;
 }
+
+
+/* Responsive optimizations for Nurse Mobile & Tablet */
+.quick-vital-btn {
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+}
+
+@media (max-width: 991px) {
+  .header-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    button, a {
+      flex: 1 1 auto;
+      min-height: 42px;
+      justify-content: center;
+    }
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .idh-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vitals-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    .vitals-header-actions {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .page-shell {
+    padding: 10px;
+  }
+
+  .header-card {
+    padding: 0.85rem;
+  }
+
+  .record-title {
+    font-size: 1.1rem;
+  }
+
+  .record-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .header-actions {
+    button, a {
+      min-height: 44px;
+      font-size: 0.88rem;
+    }
+  }
+
+  .quick-vital-btn {
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .vitals-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Form and Touch Targets in Dialogs for 1-hand mobile input */
+  :host ::ng-deep .p-dialog {
+    .field label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    input.p-inputtext,
+    .p-inputnumber-input,
+    textarea {
+      font-size: 16px !important;
+      min-height: 44px;
+      line-height: 1.5;
+    }
+
+    .form-footer button {
+      min-height: 44px;
+      padding: 0 1.25rem;
+      font-size: 0.92rem;
+    }
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .metric-card .m-number {
+    font-size: 1.1rem;
+  }
+}
