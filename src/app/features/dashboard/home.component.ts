@@ -71,7 +71,7 @@ export class HomeComponent implements OnInit {
     plugins: {
       legend: {
         position: 'top' as const,
-        labels: { boxWidth: 12, usePointStyle: true },
+        labels: { boxWidth: 10, usePointStyle: true, font: { size: 11 } },
       },
       tooltip: { mode: 'index' as const, intersect: false },
     },
@@ -79,11 +79,12 @@ export class HomeComponent implements OnInit {
       x: {
         stacked: true,
         grid: { display: false },
+        ticks: { font: { size: 10 } },
       },
       y: {
         stacked: true,
         beginAtZero: true,
-        ticks: { stepSize: 1 },
+        ticks: { stepSize: 1, font: { size: 10 } },
       },
     },
   };

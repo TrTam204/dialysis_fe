@@ -6,9 +6,9 @@
     </div>
 
     <div class="nav-controls">
-      <button pButton type="button" icon="pi pi-chevron-left" class="p-button-secondary" (click)="previousPeriod()" aria-label="Trước"></button>
-      <button pButton type="button" label="Hôm nay" class="p-button-outlined" (click)="goToToday()"></button>
-      <button pButton type="button" icon="pi pi-chevron-right" class="p-button-secondary" (click)="nextPeriod()" aria-label="Sau"></button>
+      <button pButton type="button" icon="pi pi-chevron-left" class="p-button-secondary nav-arrow-btn" (click)="previousPeriod()" aria-label="Trước"></button>
+      <button pButton type="button" label="Hôm nay" class="p-button-outlined today-btn" (click)="goToToday()"></button>
+      <button pButton type="button" icon="pi pi-chevron-right" class="p-button-secondary nav-arrow-btn" (click)="nextPeriod()" aria-label="Sau"></button>
       <div class="date-picker-wrap">
         <input
           type="date"
@@ -23,43 +23,52 @@
     </div>
 
     <div class="view-switch" role="tablist" aria-label="Chế độ xem lịch">
-      <button type="button" class="view-button" [class.active]="viewMode === 'day'" (click)="setViewMode('day')">Ngày</button>
-      <button type="button" class="view-button" [class.active]="viewMode === 'week'" (click)="setViewMode('week')">Tuần</button>
+      <button type="button" class="view-button" [class.active]="viewMode === 'day'" (click)="setViewMode('day')">
+        <i class="pi pi-calendar"></i>
+        <span>Ngày</span>
+      </button>
+      <button type="button" class="view-button" [class.active]="viewMode === 'week'" (click)="setViewMode('week')">
+        <i class="pi pi-table"></i>
+        <span>Tuần</span>
+      </button>
     </div>
   </div>
 
   <div class="schedule-toolbar">
+    <div class="toolbar-header-row">
+      <span class="filter-header-title"><i class="pi pi-filter"></i> Bộ lọc ca lọc</span>
+      <button pButton type="button" label="Xóa lọc" icon="pi pi-refresh" class="p-button-text p-button-sm reset-filter-btn" (click)="resetFilters()"></button>
+    </div>
+
     <div class="filter-group">
-      <label>
-        <span>Điều dưỡng</span>
+      <label class="filter-item">
+        <span class="filter-label">Điều dưỡng</span>
         <select [(ngModel)]="nurseFilter" (ngModelChange)="onFilterChange()">
           <option *ngFor="let option of nurseOptions" [ngValue]="option.value">{{ option.label }}</option>
         </select>
       </label>
 
-      <label>
-        <span>Máy</span>
+      <label class="filter-item">
+        <span class="filter-label">Máy lọc</span>
         <select [(ngModel)]="machineFilter" (ngModelChange)="onFilterChange()">
           <option *ngFor="let option of machineOptions" [ngValue]="option.value">{{ option.label }}</option>
         </select>
       </label>
 
-      <label>
-        <span>Trạng thái</span>
+      <label class="filter-item">
+        <span class="filter-label">Trạng thái</span>
         <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
           <option *ngFor="let option of statusOptions" [ngValue]="option.value">{{ option.label }}</option>
         </select>
       </label>
 
-      <label>
-        <span>Chu kỳ lọc</span>
+      <label class="filter-item">
+        <span class="filter-label">Chu kỳ lọc</span>
         <select [(ngModel)]="shiftGroupFilter" (ngModelChange)="onFilterChange()">
           <option *ngFor="let opt of shiftGroupOptions" [value]="opt.value">{{ opt.label }}</option>
         </select>
       </label>
     </div>
-
-    <button pButton type="button" label="Reset" class="p-button-text" (click)="resetFilters()"></button>
   </div>
 
   <div class="schedule-legend-bar">

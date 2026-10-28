@@ -34,27 +34,41 @@
   </div>
 
   <div class="mobile-week-list mobile-only">
-    <div class="mobile-day-group" *ngFor="let day of weekDays">
+    <div class="mobile-day-group" *ngFor="let day of weekDays" [class.is-today-group]="isToday(day)">
       <div class="mobile-day-header">
-        <span>{{ formatDayLabel(day) }}</span>
-        <span>{{ formatShortDate(day) }}</span>
+        <div class="day-title-wrap">
+          <span class="day-title">{{ formatDayLabel(day) }}</span>
+          <span class="day-date">{{ formatShortDate(day) }}</span>
+        </div>
+        <span class="today-badge" *ngIf="isToday(day)">Hôm nay</span>
       </div>
 
       <div class="mobile-day-sessions" *ngIf="hasSessionsForDay(day); else noSessionForDay">
         <ng-container *ngFor="let session of getSessionsForDay(day)">
           <a [routerLink]="['/sessions', session.session_id]" [queryParams]="queryParams" class="mobile-week-session {{ getStatusClass(session.status) }}">
             <div class="mobile-week-top">
-              <span>{{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}</span>
-              <span>{{ session.status }}</span>
+              <span class="mobile-week-time">
+                <i class="pi pi-clock"></i> {{ session.scheduled_start | date: 'HH:mm' }} - {{ session.scheduled_end | date: 'HH:mm' }}
+              </span>
+              <span class="mobile-week-status-badge badge-{{ getStatusClass(session.status) }}">
+                {{ getStatusShortLabel(session.status) }}
+              </span>
             </div>
-            <div class="mobile-week-patient">{{ session.patient_name || session.patient }}</div>
-            <div class="mobile-week-meta">Máy: {{ session.machine_name || session.machine }}</div>
+            <div class="mobile-week-patient">
+              <i class="pi pi-user"></i> {{ session.patient_name || session.patient }}
+            </div>
+            <div class="mobile-week-meta">
+              <i class="pi pi-cog"></i> {{ session.machine_name || session.machine }}
+            </div>
           </a>
         </ng-container>
       </div>
 
       <ng-template #noSessionForDay>
-        <div class="mobile-no-session">Không có phiên</div>
+        <div class="mobile-no-session">
+          <i class="pi pi-circle" style="font-size: 0.65rem; color: #cbd5e1;"></i>
+          <span>Không có ca lọc</span>
+        </div>
       </ng-template>
     </div>
   </div>

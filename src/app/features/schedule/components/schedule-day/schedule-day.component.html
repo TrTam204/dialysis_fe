@@ -41,12 +41,21 @@
       class="mobile-session-card {{ getStatusClass(session.status) }}"
     >
       <div class="mobile-session-top">
-        <span class="mobile-session-time">{{ getTimeRangeLabel(session) }}</span>
-        <span class="mobile-session-status">{{ session.status }}</span>
+        <span class="mobile-session-time">
+          <i class="pi pi-clock"></i> {{ getTimeRangeLabel(session) }}
+        </span>
+        <span class="mobile-session-status badge-{{ getStatusClass(session.status) }}">
+          {{ session.status === 'SCHEDULED' ? 'Đã lên lịch' : (session.status === 'IN_PROGRESS' ? 'Đang lọc' : (session.status === 'COMPLETED' ? 'Hoàn thành' : (session.status === 'CANCELLED' ? 'Đã hủy' : session.status))) }}
+        </span>
       </div>
-      <div class="mobile-session-patient">{{ session.patient_name || session.patient }}</div>
-      <div class="mobile-session-meta">Máy: {{ session.machine_name || session.machine }}</div>
-      <div class="mobile-session-meta">Điều dưỡng: {{ session.nurse_name || session.assigned_nurse }}</div>
+      <div class="mobile-session-patient">
+        <i class="pi pi-user"></i>
+        <span>{{ session.patient_name || session.patient }}</span>
+      </div>
+      <div class="mobile-session-meta-row">
+        <span class="mobile-session-meta"><i class="pi pi-cog"></i> {{ session.machine_name || session.machine }}</span>
+        <span class="mobile-session-meta"><i class="pi pi-id-card"></i> {{ session.nurse_name || session.assigned_nurse }}</span>
+      </div>
     </a>
   </div>
 </div>
@@ -55,6 +64,6 @@
   <div class="empty-state">
     <i class="pi pi-calendar" style="font-size: 2.2rem; color: #94a3b8; margin-bottom: 8px;"></i>
     <p style="font-size: 1rem; font-weight: 600; color: #475569; margin: 0 0 4px 0;">Không có phiên lọc nào trong ngày {{ selectedDate | date: 'dd/MM/yyyy' }}.</p>
-    <span style="font-size: 0.85rem; color: #94a3b8;">Chọn ngày khác (ví dụ: 30/09/2026) bằng ô chọn ngày ở trên hoặc chuyển sang xem Tuần.</span>
+    <span style="font-size: 0.85rem; color: #94a3b8;">Chọn ngày khác bằng ô chọn ngày ở trên hoặc chuyển sang xem Tuần.</span>
   </div>
 </ng-template>

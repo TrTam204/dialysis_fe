@@ -374,3 +374,36 @@ img {
     th, td { padding: 4px 6px !important; }
   }
 }
+
+
+/* ==========================================================================
+   Global Mobile Layout & Anti-Overflow Guard (Responsive Fixes)
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  .dashboard-container,
+  .schedule-shell,
+  .reports-container,
+  .topsis-container,
+  .clustering-container,
+  .patient-list-container,
+  .sessions-container,
+  .page-container,
+  .main-content,
+  .container {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 auto !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+}

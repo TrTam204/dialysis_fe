@@ -4,6 +4,7 @@
   border: 1px solid #edf2f7;
   border-radius: 12px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .desktop-only {
@@ -87,7 +88,7 @@
   right: 8px;
   border-radius: 10px;
   padding: 8px 10px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
   text-decoration: none;
   color: #111827;
   overflow: hidden;
@@ -139,15 +140,19 @@
 
 .empty-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 200px;
   border: 1px solid #edf2f7;
   background: white;
   border-radius: 12px;
   color: #64748b;
+  padding: 24px;
+  text-align: center;
 }
 
+/* Mobile Responsive */
 @media (max-width: 768px) {
   .desktop-only {
     display: none;
@@ -169,19 +174,41 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 14px;
+    padding: 12px;
+    box-sizing: border-box;
   }
 
   .mobile-session-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     padding: 12px 14px;
     border-radius: 12px;
     text-decoration: none;
     color: #111827;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-left: 4px solid transparent;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+    box-sizing: border-box;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:active {
+      transform: scale(0.99);
+    }
+
+    &.status-scheduled {
+      border-left-color: #3b82f6;
+    }
+    &.status-in-progress {
+      border-left-color: #f59e0b;
+    }
+    &.status-completed {
+      border-left-color: #22c55e;
+    }
+    &.status-cancelled {
+      border-left-color: #ef4444;
+    }
   }
 
   .mobile-session-top {
@@ -189,26 +216,82 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    font-weight: 700;
   }
 
   .mobile-session-time {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    i {
+      font-size: 0.74rem;
+      color: #0f766e;
+    }
   }
 
   .mobile-session-status {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    opacity: 0.9;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+
+    &.badge-status-scheduled {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    &.badge-status-in-progress {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    &.badge-status-completed {
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    &.badge-status-cancelled {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
   }
 
   .mobile-session-patient {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+  }
+
+  .mobile-session-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .mobile-session-meta {
     font-size: 0.76rem;
     color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    i {
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
   }
 }

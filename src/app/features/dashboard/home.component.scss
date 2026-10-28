@@ -1,9 +1,14 @@
 :host {
   display: block;
+  width: 100%;
 }
 
 .dashboard-container {
   padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .dashboard-header {
@@ -33,6 +38,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  width: 100%;
 }
 
 .full-width {
@@ -41,38 +47,14 @@
 
 .wide-card {
   grid-column: span 2;
-}
-
-@media (max-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .wide-card {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 640px) {
-  .dashboard-container {
-    padding: 16px 12px;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .stat-card,
-  .wide-card,
-  .full-width {
-    grid-column: 1 / -1;
-  }
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Stat Cards */
 .stat-card {
   min-height: 120px;
+  min-width: 0;
 }
 
 .stat-value {
@@ -103,6 +85,7 @@
   flex-wrap: wrap;
   gap: 16px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  box-sizing: border-box;
 }
 
 .timeframe-buttons {
@@ -254,10 +237,37 @@
 /* Chart Panels */
 .chart-panel {
   min-height: 200px;
+  width: 100%;
+  max-width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.trend-chart-panel {
+  width: 100%;
+  max-width: 100%;
+  height: 210px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  ::ng-deep {
+    div {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+    }
+    canvas {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+  }
 }
 
 .chart-loading {
@@ -278,6 +288,9 @@
   min-height: 180px;
   padding: 12px 16px;
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .donut-chart-wrap {
@@ -316,6 +329,7 @@
   gap: 8px;
   flex: 1;
   max-width: 260px;
+  box-sizing: border-box;
 }
 
 .legend-item {
@@ -330,6 +344,7 @@
   font-size: 0.85rem;
   color: #334155;
   transition: background 0.15s ease, border-color 0.15s ease;
+  box-sizing: border-box;
 
   &:hover {
     background: #f1f5f9;
@@ -369,32 +384,7 @@
   font-size: 0.82rem;
   min-width: 24px;
   text-align: center;
-}
-
-/* Responsive adjustment for Doughnut Charts on Mobile */
-@media (max-width: 640px) {
-  .donut-panel {
-    flex-direction: column;
-    gap: 16px;
-    padding: 8px 4px;
-  }
-
-  .status-legend-list,
-  .machine-legend-list {
-    width: 100%;
-    max-width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .legend-item {
-    padding: 6px 8px;
-  }
-
-  .legend-text {
-    font-size: 0.78rem;
-  }
+  flex-shrink: 0;
 }
 
 /* Card aesthetics */
@@ -404,6 +394,8 @@
     border: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     background: #ffffff;
+    max-width: 100%;
+    box-sizing: border-box;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 
     &:hover {
@@ -412,6 +404,9 @@
 
     .p-card-body {
       padding: 1.25rem 1.5rem;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .p-card-title {
@@ -423,6 +418,8 @@
 
     .p-card-content {
       padding: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
   }
 
@@ -449,13 +446,280 @@
   }
 }
 
+/* Tablet Media Query */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wide-card {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Mobile Media Query (Responsive Overhaul) */
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+
+    .header-actions {
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  /* 2x2 Grid for KPI cards, centered content */
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .wide-card,
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .stat-card {
+    min-height: auto;
+    width: 100%;
+  }
+
+  :host ::ng-deep {
+    .stat-card .p-card {
+      text-align: center;
+      border-radius: 12px;
+
+      .p-card-body {
+        padding: 12px 6px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .p-card-title {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-align: center;
+        color: #475569;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    .wide-card .p-card .p-card-body {
+      padding: 12px;
+    }
+
+    .wide-card .p-card .p-card-title {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .stat-value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 2px 0;
+    text-align: center;
+  }
+
+  .stat-sub {
+    font-size: 0.7rem;
+    text-align: center;
+    color: #94a3b8;
+    display: block;
+  }
+
+  /* Timeframe bar mobile optimization */
+  .timeframe-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    width: 100%;
+  }
+
+  .timeframe-buttons {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+
+    button {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 0.78rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+  }
+
+  .timeframe-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .timeframe-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .tf-stat {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6px 4px;
+    gap: 2px;
+
+    span {
+      font-size: 0.68rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+  }
+
+  /* Bar chart on mobile */
+  .chart-panel {
+    min-height: 180px;
+  }
+
+  .trend-chart-panel {
+    height: 190px;
+  }
+
+  /* Doughnut chart on mobile */
+  .donut-panel {
+    flex-direction: column;
+    gap: 14px;
+    padding: 8px 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .donut-chart-wrap {
+    width: 140px;
+    height: 140px;
+    min-width: 140px;
+    min-height: 140px;
+    max-width: 140px;
+    max-height: 140px;
+    margin: 0 auto;
+
+    ::ng-deep {
+      div {
+        width: 140px !important;
+        height: 140px !important;
+      }
+      canvas {
+        width: 140px !important;
+        height: 140px !important;
+        max-width: 140px !important;
+        max-height: 140px !important;
+      }
+    }
+  }
+
+  /* Legend on mobile: full-width vertical stack, no clipping */
+  .status-legend-list,
+  .machine-legend-list {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+  }
+
+  .legend-item {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    gap: 8px;
+    font-size: 0.8rem;
+    justify-content: space-between;
+  }
+
+  .legend-label-wrap {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .legend-text {
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .legend-count {
+    font-size: 0.76rem;
+    padding: 1px 6px;
+  }
+
+  /* Today's KPI widget */
+  .today-kpis {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .mini-kpi {
+    padding: 6px 8px;
+    text-align: center;
+    align-items: center;
+
+    .label {
+      font-size: 0.65rem;
+    }
+
+    strong {
+      font-size: 1.1rem;
+    }
+  }
+
+  .session-row {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .session-patient {
+    font-size: 0.84rem;
+  }
+}
+
 .loading-box,
 .error-box,
 .empty-state,
 .no-data {
   text-align: center;
   color: #64748b;
-  padding: 24px;
+  padding: 20px;
 }
 
 .text-green {

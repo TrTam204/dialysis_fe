@@ -102,7 +102,9 @@
     <!-- Chart: Session Trend (Daily Trends via M7.1 Aggregate) -->
     <p-card [header]="'Xu hướng phiên lọc (' + (timeframe === '7d' ? '7 ngày qua' : '30 ngày qua') + ')'" class="wide-card">
       <div class="chart-panel" *ngIf="!loadingTrends; else loadingTrendBox">
-        <p-chart *ngIf="trendChartData" type="bar" [data]="trendChartData" [options]="trendOptions" height="200px"></p-chart>
+        <div class="trend-chart-panel" *ngIf="trendChartData">
+          <p-chart type="bar" [data]="trendChartData" [options]="trendOptions" height="210px"></p-chart>
+        </div>
         <p *ngIf="!trendChartData" class="no-data">Không có dữ liệu trong khoảng thời gian này</p>
       </div>
       <ng-template #loadingTrendBox>
