@@ -188,6 +188,134 @@
   text-align: center;
 }
 
+.location-card {
+  .location-header {
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+  }
+
+  .geo-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .geo-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    &.distance-geo {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+  }
+
+  .geo-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .geo-icon {
+      font-size: 1.2rem;
+    }
+
+    .geo-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+  }
+
+  .geo-main-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .geo-distance-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .geo-sub-val {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .distance-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+
+    &.badge-dist-near {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    &.badge-dist-medium {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    &.badge-dist-far {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    &.badge-dist-unknown {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+  }
+
+  .map-container {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #e2e8f0;
+
+    iframe {
+      display: block;
+      width: 100%;
+    }
+  }
+
+  .map-actions-bar {
+    a.p-button {
+      text-decoration: none;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .page-shell {
     padding: 12px;

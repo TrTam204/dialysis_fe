@@ -87,6 +87,8 @@ export class PatientFormComponent implements OnInit {
       status: ['', Validators.required],
       preferred_shift: [null],
       treatment_pattern: [null],
+      latitude: [null, [Validators.min(10.3), Validators.max(11.2)]],
+      longitude: [null, [Validators.min(106.3), Validators.max(107.1)]],
       medical_history: [''],
     });
   }
@@ -114,6 +116,8 @@ export class PatientFormComponent implements OnInit {
           status: patient.status,
           preferred_shift: patient.preferred_shift || null,
           treatment_pattern: patient.treatment_pattern || null,
+          latitude: patient.latitude ?? null,
+          longitude: patient.longitude ?? null,
           medical_history: patient.medical_history,
         });
         this.loading = false;
@@ -164,6 +168,8 @@ export class PatientFormComponent implements OnInit {
       status: raw.status,
       preferred_shift: raw.preferred_shift || null,
       treatment_pattern: raw.treatment_pattern || null,
+      latitude: raw.latitude !== null && raw.latitude !== undefined ? Number(raw.latitude) : null,
+      longitude: raw.longitude !== null && raw.longitude !== undefined ? Number(raw.longitude) : null,
       medical_history: raw.medical_history || undefined,
     };
 
@@ -216,6 +222,32 @@ export class PatientFormComponent implements OnInit {
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+
+  quickLocations = [
+    { label: 'Quận 1 - Bến Nghé (Gần Trung tâm)', lat: 10.7769, lng: 106.7009 },
+    { label: 'Quận 3 - Võ Thị Sáu', lat: 10.7842, lng: 106.6843 },
+    { label: 'Quận 5 - Chợ Lớn', lat: 10.7554, lng: 106.6621 },
+    { label: 'Quận 10 - Sư Vạn Hạnh', lat: 10.7725, lng: 106.6678 },
+    { label: 'Tân Bình - Hoàng Văn Thụ', lat: 10.7992, lng: 106.6534 },
+    { label: 'Gò Vấp - Quang Trung', lat: 10.8386, lng: 106.6652 },
+    { label: 'Bình Thạnh - Bạch Đằng', lat: 10.8016, lng: 106.7107 },
+    { label: 'TP. Thủ Đức - Linh Trung', lat: 10.8655, lng: 106.7745 },
+    { label: 'Bình Tân - An Lạc', lat: 10.7412, lng: 106.6085 },
+  ];
+
+  onQuickPickLocation(loc: { label: string; lat: number; lng: number }): void {
+    this.form.patchValue({
+      latitude: loc.lat,
+      longitude: loc.lng,
+    });
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Đã chọn tọa độ',
+      detail: `Đã điền tọa độ ${loc.label}`,
+      life: 2000,
+    });
   }
 
   cancel() {

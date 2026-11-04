@@ -43,4 +43,12 @@ export class SessionService {
   getLstmModelInfo(): Observable<LstmModelInfoResponse> {
     return this.http.get<LstmModelInfoResponse>(`${this.apiBase}/ai/lstm-model-info/`);
   }
+
+  triggerSos(sessionId: string, reason: string, notes?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiBase}/sessions/${sessionId}/sos/`, { reason, notes });
+  }
+
+  clearSos(sessionId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiBase}/sessions/${sessionId}/clear-sos/`, {});
+  }
 }

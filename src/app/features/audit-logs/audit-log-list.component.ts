@@ -211,4 +211,61 @@ export class AuditLogListComponent implements OnInit, OnDestroy {
     }
     return String(val);
   }
+
+  getInitials(name?: string | null): string {
+    if (!name || name === 'Hệ thống' || name === 'System') return 'HT';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  getRoleBadge(role?: string | null): { label: string; cssClass: string } {
+    switch (role) {
+      case 'ADMIN':
+        return { label: 'Quản trị viên', cssClass: 'badge-role-admin' };
+      case 'DOCTOR':
+        return { label: 'Bác sĩ', cssClass: 'badge-role-doctor' };
+      case 'NURSE':
+        return { label: 'Điều dưỡng', cssClass: 'badge-role-nurse' };
+      default:
+        return { label: 'Hệ thống', cssClass: 'badge-role-system' };
+    }
+  }
+
+  getActionBadge(action?: string | null): { label: string; cssClass: string } {
+    if (!action) return { label: 'KHÁC', cssClass: 'badge-action-default' };
+    switch (action.toUpperCase()) {
+      case 'CREATE':
+        return { label: 'TẠO MỚI', cssClass: 'badge-action-create' };
+      case 'UPDATE':
+        return { label: 'CẬP NHẬT', cssClass: 'badge-action-update' };
+      case 'DELETE':
+        return { label: 'XÓA', cssClass: 'badge-action-delete' };
+      case 'TRANSFER':
+        return { label: 'CHUYỂN KHOA', cssClass: 'badge-action-transfer' };
+      case 'EMERGENCY_SOS':
+        return { label: 'BÁO ĐỘNG SOS', cssClass: 'badge-action-sos' };
+      case 'LOGIN_FAILED':
+      case 'LOCKOUT':
+        return { label: 'BẢO MẬT', cssClass: 'badge-action-security' };
+      default:
+        return { label: action, cssClass: 'badge-action-default' };
+    }
+  }
+
+  getEntityLabel(entity?: string | null): string {
+    if (!entity) return '—';
+    const map: Record<string, string> = {
+      Patient: 'Bệnh nhân',
+      DialysisMachine: 'Máy lọc máu',
+      DialysisSession: 'Phiên lọc máu',
+      VitalSign: 'Chỉ số sinh tồn',
+      BloodSample: 'Mẫu xét nghiệm',
+      CustomUser: 'Tài khoản nhân sự',
+      Department: 'Khoa / Phòng ban',
+      SchedulePlan: 'Lịch lọc tuần',
+    };
+    return map[entity] || entity;
+  }
+
 }

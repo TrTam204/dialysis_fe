@@ -1,6 +1,7 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { catchError, switchMap, throwError } from 'rxjs';
 
 const PUBLIC_AUTH_ENDPOINTS = [
   '/api/auth/login/',
@@ -28,5 +29,25 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     }
   }
 
-  return next(req);
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !isPublicEndpoint && authService.getAccessToken()) {
+        return authService.refreshToken().pipe(
+          switchMap((res) => {
+            const newReq = req.clone({
+              setHeaders: {
+                Authorization: `Bearer ${res.access}`,
+              },
+            });
+            return next(newReq);
+          }),
+          catchError((refreshErr) => {
+            authService.logout();
+            return throwError(() => refreshErr);
+          })
+        );
+      }
+      return throwError(() => error);
+    })
+  );
 };

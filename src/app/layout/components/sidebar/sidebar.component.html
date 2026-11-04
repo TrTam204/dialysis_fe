@@ -12,7 +12,7 @@
   <nav class="nav" aria-label="Sidebar navigation">
     <ng-container *ngFor="let group of navGroups">
       <div class="nav-group" *ngIf="isGroupVisible(group)">
-        <div class="nav-group__label" *ngIf="!collapsed">{{ group.label }}</div>
+        <div class="nav-group__label" *ngIf="!collapsed">{{ getGroupLabel(group) }}</div>
 
         <ng-container *ngFor="let item of group.items">
           <a
@@ -21,11 +21,11 @@
             [routerLink]="item.route"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: false }"
-            [attr.title]="item.label"
+            [attr.title]="getItemLabel(item)"
             (click)="onNavigate()"
           >
             <span class="nav-item__icon" [class]="item.icon"></span>
-            <span class="nav-item__label" *ngIf="!collapsed">{{ item.label }}</span>
+            <span class="nav-item__label" *ngIf="!collapsed">{{ getItemLabel(item) }}</span>
           </a>
         </ng-container>
       </div>

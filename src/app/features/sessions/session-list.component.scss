@@ -289,3 +289,61 @@
     }
   }
 }
+
+/* Quick SOS in Table */
+.quick-sos-table-btn {
+  background-color: #dc2626 !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  padding: 0 !important;
+
+  &:hover {
+    background-color: #b91c1c !important;
+    transform: scale(1.1);
+  }
+}
+
+.sos-pulse-row {
+  animation: pulse-sos 1.4s infinite !important;
+}
+
+@keyframes pulse-sos {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* SOS Reasons List in Dialog */
+.sos-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sos-reason-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #ef4444;
+    background: #fff5f5;
+  }
+
+  &.active {
+    border-color: #ef4444;
+    background: #fee2e2;
+    font-weight: 600;
+  }
+
+  input[type="radio"] {
+    accent-color: #dc2626;
+  }
+}

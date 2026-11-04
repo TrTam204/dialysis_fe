@@ -95,26 +95,26 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 50px" class="text-center">STT</th>
-          <th pSortableColumn="username" style="width: 140px">
+          <th style="width: 55px; white-space: nowrap;" class="text-center">STT</th>
+          <th pSortableColumn="username" style="width: 140px; white-space: nowrap;">
             Username <p-sortIcon field="username"></p-sortIcon>
           </th>
-          <th pSortableColumn="first_name">
+          <th pSortableColumn="first_name" style="min-width: 190px; white-space: nowrap;">
             Họ và tên <p-sortIcon field="first_name"></p-sortIcon>
           </th>
-          <th pSortableColumn="email">
+          <th pSortableColumn="email" style="min-width: 200px; white-space: nowrap;">
             Email <p-sortIcon field="email"></p-sortIcon>
           </th>
-          <th pSortableColumn="role" style="width: 145px" class="text-center">
+          <th pSortableColumn="role" style="width: 150px; white-space: nowrap;" class="text-center">
             Vai trò <p-sortIcon field="role"></p-sortIcon>
           </th>
-          <th pSortableColumn="department__name" style="width: 180px">
+          <th pSortableColumn="department__name" style="min-width: 170px; white-space: nowrap;">
             Khoa / Phòng <p-sortIcon field="department__name"></p-sortIcon>
           </th>
-          <th pSortableColumn="is_active" style="width: 135px" class="text-center">
+          <th pSortableColumn="is_active" style="width: 135px; white-space: nowrap;" class="text-center">
             Trạng thái <p-sortIcon field="is_active"></p-sortIcon>
           </th>
-          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+          <th *ngIf="isAdmin" style="width: 105px; white-space: nowrap;" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -163,6 +163,24 @@
               <button
                 pButton
                 type="button"
+                icon="pi pi-key"
+                class="p-button-text p-button-rounded p-button-sm p-button-secondary"
+                (click)="openPermissionDialog(user)"
+                pTooltip="Phân quyền chi tiết & Điều chuyển khoa"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                type="button"
+                [icon]="user.is_active ? 'pi pi-lock' : 'pi pi-lock-open'"
+                [class]="'p-button-text p-button-rounded p-button-sm ' + (user.is_active ? 'p-button-warning' : 'p-button-success')"
+                (click)="toggleStaffActive(user)"
+                [pTooltip]="user.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                type="button"
                 icon="pi pi-trash"
                 class="p-button-text p-button-rounded p-button-sm p-button-danger"
                 (click)="confirmDelete(user)"
@@ -186,4 +204,158 @@
   </div>
 
   <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+
+  <!-- Detailed Staff Permission Dialog -->
+  <p-dialog
+    [(visible)]="showPermissionDialog"
+    header="Phân quyền Chi tiết & Điều chuyển Khoa Nhân sự"
+    [modal]="true"
+    [style]="{ width: '760px', maxWidth: '95vw' }"
+    [closable]="!permissionSaving"
+  >
+    <div class="permission-modal-content" *ngIf="editingStaff">
+      <!-- Staff Info Banner -->
+      <div class="modal-staff-banner">
+        <div class="banner-avatar">
+          {{ getUserInitials(editingStaff) }}
+        </div>
+        <div class="banner-info">
+          <div class="banner-name-row">
+            <span class="banner-fullname">{{ getUserFullName(editingStaff) }}</span>
+            <span class="banner-username">&#64;{{ editingStaff.username }}</span>
+          </div>
+          <div class="banner-meta-row">
+            <span class="banner-email"><i class="pi pi-envelope mr-1"></i>{{ editingStaff.email }}</span>
+          </div>
+        </div>
+        <div class="banner-badge">
+          <span [class]="'role-badge role-' + (editingStaff.role || '').toLowerCase()">
+            <i class="pi" [ngClass]="getRoleIcon(editingStaff.role)"></i>
+            {{ getRoleLabel(editingStaff.role) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Controls Form Grid (3 columns on 1 line) -->
+      <div class="permission-form-grid">
+        <div class="form-field">
+          <label for="permRole" class="field-label">Vai trò hệ thống (Role) *</label>
+          <p-dropdown
+            id="permRole"
+            [options]="roleOptions"
+            [(ngModel)]="selectedRole"
+            (ngModelChange)="onRoleChanged()"
+            optionLabel="label"
+            optionValue="value"
+            [style]="{ width: '100%' }"
+            [appendTo]="'body'"
+          ></p-dropdown>
+        </div>
+
+        <div class="form-field">
+          <label for="permDept" class="field-label">Khoa / Phòng ban công tác *</label>
+          <p-dropdown
+            id="permDept"
+            [options]="modalDepartmentOptions"
+            [(ngModel)]="selectedDeptId"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="-- Chọn khoa công tác --"
+            [style]="{ width: '100%' }"
+            [appendTo]="'body'"
+          ></p-dropdown>
+        </div>
+
+        <div class="form-field">
+          <label for="permStatus" class="field-label">Trạng thái tài khoản *</label>
+          <p-dropdown
+            id="permStatus"
+            [options]="accountStatusOptions"
+            [(ngModel)]="isStaffActive"
+            optionLabel="label"
+            optionValue="value"
+            [style]="{ width: '100%' }"
+            [appendTo]="'body'"
+          ></p-dropdown>
+        </div>
+      </div>
+
+      <!-- Capability Matrix Table -->
+      <div class="matrix-box">
+        <div class="matrix-header flex align-items-center justify-content-between mb-2">
+          <span class="font-bold text-sm text-700">
+            <i class="pi pi-shield text-primary mr-1"></i>
+            Ma trận Đặc quyền (RBAC Dynamic Capability Matrix)
+          </span>
+          <span class="text-xs text-500">
+            Đặc quyền theo vai trò đang chọn: <strong class="text-primary">{{ getRoleLabel(selectedRole) }}</strong>
+          </span>
+        </div>
+
+        <div class="matrix-table-wrapper border-1 surface-border border-round">
+          <table class="w-full perm-table">
+            <thead>
+              <tr class="surface-100">
+                <th class="p-2 text-left font-semibold" style="width: 28%">Phân hệ / Nghiệp vụ</th>
+                <th class="p-2 text-left font-semibold" [class.highlight-col]="selectedRole === 'ADMIN'" style="width: 24%">
+                  <i *ngIf="selectedRole === 'ADMIN'" class="pi pi-check text-xs mr-1 text-primary"></i>Admin
+                </th>
+                <th class="p-2 text-left font-semibold" [class.highlight-col]="selectedRole === 'DOCTOR'" style="width: 24%">
+                  <i *ngIf="selectedRole === 'DOCTOR'" class="pi pi-check text-xs mr-1 text-primary"></i>Bác sĩ (Doctor)
+                </th>
+                <th class="p-2 text-left font-semibold" [class.highlight-col]="selectedRole === 'NURSE'" style="width: 24%">
+                  <i *ngIf="selectedRole === 'NURSE'" class="pi pi-check text-xs mr-1 text-primary"></i>Điều dưỡng (Nurse)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of capabilityMatrix" class="border-top-1 surface-border">
+                <td class="p-2 font-medium text-800">{{ row.module }}</td>
+                <td class="p-2" [class.active-cell]="selectedRole === 'ADMIN'">
+                  <span class="badge-perm" [class.badge-primary]="selectedRole === 'ADMIN'">
+                    <i *ngIf="selectedRole === 'ADMIN'" class="pi pi-check-circle mr-1 text-xs"></i>
+                    {{ row.admin }}
+                  </span>
+                </td>
+                <td class="p-2" [class.active-cell]="selectedRole === 'DOCTOR'">
+                  <span class="badge-perm" [class.badge-primary]="selectedRole === 'DOCTOR'">
+                    <i *ngIf="selectedRole === 'DOCTOR' && row.doctor !== 'Không có quyền'" class="pi pi-check-circle mr-1 text-xs"></i>
+                    <i *ngIf="selectedRole === 'DOCTOR' && row.doctor === 'Không có quyền'" class="pi pi-times-circle mr-1 text-xs text-400"></i>
+                    {{ row.doctor }}
+                  </span>
+                </td>
+                <td class="p-2" [class.active-cell]="selectedRole === 'NURSE'">
+                  <span class="badge-perm" [class.badge-primary]="selectedRole === 'NURSE'">
+                    <i *ngIf="selectedRole === 'NURSE' && row.nurse !== 'Không có quyền'" class="pi pi-check-circle mr-1 text-xs"></i>
+                    <i *ngIf="selectedRole === 'NURSE' && row.nurse === 'Không có quyền'" class="pi pi-times-circle mr-1 text-xs text-400"></i>
+                    {{ row.nurse }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Hủy"
+        class="p-button-text p-button-secondary"
+        (click)="showPermissionDialog = false"
+        [disabled]="permissionSaving"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Lưu phân quyền"
+        icon="pi pi-check"
+        class="p-button-primary"
+        (click)="saveStaffPermissions()"
+        [loading]="permissionSaving"
+      ></button>
+    </ng-template>
+  </p-dialog>
 </div>

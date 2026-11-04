@@ -101,6 +101,66 @@
         </div>
       </div>
 
+
+      <!-- PostGIS Coordinates Section -->
+      <div class="field-coords-block p-3 surface-50 border-round border-1 surface-border my-3">
+        <div class="flex align-items-center justify-content-between mb-2">
+          <label class="font-bold text-900 m-0">
+            <i class="pi pi-map-marker text-primary mr-1"></i> Tọa độ địa lý (PostGIS - Phục vụ TOPSIS C5)
+          </label>
+          <span class="text-xs text-500">Giới hạn TP.HCM (10.3-11.2° N, 106.3-107.1° E)</span>
+        </div>
+
+        <div class="form-row">
+          <div class="field mb-2">
+            <label for="latitude">Vĩ độ (Latitude °N)</label>
+            <p-inputNumber
+              id="latitude"
+              formControlName="latitude"
+              [min]="10.3"
+              [max]="11.2"
+              [minFractionDigits]="4"
+              [maxFractionDigits]="6"
+              placeholder="Ví dụ: 10.7915"
+              class="w-full"
+            ></p-inputNumber>
+            <small class="p-error" *ngIf="hasError('latitude', 'min') || hasError('latitude', 'max')">Vĩ độ TP.HCM nằm trong khoảng 10.3 - 11.2</small>
+            <small class="p-error" *ngIf="hasError('latitude', 'server')">{{ form.get('latitude')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field mb-2">
+            <label for="longitude">Kinh độ (Longitude °E)</label>
+            <p-inputNumber
+              id="longitude"
+              formControlName="longitude"
+              [min]="106.3"
+              [max]="107.1"
+              [minFractionDigits]="4"
+              [maxFractionDigits]="6"
+              placeholder="Ví dụ: 106.6650"
+              class="w-full"
+            ></p-inputNumber>
+            <small class="p-error" *ngIf="hasError('longitude', 'min') || hasError('longitude', 'max')">Kinh độ TP.HCM nằm trong khoảng 106.3 - 107.1</small>
+            <small class="p-error" *ngIf="hasError('longitude', 'server')">{{ form.get('longitude')?.errors?.['server'] }}</small>
+          </div>
+        </div>
+
+        <!-- Quick Pick Buttons -->
+        <div class="quick-pick-box mt-2">
+          <span class="text-xs font-semibold text-600 block mb-1">⚡ Chọn nhanh địa điểm mẫu tại TP.HCM:</span>
+          <div class="flex flex-wrap gap-1">
+            <button
+              *ngFor="let loc of quickLocations"
+              pButton
+              type="button"
+              [label]="loc.label"
+              class="p-button-outlined p-button-xs p-button-secondary text-xs py-1 px-2"
+              (click)="onQuickPickLocation(loc)"
+            ></button>
+          </div>
+        </div>
+      </div>
+
       <div class="field" *ngIf="!isNurse || !editMode">
         <label for="medical_history">Tiền sử bệnh lý</label>
         <textarea id="medical_history" pInputTextarea formControlName="medical_history" class="w-full" rows="3"></textarea>

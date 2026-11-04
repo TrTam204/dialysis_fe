@@ -1,4 +1,5 @@
 <div class="page-shell">
+  <p-toast></p-toast>
   <div class="header-section">
     <div>
       <h2 class="page-title">Quản lý Phiên lọc máu</h2>
@@ -98,7 +99,7 @@
           <th pSortableColumn="scheduled_start" style="width: 155px">Thời gian ca <p-sortIcon field="scheduled_start"></p-sortIcon></th>
           <th style="width: 110px" class="text-right">UF Mục tiêu</th>
           <th pSortableColumn="status" style="width: 140px" class="text-center">Trạng thái <p-sortIcon field="status"></p-sortIcon></th>
-          <th style="width: 115px" class="text-center">Thao tác</th>
+          <th style="width: 130px" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -141,6 +142,17 @@
           </td>
           <td class="text-center" (click)="$event.stopPropagation()">
             <div class="action-cell">
+              <!-- Quick SOS button directly on row -->
+              <button
+                pButton
+                type="button"
+                icon="pi pi-exclamation-triangle"
+                class="p-button-rounded p-button-sm p-button-danger quick-sos-table-btn"
+                [class.sos-pulse-row]="session.is_emergency"
+                (click)="openQuickSos(session)"
+                pTooltip="🚨 Báo động khẩn cấp SOS tại giường"
+                tooltipPosition="top"
+              ></button>
               <a
                 pButton
                 type="button"
@@ -190,4 +202,70 @@
   </div>
 
   <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+
+  <!-- Quick Bedside Emergency SOS Dialog from Table -->
+  <p-dialog
+    [(visible)]="showQuickSosDialog"
+    header="🚨 KÍCH HOẠT BÁO ĐỘNG SOS TẠI GIƯỜNG"
+    [modal]="true"
+    [style]="{ width: '560px', maxWidth: '95vw' }"
+    [closable]="!sosSaving"
+    styleClass="sos-dialog"
+  >
+    <div class="sos-dialog-content" *ngIf="targetSosSession">
+      <div class="sos-dialog-warning mb-3">
+        <i class="pi pi-exclamation-triangle mr-2 text-danger" style="font-size: 1.5rem;"></i>
+        <span>
+          Phát báo động đỏ cho ca lọc <strong>#{{ targetSosSession.session_id }}</strong> (BN: <strong>{{ targetSosSession.patient_name || targetSosSession.patient }}</strong> - Máy: <strong>{{ targetSosSession.machine_name || targetSosSession.machine }}</strong>).
+        </span>
+      </div>
+
+      <div class="sos-reasons-block">
+        <label class="font-bold block mb-2">Chọn triệu chứng / nguyên nhân cấp tính:</label>
+        <div class="sos-reasons-list">
+          <div
+            *ngFor="let opt of sosReasonOptions"
+            class="sos-reason-item"
+            [class.active]="sosReason === opt"
+            (click)="sosReason = opt"
+          >
+            <input type="radio" [id]="'list_' + opt" name="sosReasonList" [value]="opt" [(ngModel)]="sosReason" />
+            <label [for]="'list_' + opt" class="reason-label cursor-pointer">{{ opt }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label for="quickSosNotesInput" class="font-bold block mb-1">Ghi chú lâm sàng bổ sung (nếu có):</label>
+        <textarea
+          id="quickSosNotesInput"
+          pInputTextarea
+          [(ngModel)]="sosNotes"
+          rows="2"
+          placeholder="Ví dụ: Bệnh nhân chóng mặt dữ dội, vã mồ hôi, tụt HA..."
+          class="w-full"
+        ></textarea>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Hủy bỏ"
+        class="p-button-text p-button-secondary"
+        (click)="showQuickSosDialog = false"
+        [disabled]="sosSaving"
+      ></button>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bell"
+        label="XÁC NHẬN PHÁT BÁO ĐỘNG"
+        class="p-button-danger p-button-raised"
+        (click)="submitQuickSos()"
+        [loading]="sosSaving"
+      ></button>
+    </ng-template>
+  </p-dialog>
 </div>

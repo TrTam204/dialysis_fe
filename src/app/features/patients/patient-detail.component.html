@@ -21,14 +21,25 @@
         </div>
       </div>
 
-      <a
-        pButton
-        *ngIf="canEdit"
-        type="button"
-        icon="pi pi-pencil"
-        label="Sửa"
-        [routerLink]="['/patients', patient.patient_id, 'edit']"
-      ></a>
+      <div class="action-buttons flex gap-2">
+        <button
+          pButton
+          *ngIf="canEdit"
+          type="button"
+          icon="pi pi-send"
+          label="Chuyển khoa"
+          class="p-button-outlined p-button-secondary"
+          (click)="openTransferDialog()"
+        ></button>
+        <a
+          pButton
+          *ngIf="canEdit"
+          type="button"
+          icon="pi pi-pencil"
+          label="Sửa"
+          [routerLink]="['/patients', patient.patient_id, 'edit']"
+        ></a>
+      </div>
     </div>
 
     <div class="tabs">
@@ -89,6 +100,10 @@
           <h3>Thông tin điều trị</h3>
           <div class="summary-grid">
             <div class="summary-item">
+              <span class="summary-label">Khoa điều trị</span>
+              <strong class="text-primary">{{ patient.department_name || 'Chưa phân khoa' }}</strong>
+            </div>
+            <div class="summary-item">
               <span class="summary-label">Ca lọc mong muốn</span>
               <strong>{{ getShiftLabel(patient.preferred_shift) }}</strong>
             </div>
@@ -115,6 +130,109 @@
           </div>
         </div>
       </div>
+
+
+        <div class="info-card location-card">
+          <div class="location-header flex justify-content-between align-items-center mb-3">
+            <h3 class="m-0"><i class="pi pi-map-marker text-red-500 mr-2"></i> Tọa độ PostGIS & Định vị Vệ tinh Google Maps</h3>
+            <span class="text-xs text-500 font-semibold uppercase tracking-wider">Hệ chuẩn WGS84 • SRID 4326</span>
+          </div>
+
+          <div class="location-body">
+            <div *ngIf="patient.latitude && patient.longitude; else noCoords">
+              <!-- 3 Info Cards Summary Grid -->
+              <div class="geo-summary-grid">
+                <!-- Card 1: Patient Coordinates -->
+                <div class="geo-card patient-geo">
+                  <div class="geo-card-header">
+                    <span class="geo-icon">📍</span>
+                    <span class="geo-label">Tọa độ Nhà Bệnh nhân</span>
+                  </div>
+                  <div class="geo-main-val">
+                    {{ patient.latitude.toFixed(4) }}° N, {{ patient.longitude.toFixed(4) }}° E
+                  </div>
+                  <div class="geo-sub-val text-500">
+                    Kinh độ / Vĩ độ lưu trữ CSDL PostGIS
+                  </div>
+                </div>
+
+                <!-- Card 2: Dialysis Center -->
+                <div class="geo-card center-geo">
+                  <div class="geo-card-header">
+                    <span class="geo-icon">🏥</span>
+                    <span class="geo-label">BỆNH VIỆN CHỢ RẪY TP.HCM</span>
+                  </div>
+                  <div class="geo-main-val">
+                    {{ patient.center_address || CENTER_ADDRESS }}
+                  </div>
+                  <div class="geo-sub-val text-500">
+                    Tọa độ đích: {{ CENTER_LAT }}° N, {{ CENTER_LNG }}° E
+                  </div>
+                </div>
+
+                <!-- Card 3: Distance & TOPSIS C5 -->
+                <div class="geo-card distance-geo">
+                  <div class="geo-card-header">
+                    <span class="geo-icon">🚗</span>
+                    <span class="geo-label">Khoảng cách di chuyển (C5)</span>
+                  </div>
+                  <div class="geo-distance-row">
+                    <span class="geo-main-val text-primary">{{ calculatedDistance }} km</span>
+                    <span class="distance-badge" [ngClass]="getDistanceBadgeClass(calculatedDistance)">
+                      {{ getDistanceBadgeLabel(calculatedDistance) }}
+                    </span>
+                  </div>
+                  <div class="geo-sub-val text-500">
+                    Tiêu chí C5 trong thuật toán TOPSIS
+                  </div>
+                </div>
+              </div>
+
+              <!-- Embedded Google Maps -->
+              <div class="map-container mt-3" *ngIf="googleMapEmbedUrl">
+                <iframe
+                  [src]="googleMapEmbedUrl"
+                  width="100%"
+                  height="340"
+                  style="border: 0; border-radius: 12px; display: block;"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="map-actions-bar mt-3 flex flex-wrap gap-2">
+                <a
+                  [href]="googleMapExternalUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  pButton
+                  type="button"
+                  icon="pi pi-external-link"
+                  label="Xem trên Google Maps"
+                  class="p-button-outlined p-button-sm p-button-primary"
+                ></a>
+                <a
+                  [href]="googleMapDirectionsUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  pButton
+                  type="button"
+                  icon="pi pi-directions"
+                  label="Chỉ đường đến BV Chợ Rẫy"
+                  class="p-button-sm p-button-success"
+                ></a>
+              </div>
+            </div>
+
+            <ng-template #noCoords>
+              <div class="empty-state">
+                <i class="pi pi-map mr-2 text-xl text-400"></i>
+                <span>Chưa cập nhật tọa độ địa lý cho bệnh nhân này. Hãy chỉnh sửa thông tin bệnh nhân để lưu vị trí PostGIS.</span>
+              </div>
+            </ng-template>
+          </div>
+        </div>
 
       <div class="info-card mt-16">
         <h3>Tiền sử bệnh lý</h3>
@@ -249,4 +367,66 @@
       <button pButton type="button" icon="pi pi-arrow-left" label="Quay lại danh sách" class="p-button-text" (click)="navigateBack()"></button>
     </p-card>
   </div>
+<
+  <!-- Department Transfer Dialog -->
+  <p-dialog
+    [(visible)]="showTransferDialog"
+    header="Điều chuyển khoa điều trị"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    [closable]="!transferSaving"
+  >
+    <div class="p-fluid">
+      <div class="field mb-3">
+        <label class="font-semibold block mb-1">Bệnh nhân</label>
+        <p class="text-secondary font-bold m-0">{{ patient?.full_name }} ({{ patient?.patient_id }})</p>
+        <small class="text-500">Khoa hiện tại: <strong>{{ patient?.department_name || 'Chưa phân khoa' }}</strong></small>
+      </div>
+
+      <div class="field mb-3">
+        <label for="targetDept" class="font-semibold block mb-1">Khoa điều trị đích *</label>
+        <p-dropdown
+          id="targetDept"
+          [options]="departments"
+          [(ngModel)]="targetDepartmentId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="-- Chọn khoa tiếp nhận --"
+          [appendTo]="'body'"
+        ></p-dropdown>
+      </div>
+
+      <div class="field mb-3">
+        <label for="transferReason" class="font-semibold block mb-1">Lý do điều chuyển</label>
+        <textarea
+          id="transferReason"
+          pInputTextarea
+          [(ngModel)]="transferReason"
+          rows="3"
+          placeholder="Nhập lý do điều chuyển (ví dụ: Thay đổi địa bàn cư trú, bác sĩ chỉ định...)"
+        ></textarea>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Hủy"
+        class="p-button-text"
+        (click)="showTransferDialog = false"
+        [disabled]="transferSaving"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="Xác nhận chuyển khoa"
+        icon="pi pi-check"
+        class="p-button-primary"
+        (click)="submitTransfer()"
+        [loading]="transferSaving"
+        [disabled]="!targetDepartmentId"
+      ></button>
+    </ng-template>
+  </p-dialog>
 </div>

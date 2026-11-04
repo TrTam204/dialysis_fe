@@ -1,18 +1,25 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { Subject, catchError, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { SessionService } from '../../core/services/session.service';
 import { BloodSampleService } from '../../core/services/blood-sample.service';
 import { PatientService } from '../../core/services/patient.service';
+import { DepartmentService } from '../../core/services/department.service';
 import { AuthService } from '../../core/services/auth.service';
-import { BloodSample, DialysisSession, Patient } from '../../core/models';
+import { BloodSample, Department, DialysisSession, Patient } from '../../core/models';
 
 @Component({
   selector: 'app-patient-detail',
@@ -20,10 +27,15 @@ import { BloodSample, DialysisSession, Patient } from '../../core/models';
   imports: [
     CommonModule,
     RouterLink,
+    FormsModule,
     CardModule,
     ButtonModule,
     TagModule,
     TableModule,
+    DialogModule,
+    DropdownModule,
+    InputTextareaModule,
+    TooltipModule,
   ],
   templateUrl: './patient-detail.component.html',
   styleUrls: ['./patient-detail.component.scss'],
@@ -48,6 +60,25 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
   canEdit = false;
   canDelete = false;
 
+  // Department Transfer
+  showTransferDialog = false;
+  targetDepartmentId: number | null = null;
+  transferReason = '';
+  transferSaving = false;
+  departments: Department[] = [];
+
+  // Dialysis Center coordinates (Benh vien Cho Ray TP.HCM)
+  readonly CENTER_LAT = 10.7556;
+  readonly CENTER_LNG = 106.6602;
+  readonly CENTER_NAME = 'Bệnh viện Chợ Rẫy TP.HCM';
+  readonly CENTER_ADDRESS = '201B Nguyễn Chí Thanh, Phường 12, Quận 5, TP.HCM';
+
+  // Cached Google Maps URLs to prevent iframe reloading on change detection
+  googleMapEmbedUrl: SafeResourceUrl | null = null;
+  googleMapExternalUrl: string = '';
+  googleMapDirectionsUrl: string = '';
+  private lastCachedCoordKey: string = '';
+
   returnQueryParams: Record<string, string> = {};
   private destroy$ = new Subject<void>();
 
@@ -57,8 +88,10 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
     private patientService: PatientService,
     private sessionService: SessionService,
     private bloodSampleService: BloodSampleService,
+    private departmentService: DepartmentService,
     private authService: AuthService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private sanitizer: DomSanitizer
   ) {
     this.canEdit = this.authService.hasRole(['ADMIN', 'DOCTOR']);
     this.canDelete = this.authService.hasRole('ADMIN');
@@ -101,11 +134,13 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
       next: (patient: Patient) => {
         this.patient = patient;
         this.patientLoading = false;
+        this.updateCachedMapUrls();
         this.loadRelatedData(patientId);
       },
       error: () => {
         this.patientLoading = false;
         this.patient = null;
+        this.updateCachedMapUrls();
         this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không tìm thấy bệnh nhân.' });
       },
     });
@@ -152,107 +187,200 @@ export class PatientDetailComponent implements OnInit, OnDestroy {
   }
 
   onSessionPageChange(event: any) {
-    if (!this.patient) {
-      return;
-    }
-
+    if (!this.patient) return;
     const nextPage = (event.first ?? 0) / (event.rows ?? this.sessionsRows) + 1;
     this.loadRelatedData(this.patient.patient_id, nextPage, this.samplesPage);
   }
 
   onSamplePageChange(event: any) {
-    if (!this.patient) {
-      return;
-    }
-
+    if (!this.patient) return;
     const nextPage = (event.first ?? 0) / (event.rows ?? this.samplesRows) + 1;
     this.loadRelatedData(this.patient.patient_id, this.sessionsPage, nextPage);
   }
 
   getPatientAge(dateOfBirth?: string | null): number | null {
-    if (!dateOfBirth) {
-      return null;
-    }
-
+    if (!dateOfBirth) return null;
     const birth = new Date(dateOfBirth);
-    if (Number.isNaN(birth.getTime())) {
-      return null;
-    }
-
+    if (Number.isNaN(birth.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age -= 1;
+      age--;
     }
-
-    return age >= 0 ? age : null;
+    return age;
   }
 
-  getGenderLabel(gender?: string): string {
-    const labels: Record<string, string> = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' };
-    return labels[gender || 'OTHER'] || 'Khác';
-  }
-
-  getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      ACTIVE: 'Hoạt động',
-      IN_TREATMENT: 'Điều trị',
-      STABLE: 'Ổn định',
-      DISCHARGED: 'Xuất viện',
+  getGenderLabel(gender?: string | null): string {
+    if (!gender) return '-';
+    const map: Record<string, string> = {
+      MALE: 'Nam',
+      FEMALE: 'Nữ',
+      OTHER: 'Khác',
     };
-    return labels[status] || status;
+    return map[gender] || gender;
   }
 
-  getStatusSeverity(status: string): 'success' | 'info' | 'warning' | 'danger' {
-    const severities: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
-      ACTIVE: 'success',
-      IN_TREATMENT: 'info',
-      STABLE: 'warning',
-      DISCHARGED: 'danger',
-    };
-    return severities[status] || 'info';
-  }
-
-  getSessionStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      SCHEDULED: 'Đã lên lịch',
-      IN_PROGRESS: 'Đang thực hiện',
-      COMPLETED: 'Hoàn thành',
-      CANCELLED: 'Hủy',
-    };
-    return labels[status] || status;
-  }
-
-  getSessionStatusSeverity(status: string): 'success' | 'info' | 'warning' | 'danger' {
-    const severities: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
+  getSessionStatusSeverity(status?: string | null): 'success' | 'info' | 'warning' | 'danger' {
+    const map: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
       SCHEDULED: 'info',
       IN_PROGRESS: 'warning',
       COMPLETED: 'success',
       CANCELLED: 'danger',
     };
-    return severities[status] || 'info';
+    return (status && map[status]) || 'info';
+  }
+
+  getStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      ACTIVE: 'Hoạt động',
+      IN_TREATMENT: 'Đang điều trị',
+      STABLE: 'Ổn định',
+      DISCHARGED: 'Đã xuất viện',
+    };
+    return map[status] || status;
+  }
+
+  getStatusSeverity(status: string): 'success' | 'info' | 'warning' | 'danger' {
+    const map: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
+      ACTIVE: 'success',
+      IN_TREATMENT: 'warning',
+      STABLE: 'info',
+      DISCHARGED: 'danger',
+    };
+    return map[status] || 'info';
   }
 
   getShiftLabel(shift?: string | null): string {
-    const labels: Record<string, string> = {
-      SHIFT_1: 'Ca 1',
-      SHIFT_2: 'Ca 2',
-      SHIFT_3: 'Ca 3',
+    const map: Record<string, string> = {
+      SHIFT_1: 'Ca 1 (Sáng)',
+      SHIFT_2: 'Ca 2 (Trưa)',
+      SHIFT_3: 'Ca 3 (Chiều)',
     };
-    return (shift && labels[shift]) || 'Chưa thiết lập';
+    return shift ? map[shift] || shift : 'Chưa thiết lập';
   }
 
   getPatternLabel(pattern?: string | null): string {
-    const labels: Record<string, string> = {
+    const map: Record<string, string> = {
       T2_T4_T6: 'Thứ 2 - Thứ 4 - Thứ 6',
       T3_T5_T7: 'Thứ 3 - Thứ 5 - Thứ 7',
     };
-    return (pattern && labels[pattern]) || 'Chưa thiết lập';
+    return pattern ? map[pattern] || pattern : 'Chưa thiết lập';
   }
 
   latestSession(): DialysisSession | null {
-    return this.latestSessionInfo ?? (this.sessions.length > 0 ? this.sessions[0] : null);
+    return this.latestSessionInfo;
+  }
+
+  getSessionStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      SCHEDULED: 'Chờ lọc',
+      IN_PROGRESS: 'Đang lọc',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    return map[status] || status;
+  }
+
+  // Transfer Dialog
+  openTransferDialog(): void {
+    if (!this.patient) return;
+    this.targetDepartmentId = null;
+    this.transferReason = '';
+    this.showTransferDialog = true;
+    if (this.departments.length === 0) {
+      this.departmentService.getAll().subscribe({
+        next: (res: any) => {
+          this.departments = (res.results || res || []).filter((d: Department) => d.is_active);
+        },
+      });
+    }
+  }
+
+  submitTransfer(): void {
+    if (!this.patient || !this.targetDepartmentId) return;
+    this.transferSaving = true;
+    this.patientService.transferDepartment(this.patient.patient_id, this.targetDepartmentId, this.transferReason).subscribe({
+      next: (res) => {
+        this.transferSaving = false;
+        this.showTransferDialog = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Thành công',
+          detail: res.detail || 'Chuyển khoa thành công!',
+        });
+        if (this.patient) {
+          this.loadPatient(this.patient.patient_id);
+        }
+      },
+      error: (err) => {
+        this.transferSaving = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: err?.error?.detail || 'Không thể chuyển khoa.',
+        });
+      },
+    });
+  }
+
+  // PostGIS & Google Maps
+  get calculatedDistance(): number | null {
+    if (this.patient?.distance_km !== undefined && this.patient?.distance_km !== null) {
+      return this.patient.distance_km;
+    }
+    if (!this.patient?.latitude || !this.patient?.longitude) return null;
+    return this.calculateHaversine(this.CENTER_LAT, this.CENTER_LNG, this.patient.latitude, this.patient.longitude);
+  }
+
+  updateCachedMapUrls(): void {
+    if (!this.patient || this.patient.latitude == null || this.patient.longitude == null) {
+      this.googleMapEmbedUrl = null;
+      this.googleMapExternalUrl = '';
+      this.googleMapDirectionsUrl = '';
+      this.lastCachedCoordKey = '';
+      return;
+    }
+    const lat = Number(this.patient.latitude).toFixed(6);
+    const lon = Number(this.patient.longitude).toFixed(6);
+    const centerLat = Number(this.patient.center_lat ?? this.CENTER_LAT).toFixed(6);
+    const centerLon = Number(this.patient.center_lon ?? this.CENTER_LNG).toFixed(6);
+    const coordKey = `${lat},${lon}->${centerLat},${centerLon}`;
+
+    // Chỉ khởi tạo lại SafeResourceUrl nếu tọa độ thực sự thay đổi
+    if (this.lastCachedCoordKey === coordKey && this.googleMapEmbedUrl) {
+      return;
+    }
+    this.lastCachedCoordKey = coordKey;
+
+    const embedRawUrl = `https://maps.google.com/maps?q=${lat},${lon}&hl=vi&z=15&output=embed`;
+    this.googleMapEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedRawUrl);
+    this.googleMapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    this.googleMapDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${centerLat},${centerLon}&travelmode=driving`;
+  }
+
+  getDistanceBadgeClass(dist: number | null): string {
+    if (dist === null) return 'badge-dist-unknown';
+    if (dist <= 5) return 'badge-dist-near';
+    if (dist <= 15) return 'badge-dist-medium';
+    return 'badge-dist-far';
+  }
+
+  getDistanceBadgeLabel(dist: number | null): string {
+    if (dist === null) return 'Chưa xác định';
+    if (dist <= 5) return 'Gần (< 5 km)';
+    if (dist <= 15) return 'Trung bình (5 - 15 km)';
+    return 'Xa (> 15 km)';
+  }
+
+  private calculateHaversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Number((R * c).toFixed(2));
   }
 }

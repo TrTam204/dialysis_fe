@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
@@ -33,6 +34,7 @@ import { CustomUser, Department } from '../../core/models';
     DropdownModule,
     TagModule,
     TooltipModule,
+    DialogModule,
   ],
   templateUrl: './staff-list.component.html',
   styleUrls: ['./staff-list.component.scss'],
@@ -71,6 +73,64 @@ export class StaffListComponent implements OnInit, OnDestroy {
   sortOrder = 1;
 
   isAdmin = false;
+  // Detailed Staff Permissions Dialog
+  showPermissionDialog = false;
+  editingStaff: CustomUser | null = null;
+  selectedRole: 'ADMIN' | 'DOCTOR' | 'NURSE' = 'NURSE';
+  selectedDeptId: number | null = null;
+  isStaffActive = true;
+  permissionSaving = false;
+
+  roleOptions = [
+    { label: 'Quản trị viên (Admin)', value: 'ADMIN' },
+    { label: 'Bác sĩ điều trị (Doctor)', value: 'DOCTOR' },
+    { label: 'Điều dưỡng viên (Nurse)', value: 'NURSE' },
+  ];
+
+  accountStatusOptions = [
+    { label: 'Hoạt động (Active)', value: true },
+    { label: 'Tạm khóa (Inactive)', value: false },
+  ];
+
+  readonly capabilityMatrix = [
+    {
+      module: 'Quản lý hồ sơ bệnh nhân & Tọa độ PostGIS',
+      admin: 'Toàn quyền (CRUD + Chuyển khoa)',
+      doctor: 'Xem, Sửa & Chuyển khoa',
+      nurse: 'Xem thông tin lâm sàng'
+    },
+    {
+      module: 'Vận hành ca lọc máu (Bắt đầu / Kết thúc / Ghi sinh hiệu / SOS)',
+      admin: 'Toàn quyền giám sát',
+      doctor: 'Kê y lệnh & Điều phối SOS',
+      nurse: 'Vận hành ca, Ghi sinh hiệu & SOS'
+    },
+    {
+      module: 'Công cụ Hỗ trợ Ra quyết định (TOPSIS & Phân cụm K-Means)',
+      admin: 'Xem cấu hình & Chạy lại',
+      doctor: 'Toàn quyền đánh giá & Phân tầng',
+      nurse: 'Xem kết quả phân nhóm'
+    },
+    {
+      module: 'Phê duyệt hoặc Từ chối Kế hoạch lọc máu tuần (GA)',
+      admin: 'Cấu hình tham số & Chạy GA',
+      doctor: 'Xem & Phê duyệt hoặc Từ chối',
+      nurse: 'Xem lịch phân bổ ca trực'
+    },
+    {
+      module: 'Xem dự báo AI tụt huyết áp (PyTorch LSTM IDH)',
+      admin: 'Giám sát Microservice port 8001',
+      doctor: 'Xem cảnh báo & Quyết định can thiệp',
+      nurse: 'Xem khuyến nghị điều dưỡng'
+    },
+    {
+      module: 'Quản trị danh mục (Máy lọc / Khoa / Nhân sự / Audit Log)',
+      admin: 'Toàn quyền phân quyền & Kiểm toán',
+      doctor: 'Không có quyền',
+      nurse: 'Không có quyền'
+    }
+  ];
+
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -100,6 +160,36 @@ export class StaffListComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  get modalDepartmentOptions(): { label: string; value: number | null }[] {
+    const list: { label: string; value: number | null }[] = [];
+    if (this.selectedRole === 'ADMIN') {
+      list.push({ label: '🌐 Toàn viện (Không giới hạn khoa)', value: null });
+    }
+    this.departments.forEach((d) => {
+      if (d.id != null) {
+        list.push({ label: d.name, value: d.id });
+      }
+    });
+    return list;
+  }
+
+  onRoleChanged(): void {
+    if (this.selectedRole === 'ADMIN') {
+      this.selectedDeptId = null;
+    } else if (this.selectedDeptId === null && this.departments.length > 0) {
+      this.selectedDeptId = (this.departments[0].id as number) ?? null;
+    }
+  }
+
+  getUserInitials(user?: CustomUser | null): string {
+    if (!user) return 'NV';
+    const fullName = `${user.last_name || ''} ${user.first_name || ''}`.trim() || user.username;
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'NV';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   formatIndex(idx: number): string {
@@ -242,4 +332,62 @@ export class StaffListComponent implements OnInit, OnDestroy {
       },
     });
   }
+  toggleStaffActive(user: CustomUser) {
+    if (!user.id || !this.isAdmin) return;
+    const newStatus = !user.is_active;
+    this.staffService.patch(user.id, { is_active: newStatus }).subscribe({
+      next: (updated) => {
+        user.is_active = updated.is_active;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Thành công',
+          detail: `Đã ${newStatus ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản "${user.username}".`,
+        });
+      },
+      error: (err) => {
+        const detail = err?.error?.detail || 'Không thể cập nhật trạng thái tài khoản.';
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail });
+      },
+    });
+  }
+
+
+  openPermissionDialog(user: CustomUser): void {
+    this.editingStaff = { ...user };
+    this.selectedRole = user.role;
+    this.selectedDeptId = user.department ?? null;
+    this.isStaffActive = user.is_active;
+    this.showPermissionDialog = true;
+  }
+
+  saveStaffPermissions(): void {
+    if (!this.editingStaff?.id) return;
+    this.permissionSaving = true;
+    const deptVal = this.selectedRole === 'ADMIN' && this.selectedDeptId === null ? null : this.selectedDeptId;
+    this.staffService.patch(this.editingStaff.id, {
+      role: this.selectedRole,
+      department: deptVal as any,
+      is_active: this.isStaffActive,
+    }).subscribe({
+      next: () => {
+        this.permissionSaving = false;
+        this.showPermissionDialog = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Thành công',
+          detail: `Đã cập nhật phân quyền và khoa cho "${this.editingStaff?.username}".`,
+        });
+        this.loadStaff();
+      },
+      error: (err) => {
+        this.permissionSaving = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: err?.error?.detail || 'Không thể cập nhật quyền nhân sự.',
+        });
+      },
+    });
+  }
+
 }

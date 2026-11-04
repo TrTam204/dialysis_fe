@@ -621,3 +621,333 @@
     font-size: 1.1rem;
   }
 }
+
+/* Bedside SOS & Pulse Animation */
+.sos-pulse-btn {
+  background-color: #dc2626 !important;
+  border-color: #b91c1c !important;
+  font-weight: 700 !important;
+  animation: pulse-red 1.6s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+/* Emergency High Alert Banner */
+.emergency-banner-alert {
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.emergency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.emergency-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emergency-pulse-icon {
+  font-size: 2.2rem;
+  animation: pulse-icon 1s infinite alternate;
+}
+
+@keyframes pulse-icon {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
+}
+
+.emergency-title {
+  color: #b91c1c;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.emergency-sub {
+  color: #7f1d1d;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.clear-sos-btn {
+  background: #ffffff !important;
+  color: #b45309 !important;
+  border-color: #f59e0b !important;
+  font-weight: 700 !important;
+  &:hover {
+    background: #fef3c7 !important;
+  }
+}
+
+/* Protocol Checklist Card */
+.protocol-checklist-card {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.protocol-title {
+  color: #991b1b;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.protocol-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.protocol-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #fff5f5;
+  }
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #dc2626;
+  }
+}
+
+/* Nurse Big Cards Grid */
+.nurse-big-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 992px) {
+  .nurse-big-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nurse-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+  &--safe {
+    border-left: 5px solid #10b981;
+  }
+  &--warning {
+    border-left: 5px solid #f59e0b;
+  }
+  &--danger {
+    border-left: 5px solid #ef4444;
+  }
+  &--info {
+    border-left: 5px solid #0284c7;
+  }
+  &--success {
+    border-left: 5px solid #10b981;
+  }
+}
+
+.nurse-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.nurse-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nurse-card__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nurse-card__main-val {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 6px;
+}
+
+.val-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.val-sub {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.val-sep {
+  font-size: 1.2rem;
+  color: #94a3b8;
+}
+
+.nurse-card__status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  &.pill--safe {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  &.pill--warning {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  &.pill--danger {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+}
+
+.nurse-card__note {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.nurse-card__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* SOS Dialog styling */
+.sos-dialog-warning {
+  display: flex;
+  align-items: center;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.sos-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sos-reason-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #ef4444;
+    background: #fff5f5;
+  }
+
+  &.active {
+    border-color: #ef4444;
+    background: #fee2e2;
+    font-weight: 600;
+  }
+
+  input[type="radio"] {
+    accent-color: #dc2626;
+  }
+
+  .reason-label {
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin: 0;
+    color: #1e293b;
+  }
+}
+
+.chart-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

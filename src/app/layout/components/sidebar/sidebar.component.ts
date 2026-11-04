@@ -41,8 +41,8 @@ export class SidebarComponent {
     {
       label: 'Vận hành',
       items: [
-        { label: 'Lịch lọc máu', route: '/schedule', icon: 'pi pi-calendar' },
         { label: 'Phiên lọc máu', route: '/sessions', icon: 'pi pi-clock' },
+        { label: 'Lịch lọc máu', route: '/schedule', icon: 'pi pi-calendar' },
         { label: 'Bệnh nhân', route: '/patients', icon: 'pi pi-user' },
         { label: 'Máy lọc máu', route: '/machines', icon: 'pi pi-cog' },
         { label: 'Kế hoạch tuần', route: '/schedule-plans', icon: 'pi pi-calendar-plus', roles: ['ADMIN', 'DOCTOR'] },
@@ -67,10 +67,31 @@ export class SidebarComponent {
   ];
 
   isItemVisible(item: NavItem): boolean {
+    // Nurse-focused view: only 3 core operational items
+    if (this.currentUserRole === 'NURSE') {
+      return ['/sessions', '/schedule', '/patients'].includes(item.route);
+    }
+
     if (!item.roles || item.roles.length === 0) {
       return true;
     }
     return item.roles.includes(this.currentUserRole);
+  }
+
+  getItemLabel(item: NavItem): string {
+    if (this.currentUserRole === 'NURSE') {
+      if (item.route === '/sessions') return 'Phiên lọc hôm nay';
+      if (item.route === '/schedule') return 'Lịch làm việc tuần';
+      if (item.route === '/patients') return 'Hồ sơ bệnh nhân';
+    }
+    return item.label;
+  }
+
+  getGroupLabel(group: NavGroup): string {
+    if (this.currentUserRole === 'NURSE') {
+      return 'Ca trực lâm sàng';
+    }
+    return group.label;
   }
 
   isGroupVisible(group: NavGroup): boolean {

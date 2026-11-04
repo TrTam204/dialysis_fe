@@ -14,12 +14,591 @@
       <span class="eyebrow">Trung tâm lọc máu</span>
       <h1>{{ title }}</h1>
     </div>
+
+    <!-- Live Clock & Greeting Banner -->
+    <div class="topbar-clock-greeting">
+      <div class="greeting-text">
+        <i class="pi pi-user text-primary"></i>
+        <span>{{ getGreeting() }}</span>
+      </div>
+      <div class="clock-badge">
+        <i class="pi pi-clock"></i>
+        <span>{{ currentTimeString }}</span>
+      </div>
+    </div>
   </div>
 
   <div class="topbar-right">
+    <!-- Online Presence & Quick Chat Button with Unread Badge -->
+    <div class="presence-btn-container">
+      <button
+        pButton
+        type="button"
+        class="p-button-outlined p-button-rounded online-presence-btn"
+        (click)="openChatDrawer()"
+        pTooltip="Nhân viên y tế trực tuyến & Chat nội bộ"
+        tooltipPosition="bottom"
+      >
+        <span class="online-indicator-dot"></span>
+        <span class="online-text">{{ onlineCount }} trực tuyến</span>
+        <i class="pi pi-comments ml-1 chat-icon"></i>
+      </button>
+
+      <!-- Red Pulse Unread Count Badge (1, 2, 3...) -->
+      <span
+        *ngIf="totalUnreadCount > 0"
+        class="topbar-unread-badge"
+        [pTooltip]="totalUnreadCount + ' tin nhắn chưa đọc'"
+        tooltipPosition="bottom"
+      >
+        {{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}
+      </span>
+    </div>
+
     <div class="user-badge">
       <span class="user-badge__name">{{ userName }}</span>
       <span class="user-badge__role">{{ userRole }}</span>
     </div>
   </div>
 </header>
+
+<!-- Medical Chat & Staff Presence Drawer (Zalo / Messenger Style) -->
+<p-sidebar
+  [(visible)]="showChatDrawer"
+  (onHide)="onDrawerHide()"
+  position="right"
+  styleClass="medical-chat-sidebar"
+  [modal]="true"
+  [baseZIndex]="10000"
+>
+  <ng-template pTemplate="header">
+    <!-- Header when in List View -->
+    <div *ngIf="chatView === 'list'" class="chat-header-list">
+      <div class="header-main">
+        <i class="pi pi-comments text-primary mr-2" style="font-size: 1.3rem;"></i>
+        <h3 class="m-0 font-bold">Trao đổi nội bộ</h3>
+        <span *ngIf="totalUnreadCount > 0" class="drawer-header-unread-badge ml-2">
+          {{ totalUnreadCount }} chưa đọc
+        </span>
+      </div>
+      <span class="chat-subtitle">Kênh liên lạc lâm sàng & trực ban</span>
+    </div>
+
+    <!-- Header when in Chat View -->
+    <div *ngIf="chatView === 'chat'" class="chat-header-thread">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        class="p-button-text p-button-rounded p-button-secondary back-btn mr-2"
+        (click)="backToList()"
+        pTooltip="Quay lại danh sách"
+        tooltipPosition="bottom"
+      ></button>
+
+      <!-- Pinned Channel Header -->
+      <div *ngIf="isPinnedSelected" class="thread-info">
+        <div class="thread-avatar avatar-channel">📢</div>
+        <div class="thread-meta">
+          <div class="thread-name font-bold">🏥 Kênh Chung Toàn Khoa</div>
+          <div class="thread-sub text-xs text-slate-500">Thông báo & trao đổi lâm sàng chung</div>
+        </div>
+      </div>
+
+      <!-- Direct Contact Header -->
+      <div *ngIf="!isPinnedSelected && selectedContact" class="thread-info">
+        <div
+          class="thread-avatar"
+          [class.avatar-admin]="selectedContact.role === 'ADMIN'"
+          [class.avatar-doctor]="selectedContact.role === 'DOCTOR'"
+          [class.avatar-nurse]="selectedContact.role === 'NURSE'"
+        >
+          {{ getInitials(selectedContact.full_name) }}
+          <span class="status-dot" [class.dot-online]="selectedContact.is_online"></span>
+        </div>
+        <div class="thread-meta">
+          <div class="thread-name-row">
+            <span class="thread-name font-bold">{{ selectedContact.full_name }}</span>
+            <span class="role-badge" [ngClass]="getRoleBadge(selectedContact.role).cssClass">
+              {{ getRoleBadge(selectedContact.role).label }}
+            </span>
+          </div>
+          <div class="thread-sub text-xs">
+            <span *ngIf="selectedContact.is_online" class="text-emerald-600 font-semibold">🟢 Đang hoạt động</span>
+            <span *ngIf="!selectedContact.is_online" class="text-slate-500">
+              {{ selectedContact.status_text }}
+            </span>
+            <span *ngIf="selectedContact.department_name" class="dept-separator">• {{ selectedContact.department_name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- BODY: VIEW 1 - LIST & CONTACTS -->
+  <div *ngIf="chatView === 'list'" class="chat-list-view">
+    <!-- Top Search Bar -->
+    <div class="chat-search-container">
+      <div class="search-input-wrapper">
+        <i class="pi pi-search search-icon"></i>
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Tìm theo tên, chức vụ, khoa/phòng..."
+          class="chat-search-input"
+        />
+        <i
+          *ngIf="searchQuery"
+          class="pi pi-times clear-search-icon"
+          (click)="clearSearch()"
+        ></i>
+      </div>
+    </div>
+
+    <!-- Active Staff Horizontal Strip -->
+    <div class="active-strip-section" *ngIf="activeStaffList.length > 0">
+      <div class="strip-header">
+        <span class="strip-title">ĐANG HOẠT ĐỘNG / GẦN ĐÂY</span>
+        <span class="online-pill">{{ onlineCount }} trực tuyến</span>
+      </div>
+      <div class="active-avatars-scroll">
+        <div
+          *ngFor="let staff of activeStaffList"
+          class="active-avatar-item"
+          (click)="openConversation(staff)"
+          [pTooltip]="staff.full_name + ' (' + getRoleBadge(staff.role).label + ') - ' + staff.status_text"
+          tooltipPosition="bottom"
+        >
+          <div
+            class="active-avatar-circle"
+            [class.avatar-admin]="staff.role === 'ADMIN'"
+            [class.avatar-doctor]="staff.role === 'DOCTOR'"
+            [class.avatar-nurse]="staff.role === 'NURSE'"
+          >
+            {{ getInitials(staff.full_name) }}
+            <span class="status-dot" [class.dot-online]="staff.is_online"></span>
+          </div>
+          <span class="active-short-name">{{ getShortName(staff.full_name, staff.role) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Conversation & Channel List -->
+    <div class="conversations-scroll-container">
+      <!-- Pinned Channel Card -->
+      <div class="list-section-heading">📌 GHIM ĐẦU TRANG</div>
+      <div
+        class="conversation-row pinned-row"
+        (click)="openPinnedChannel()"
+      >
+        <div class="avatar-box avatar-channel">
+          <i class="pi pi-megaphone"></i>
+        </div>
+        <div class="conversation-details">
+          <div class="row-top">
+            <span class="convo-name font-semibold text-slate-900">🏥 Kênh Chung Toàn Khoa</span>
+            <div class="row-top-right">
+              <span class="convo-time" *ngIf="pinnedChannel.last_message_at">
+                {{ formatTime(pinnedChannel.last_message_at) }}
+              </span>
+              <!-- Unread Badge on Pinned Channel -->
+              <span *ngIf="pinnedChannel.unread_count && pinnedChannel.unread_count > 0" class="row-unread-pill">
+                {{ pinnedChannel.unread_count > 99 ? '99+' : pinnedChannel.unread_count }}
+              </span>
+            </div>
+          </div>
+          <div class="row-bottom">
+            <span class="last-message" [class.font-bold]="pinnedChannel.unread_count && pinnedChannel.unread_count > 0">
+              {{ pinnedChannel.last_message || 'Bấm để xem các thông báo chung toàn khoa...' }}
+            </span>
+            <span class="pin-badge">Ghim</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversations & Contacts -->
+      <div class="list-section-heading mt-3">
+        <span>TIN NHẮN & LIÊN HỆ</span>
+        <span class="text-xs text-slate-400 font-normal">({{ filteredConversations.length }})</span>
+      </div>
+
+      <div *ngIf="filteredConversations.length === 0" class="empty-list-state">
+        <i class="pi pi-users text-slate-400 text-3xl mb-2"></i>
+        <span class="text-slate-500 text-sm">Không tìm thấy cán bộ y tế phù hợp</span>
+      </div>
+
+      <div
+        *ngFor="let convo of filteredConversations"
+        class="conversation-row"
+        [class.has-unread]="convo.unread_count && convo.unread_count > 0"
+        (click)="openConversation(convo)"
+      >
+        <div
+          class="avatar-box"
+          [class.avatar-admin]="convo.role === 'ADMIN'"
+          [class.avatar-doctor]="convo.role === 'DOCTOR'"
+          [class.avatar-nurse]="convo.role === 'NURSE'"
+        >
+          {{ getInitials(convo.full_name) }}
+          <span class="status-dot" [class.dot-online]="convo.is_online"></span>
+        </div>
+
+        <div class="conversation-details">
+          <div class="row-top">
+            <div class="name-badge-group">
+              <span class="convo-name font-semibold text-slate-900">{{ convo.full_name }}</span>
+              <span class="role-badge" [ngClass]="getRoleBadge(convo.role).cssClass">
+                {{ getRoleBadge(convo.role).label }}
+              </span>
+            </div>
+            <div class="row-top-right">
+              <span class="convo-time" *ngIf="convo.last_message_at">
+                {{ formatTime(convo.last_message_at) }}
+              </span>
+              <!-- Unread Badge on Conversation Row -->
+              <span *ngIf="convo.unread_count && convo.unread_count > 0" class="row-unread-pill">
+                {{ convo.unread_count > 99 ? '99+' : convo.unread_count }}
+              </span>
+            </div>
+          </div>
+
+          <div class="row-bottom">
+            <span
+              class="last-message"
+              [class.unread-preview]="convo.unread_count && convo.unread_count > 0"
+            >
+              <span *ngIf="convo.last_message">
+                <span *ngIf="convo.is_last_from_me" class="font-medium text-slate-600">Bạn: </span>
+                {{ convo.last_message }}
+              </span>
+              <span *ngIf="!convo.last_message" class="text-slate-400 italic">
+                {{ convo.department_name ? convo.department_name : 'Bắt đầu cuộc trò chuyện...' }}
+              </span>
+            </span>
+            <span *ngIf="convo.department_name && convo.last_message" class="dept-tag">
+              {{ convo.department_name }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY: VIEW 2 - DEDICATED CHAT THREAD -->
+  <div *ngIf="chatView === 'chat'" class="chat-thread-view">
+    <!-- Messages Scroll Area -->
+    <div class="chat-messages-container" id="chatMessagesBody">
+      <div *ngIf="loadingMessages" class="loading-state">
+        <i class="pi pi-spin pi-spinner text-primary mr-2"></i>
+        <span>Đang đồng bộ tin nhắn...</span>
+      </div>
+
+      <div *ngIf="!loadingMessages && chatMessages.length === 0" class="empty-chat">
+        <div class="empty-chat-icon-wrap">
+          <i class="pi pi-comments"></i>
+        </div>
+        <p class="empty-chat-title">Chưa có trao đổi nào</p>
+        <p class="empty-chat-sub">Hãy gửi tin nhắn đầu tiên để bắt đầu hỗ trợ lâm sàng!</p>
+      </div>
+
+      <div
+        *ngFor="let msg of chatMessages"
+        class="chat-message-row"
+        [class.outgoing]="isOutgoing(msg)"
+        [class.sos-row]="isSOSMessage(msg.content)"
+      >
+        <div
+          class="message-bubble"
+          [class.bubble-out]="isOutgoing(msg)"
+          [class.bubble-in]="!isOutgoing(msg)"
+          [class.bubble-sos]="isSOSMessage(msg.content)"
+        >
+          <!-- Sender Meta for incoming or SOS -->
+          <div class="message-meta" *ngIf="!isOutgoing(msg) || isSOSMessage(msg.content)">
+            <span class="sender-name">{{ msg.sender_name }}</span>
+            <span class="sender-role-tag" *ngIf="msg.sender_role">{{ msg.sender_role }}</span>
+            <span class="timestamp">{{ msg.created_at | date:'HH:mm' }}</span>
+          </div>
+
+          <!-- Message Text (if any) -->
+          <div class="message-text" *ngIf="msg.content">
+            <span *ngIf="isSOSMessage(msg.content)" class="sos-icon-badge">🚨</span>
+            {{ msg.content }}
+          </div>
+
+          <!-- MULTIMEDIA ATTACHMENTS RENDERING -->
+          <!-- 1. Voice Note / Audio Player -->
+          <div *ngIf="msg.attachment_type === 'AUDIO' && msg.attachment_url" class="audio-attachment-wrap">
+            <audio controls [src]="msg.attachment_url" preload="metadata" class="chat-audio-player"></audio>
+            <div class="attachment-label">
+              <i class="pi pi-microphone mr-1 text-primary"></i>
+              <span>{{ msg.attachment_name || 'Bản ghi âm lâm sàng' }}</span>
+            </div>
+          </div>
+
+          <!-- 2. Image Attachment -->
+          <div *ngIf="msg.attachment_type === 'IMAGE' && msg.attachment_url" class="image-attachment-wrap">
+            <img
+              [src]="msg.attachment_url"
+              [alt]="msg.attachment_name || 'Hình ảnh'"
+              class="chat-attached-image"
+              (click)="openImagePreviewModal(msg.attachment_url)"
+            />
+          </div>
+
+          <!-- 3. Video Player Attachment -->
+          <div *ngIf="msg.attachment_type === 'VIDEO' && msg.attachment_url" class="video-attachment-wrap">
+            <video controls [src]="msg.attachment_url" class="chat-attached-video"></video>
+          </div>
+
+          <!-- 4. File Document Attachment -->
+          <div *ngIf="msg.attachment_type === 'FILE' && msg.attachment_url" class="file-attachment-wrap">
+            <a [href]="msg.attachment_url" target="_blank" download class="file-attachment-card">
+              <div class="file-icon-box">
+                <i class="pi pi-file-pdf"></i>
+              </div>
+              <div class="file-info-box">
+                <span class="file-name">{{ msg.attachment_name || 'Tài liệu đính kèm' }}</span>
+                <span class="file-action"><i class="pi pi-download mr-1"></i>Tải xuống / Mở file</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- SMART @ MENTIONS & MEDICAL DATA CARDS -->
+          <div *ngIf="msg.metadata?.mentions?.length" class="medical-ref-cards-container">
+            <div
+              *ngFor="let ref of msg.metadata?.mentions"
+              class="medical-ref-card"
+              (click)="openRefLink(ref.link)"
+            >
+              <div class="ref-card-header">
+                <span class="ref-icon">
+                  {{ ref.ref_type === 'PATIENT' ? '👤' : (ref.ref_type === 'MACHINE' ? '⚙️' : '👨‍⚕️') }}
+                </span>
+                <div class="ref-title-wrap">
+                  <span class="ref-title">{{ ref.title }}</span>
+                  <span class="ref-sub" *ngIf="ref.subtitle">{{ ref.subtitle }}</span>
+                </div>
+                <i class="pi pi-external-link ref-external-icon"></i>
+              </div>
+
+              <div class="ref-doc-summary" *ngIf="ref.doc_summary">
+                <i class="pi pi-file mr-1"></i>{{ ref.doc_summary }}
+              </div>
+
+              <div class="ref-action-footer">
+                <button type="button" class="ref-btn">
+                  Mở hồ sơ / Xem dữ liệu ↗
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Reference Pill -->
+          <div *ngIf="msg.session_code" class="session-ref">
+            <i class="pi pi-link mr-1"></i>Phiên HD #{{ msg.session_code }}
+          </div>
+
+          <!-- Timestamp for outgoing -->
+          <div class="message-meta-out" *ngIf="isOutgoing(msg) && !isSOSMessage(msg.content)">
+            <span class="timestamp-out">{{ msg.created_at | date:'HH:mm' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVIEWS & ATTACHMENT TRAY BEFORE SENDING -->
+    <!-- Mention Tag Chips Preview -->
+    <div *ngIf="selectedMentions.length > 0" class="selected-mentions-bar">
+      <span class="mentions-label">Đính kèm hồ sơ:</span>
+      <div *ngFor="let m of selectedMentions; let idx = index" class="mention-chip">
+        <span class="chip-icon">{{ m.ref_type === 'PATIENT' ? '👤' : (m.ref_type === 'MACHINE' ? '⚙️' : '👨‍⚕️') }}</span>
+        <span class="chip-text">{{ m.code }} ({{ m.title }})</span>
+        <i class="pi pi-times remove-chip-btn" (click)="removeMention(idx)"></i>
+      </div>
+    </div>
+
+    <!-- Media File Preview -->
+    <div *ngIf="mediaPreviewUrl" class="attachment-preview-tray">
+      <div class="media-preview-box">
+        <img *ngIf="mediaFileType === 'IMAGE'" [src]="mediaPreviewUrl" class="preview-thumb" alt="Preview" />
+        <video *ngIf="mediaFileType === 'VIDEO'" [src]="mediaPreviewUrl" class="preview-thumb" controls></video>
+        <span class="preview-filename">{{ selectedMediaFile?.name }}</span>
+        <button type="button" class="clear-preview-btn" (click)="clearSelectedMedia()"><i class="pi pi-times"></i></button>
+      </div>
+    </div>
+
+    <!-- Document File Preview -->
+    <div *ngIf="selectedDocFile" class="attachment-preview-tray">
+      <div class="doc-preview-box">
+        <i class="pi pi-file-pdf text-xl text-primary mr-2"></i>
+        <span class="preview-filename">{{ selectedDocFile.name }}</span>
+        <button type="button" class="clear-preview-btn" (click)="clearSelectedDoc()"><i class="pi pi-times"></i></button>
+      </div>
+    </div>
+
+    <!-- Voice Recording Status Banner -->
+    <div *ngIf="isRecording" class="recording-status-banner">
+      <div class="rec-dot-wave">
+        <span class="rec-live-dot"></span>
+        <span class="rec-text font-bold">🔴 Đang ghi âm {{ formatRecordingTime(recordingSeconds) }}...</span>
+      </div>
+      <div class="rec-actions">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-check"
+          label="Gửi ngay"
+          class="p-button-sm p-button-success"
+          (click)="stopVoiceRecording(true)"
+        ></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-times"
+          label="Hủy"
+          class="p-button-sm p-button-secondary ml-1"
+          (click)="cancelVoiceRecording()"
+        ></button>
+      </div>
+    </div>
+
+    <!-- FLOATING @ MENTION POPUP PICKER -->
+    <div *ngIf="showMentionPopup" class="mention-floating-popup">
+      <div class="mention-popup-header">
+        <span class="font-bold text-xs">&#64; ĐÍNH KÈM DỮ LIỆU Y TẾ</span>
+        <i class="pi pi-times close-popup-icon" (click)="showMentionPopup = false"></i>
+      </div>
+
+      <!-- Quick Filter Tabs -->
+      <div class="mention-filter-tabs">
+        <button type="button" class="tab-btn" [class.active]="mentionTab === 'ALL'" (click)="mentionTab = 'ALL'">Tất cả</button>
+        <button type="button" class="tab-btn" [class.active]="mentionTab === 'PATIENT'" (click)="mentionTab = 'PATIENT'">👤 Bệnh nhân</button>
+        <button type="button" class="tab-btn" [class.active]="mentionTab === 'MACHINE'" (click)="mentionTab = 'MACHINE'">⚙️ Máy lọc</button>
+        <button type="button" class="tab-btn" [class.active]="mentionTab === 'STAFF'" (click)="mentionTab = 'STAFF'">👨‍⚕️ Nhân sự</button>
+      </div>
+
+      <!-- Suggestion Items Scroll List -->
+      <div class="mention-items-list">
+        <div *ngIf="getFilteredMentionSuggestions().length === 0" class="no-suggestions">
+          Không tìm thấy đối tượng khớp từ khóa
+        </div>
+        <div
+          *ngFor="let item of getFilteredMentionSuggestions()"
+          class="mention-item-row"
+          (click)="selectMention(item)"
+        >
+          <span class="item-icon">{{ item.ref_type === 'PATIENT' ? '👤' : (item.ref_type === 'MACHINE' ? '⚙️' : '👨‍⚕️') }}</span>
+          <div class="item-text-wrap">
+            <span class="item-title font-semibold">{{ item.title }}</span>
+            <span class="item-sub" *ngIf="item.subtitle">{{ item.subtitle }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT INPUT AREA & TOOLBAR -->
+    <div class="chat-input-area">
+      <!-- Hidden file inputs -->
+      <input
+        #mediaInput
+        type="file"
+        accept="image/*,video/*"
+        style="display: none;"
+        (change)="onMediaFileSelected($event)"
+      />
+      <input
+        #docInput
+        type="file"
+        accept=".pdf,.doc,.docx,.xlsx,.xls,.csv,.txt,.zip"
+        style="display: none;"
+        (change)="onDocFileSelected($event)"
+      />
+
+      <div class="textarea-wrapper">
+        <textarea
+          pInputTextarea
+          [(ngModel)]="messageText"
+          (input)="onMessageInput($event)"
+          rows="2"
+          [autoResize]="false"
+          [placeholder]="isPinnedSelected ? 'Nhập thông báo gửi toàn khoa... (Gõ @ để đính kèm)' : ('Nhắn cho ' + (selectedContact?.full_name || 'đồng nghiệp') + '... (Gõ @ để đính kèm)')"
+          (keydown.enter)="$event.preventDefault(); sendMessage()"
+          [disabled]="sendingMessage"
+        ></textarea>
+      </div>
+
+      <!-- Action Toolbar with Multimedia Buttons -->
+      <div class="chat-input-toolbar">
+        <div class="toolbar-left-tools">
+          <!-- Voice Record Button -->
+          <button
+            pButton
+            type="button"
+            icon="pi pi-microphone"
+            class="p-button-text p-button-rounded tool-btn voice-btn"
+            [class.active-rec]="isRecording"
+            (click)="isRecording ? stopVoiceRecording(true) : startVoiceRecording()"
+            [pTooltip]="isRecording ? 'Bấm để hoàn tất và gửi ghi âm' : 'Gửi ghi âm giọng nói'"
+            tooltipPosition="top"
+          ></button>
+
+          <!-- Image & Video Upload Button -->
+          <button
+            pButton
+            type="button"
+            icon="pi pi-image"
+            class="p-button-text p-button-rounded tool-btn"
+            (click)="mediaInput.click()"
+            pTooltip="Gửi hình ảnh hoặc video"
+            tooltipPosition="top"
+          ></button>
+
+          <!-- File Document Attachment Button -->
+          <button
+            pButton
+            type="button"
+            icon="pi pi-paperclip"
+            class="p-button-text p-button-rounded tool-btn"
+            (click)="docInput.click()"
+            pTooltip="Đính kèm file tài liệu / bệnh án (.pdf, .docx, .xlsx...)"
+            tooltipPosition="top"
+          ></button>
+
+          <!-- @ Mention Trigger Button -->
+          <button
+            pButton
+            type="button"
+            icon="pi pi-at"
+            class="p-button-text p-button-rounded tool-btn mention-btn"
+            (click)="toggleMentionPicker()"
+            pTooltip="Đính kèm hồ sơ Bệnh nhân, Máy lọc, Nhân viên"
+            tooltipPosition="top"
+          ></button>
+        </div>
+
+        <button
+          pButton
+          type="button"
+          icon="pi pi-send"
+          class="p-button-primary send-btn"
+          (click)="sendMessage()"
+          [disabled]="(!messageText.trim() && !selectedMediaFile && !selectedDocFile && selectedMentions.length === 0 && !recordedAudioBlob) || sendingMessage"
+          pTooltip="Gửi tin nhắn"
+        ></button>
+      </div>
+    </div>
+  </div>
+</p-sidebar>
+
+<!-- Full Image Modal Lightbox -->
+<div *ngIf="previewModalImageUrl" class="image-modal-lightbox" (click)="closeImagePreviewModal()">
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <img [src]="previewModalImageUrl" alt="Full Preview" class="full-preview-img" />
+    <button type="button" class="lightbox-close-btn" (click)="closeImagePreviewModal()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+</div>

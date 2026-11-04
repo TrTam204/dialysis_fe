@@ -32,6 +32,8 @@ export class LoginComponent {
   form;
   loading = false;
   shakeError = false;
+  isLocked = false;
+  remainingAttempts: number | null = null;
   messages: { severity: string; summary: string; detail: string }[] = [];
 
   constructor(
@@ -55,6 +57,7 @@ export class LoginComponent {
     this.loading = true;
     this.form.disable();
     this.messages = [];
+    this.isLocked = false;
 
     const credentials: LoginRequest = {
       username: this.form.value.username || '',
@@ -71,12 +74,20 @@ export class LoginComponent {
         this.loading = false;
         this.form.enable();
         const detail = err?.error?.detail || err?.error?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
-        this.messages = [{ severity: 'error', summary: 'Lỗi đăng nhập', detail }];
+        this.remainingAttempts = err?.error?.remaining_attempts !== undefined ? err.error.remaining_attempts : null;
+        this.isLocked = err?.status === 403 || err?.error?.locked || this.remainingAttempts === 0 || detail.includes('tạm khóa 15 phút');
+        this.messages = [
+          {
+            severity: this.isLocked ? 'error' : (this.remainingAttempts !== null ? 'warn' : 'error'),
+            summary: this.isLocked ? 'Cảnh báo bảo mật: Tài khoản bị khóa tạm thời' : 'Lỗi đăng nhập',
+            detail,
+          },
+        ];
         this.triggerShake();
       },
     });
   }
-  
+
   private triggerShake() {
     this.shakeError = false;
     setTimeout(() => {

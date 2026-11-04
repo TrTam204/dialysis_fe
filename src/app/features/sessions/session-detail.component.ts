@@ -55,6 +55,24 @@ import { DialysisSession, VitalSign, IdhPredictionResponse, LstmModelInfoRespons
 })
 export class SessionDetailComponent implements OnInit, OnDestroy {
   session: DialysisSession | null = null;
+  currentUserRole = 'NURSE';
+  isChartCollapsed = false;
+
+  // Bedside Emergency SOS
+  showSosDialog = false;
+  sosReason = 'Tụt huyết áp cấp (MAP giảm đột ngột < 60 mmHg hoặc HA tâm thu giảm > 30 mmHg)';
+  sosNotes = '';
+  sosSaving = false;
+
+  readonly sosReasonOptions = [
+    'Tụt huyết áp cấp (MAP giảm đột ngột < 60 mmHg hoặc HA tâm thu giảm > 30 mmHg)',
+    'Khó thở cấp / Phù phổi cấp',
+    'Choáng phản vệ / Dị ứng màng lọc',
+    'Chuột rút cơ dữ dội kèm co giật',
+    'Sự cố đường mạch máu (vỡ FAV, tuột kim chảy máu)',
+    'Lý do cấp tính khác',
+  ];
+
   vitalSigns: VitalSign[] = [];
   loading = false;
   vitalSignsLoading = false;
@@ -250,6 +268,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.currentUserRole = this.authService.getUserRole() || 'NURSE';
     const sessionId = this.route.snapshot.paramMap.get('id');
     if (sessionId) {
       this.loadSession(sessionId);
@@ -1029,5 +1048,116 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
       case 'HIGH': return 'Nguy cơ Cao (Cảnh báo)';
       default: return 'Chưa xác định';
     }
+  }
+
+  get weightGainPercent(): number | null {
+    if (this.session?.pre_weight && this.session?.patient_dry_weight && this.session.patient_dry_weight > 0) {
+      const gain = this.session.pre_weight - this.session.patient_dry_weight;
+      return Number(((gain / this.session.patient_dry_weight) * 100).toFixed(1));
+    }
+    return null;
+  }
+
+  get weightGainSeverity(): 'safe' | 'warning' | 'danger' {
+    const p = this.weightGainPercent;
+    if (p === null) return 'safe';
+    if (p > 7) return 'danger';
+    if (p >= 5) return 'warning';
+    return 'safe';
+  }
+
+  get ufProgressPercent(): number {
+    if (!this.session?.uf_target || this.session.uf_target <= 0) return 0;
+    const actual = this.session.uf_actual || 0;
+    const pct = Math.round((actual / this.session.uf_target) * 100);
+    return Math.min(pct, 100);
+  }
+
+  toggleChartCollapse(): void {
+    this.isChartCollapsed = !this.isChartCollapsed;
+  }
+
+  openSosDialog(): void {
+    this.showSosDialog = true;
+    this.sosNotes = '';
+  }
+
+  playEmergencyAlarm(): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.36);
+    } catch (e) {
+      // Audio policy fallback
+    }
+  }
+
+  submitSos(): void {
+    if (!this.session) return;
+    this.sosSaving = true;
+    this.sessionService.triggerSos(this.session.session_id, this.sosReason, this.sosNotes).subscribe({
+      next: (updatedSession) => {
+        this.sosSaving = false;
+        this.showSosDialog = false;
+        this.session = updatedSession;
+        this.playEmergencyAlarm();
+        this.messageService.add({
+          severity: 'error',
+          summary: '🚨 ĐÃ KÍCH HOẠT BÁO ĐỘNG SOS',
+          detail: `Báo động cấp cứu tại giường cho bệnh nhân ${updatedSession.patient_name || updatedSession.patient || ''}!`,
+          life: 8000,
+        });
+      },
+      error: (err) => {
+        this.sosSaving = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: err.error?.detail || 'Không thể kích hoạt báo động SOS.',
+        });
+      },
+    });
+  }
+
+  confirmClearSos(): void {
+    if (!this.session) return;
+    this.confirmationService.confirm({
+      header: 'Xác nhận hủy báo động cấp cứu',
+      message: 'Người bệnh đã ổn định và kíp trực đã hoàn tất quy trình can thiệp cấp cứu?',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Xác nhận an toàn',
+      rejectLabel: 'Chưa, tiếp tục theo dõi',
+      accept: () => {
+        if (!this.session) return;
+        this.sessionService.clearSos(this.session.session_id).subscribe({
+          next: (updatedSession) => {
+            this.session = updatedSession;
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Đã hủy báo động',
+              detail: 'Trạng thái ca lọc đã trở về vận hành theo dõi bình thường.',
+            });
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Lỗi',
+              detail: err.error?.detail || 'Không thể hủy báo động.',
+            });
+          },
+        });
+      },
+    });
   }
 }

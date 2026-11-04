@@ -4,8 +4,12 @@ export interface AuditLog {
   id: number;
   actor: number | null;
   actor_name: string | null;
+  actor_username?: string | null;
   actor_role: string | null;
-  action: AuditAction;
+  user_full_name?: string | null;
+  username?: string | null;
+  user_role?: string | null;
+  action: AuditAction | string;
   entity_type: string;
   entity_id: string;
   changes: Record<string, any>;

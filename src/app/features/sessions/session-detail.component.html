@@ -43,6 +43,18 @@
           class="p-button-success quick-vital-btn"
           (click)="openAddVitalSign()"
         ></button>
+        <!-- Bedside Emergency SOS button (Prominent & always visible on all sessions) -->
+        <button
+          pButton
+          *ngIf="session.status !== 'CANCELLED'"
+          type="button"
+          icon="pi pi-exclamation-triangle"
+          label="🚨 BÁO ĐỘNG SOS KHẨN CẤP"
+          class="p-button-danger p-button-raised btn-sos-emergency sos-pulse-btn"
+          (click)="openSosDialog()"
+          pTooltip="Kích hoạt báo động khẩn cấp tại giường lọc máu"
+        ></button>
+
         <!-- Start session button -->
         <button
           pButton
@@ -97,6 +109,128 @@
           class="p-button-danger p-button-outlined"
           (click)="confirmCancelSession()"
         ></button>
+      </div>
+    </div>
+
+    <!-- EMERGENCY HIGH ALERT BANNER -->
+    <div *ngIf="session.is_emergency" class="emergency-banner-alert">
+      <div class="emergency-header">
+        <div class="emergency-title-group">
+          <span class="emergency-pulse-icon">🚨</span>
+          <div>
+            <h2 class="emergency-title">TÌNH TRẠNG CẤP CỨU ĐANG ĐƯỢC KÍCH HOẠT!</h2>
+            <p class="emergency-sub">
+              Lý do: <strong>{{ session.emergency_details?.reason || 'Báo động cấp tính tại giường' }}</strong>
+              &bull; Kích hoạt lúc: <strong>{{ session.emergency_details?.triggered_at | date:'HH:mm:ss dd/MM/yyyy' }}</strong>
+              &bull; Bởi: <strong>{{ session.emergency_details?.triggered_by_name || session.emergency_details?.triggered_by || 'Nhân viên y tế' }}</strong>
+            </p>
+          </div>
+        </div>
+        <button
+          pButton
+          *ngIf="canManageWorkflow"
+          type="button"
+          icon="pi pi-check"
+          label="HỦY BÁO ĐỘNG / ĐÃ KIỂM SOÁT"
+          class="p-button-outlined p-button-warning clear-sos-btn"
+          (click)="confirmClearSos()"
+        ></button>
+      </div>
+
+      <div class="protocol-checklist-card">
+        <h4 class="protocol-title">
+          <i class="pi pi-shield mr-2"></i>QUY TRÌNH XỬ TRÍ CẤP CỨU TẠI GIƯỜNG (THEO KHUYẾN CÁO BỘ Y TẾ)
+        </h4>
+        <div class="protocol-items">
+          <label class="protocol-item">
+            <input type="checkbox" />
+            <span><strong>1. Giảm ngay tốc độ siêu lọc</strong> — Chuyển UF rate về 0 mL/h để ngăn trụy mạch.</span>
+          </label>
+          <label class="protocol-item">
+            <input type="checkbox" />
+            <span><strong>2. Đặt bệnh nhân nằm đầu thấp</strong> — Tư thế Trendelenburg (nâng cao chân 15–30 độ).</span>
+          </label>
+          <label class="protocol-item">
+            <input type="checkbox" />
+            <span><strong>3. Bù dịch tĩnh mạch tức thì</strong> — Truyền nhanh 100–200 mL NaCl 0.9% qua đường tĩnh mạch.</span>
+          </label>
+          <label class="protocol-item">
+            <input type="checkbox" />
+            <span><strong>4. Thở Oxy hỗ trợ</strong> — Cannula mũi 2–4 L/phút nếu SpO2 &lt; 92% hoặc khó thở.</span>
+          </label>
+          <label class="protocol-item">
+            <input type="checkbox" />
+            <span><strong>5. Báo động khẩn cấp</strong> — Gọi ngay Bác sĩ trưởng kíp trực và điều dưỡng hỗ trợ giường bên cạnh.</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- NURSE BIG STATUS CARDS (3 Thẻ trực quan lớn cho điều dưỡng) -->
+    <div *ngIf="currentUserRole === 'NURSE'" class="nurse-big-cards-grid">
+      <!-- Card 1: Cân nặng khô & Độ tăng cân -->
+      <div class="nurse-card" [ngClass]="'nurse-card--' + weightGainSeverity">
+        <div class="nurse-card__icon">
+          <i class="pi pi-compass"></i>
+        </div>
+        <div class="nurse-card__body">
+          <span class="nurse-card__label">Cân nặng khô & Mức tăng cân</span>
+          <div class="nurse-card__main-val">
+            <span class="val-num">{{ session.patient_dry_weight ? (session.patient_dry_weight + ' kg') : '--' }}</span>
+            <span class="val-sub" *ngIf="weightGain !== null">
+              (Tăng: {{ weightGain > 0 ? '+' : '' }}{{ weightGain.toFixed(1) }} kg)
+            </span>
+          </div>
+          <div class="nurse-card__status-pill" [ngClass]="'pill--' + weightGainSeverity">
+            <i class="pi" [ngClass]="{'pi-check-circle': weightGainSeverity === 'safe', 'pi-exclamation-circle': weightGainSeverity === 'warning', 'pi-exclamation-triangle': weightGainSeverity === 'danger'}"></i>
+            <span *ngIf="weightGainPercent !== null">
+              Tăng {{ weightGainPercent }}% thể trọng
+              <span *ngIf="weightGainSeverity === 'safe'"> (An toàn &lt; 5%)</span>
+              <span *ngIf="weightGainSeverity === 'warning'"> (Chú ý tốc độ rút: 5-7%)</span>
+              <span *ngIf="weightGainSeverity === 'danger'"> (Cảnh báo quá tải: &gt; 7%)</span>
+            </span>
+            <span *ngIf="weightGainPercent === null">Chưa có cân trước lọc</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Cân trước lọc & Mục tiêu rút nước -->
+      <div class="nurse-card nurse-card--info">
+        <div class="nurse-card__icon">
+          <i class="pi pi-sliders-h"></i>
+        </div>
+        <div class="nurse-card__body">
+          <span class="nurse-card__label">Cân trước lọc & Mục tiêu UF</span>
+          <div class="nurse-card__main-val">
+            <span class="val-num text-primary">{{ session.pre_weight ? (session.pre_weight + ' kg') : '--' }}</span>
+            <span class="val-sep">➔</span>
+            <span class="val-num text-orange-600 font-bold">{{ session.uf_target !== null && session.uf_target !== undefined ? (session.uf_target + ' L') : '--' }}</span>
+          </div>
+          <div class="nurse-card__note">
+            Mục tiêu thể tích siêu lọc chỉ định cho ca này
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Cân sau lọc & UF thực tế đã rút -->
+      <div class="nurse-card nurse-card--success">
+        <div class="nurse-card__icon">
+          <i class="pi pi-chart-line"></i>
+        </div>
+        <div class="nurse-card__body">
+          <span class="nurse-card__label">Cân sau lọc & Nước thực tế đã rút</span>
+          <div class="nurse-card__main-val">
+            <span class="val-num">{{ session.post_weight ? (session.post_weight + ' kg') : '--' }}</span>
+            <span class="val-sep">|</span>
+            <span class="val-num text-green-600 font-bold">{{ session.uf_actual !== null && session.uf_actual !== undefined ? (session.uf_actual + ' L') : '--' }}</span>
+          </div>
+          <div class="nurse-card__progress">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="ufProgressPercent"></div>
+            </div>
+            <span class="progress-text">Tiến độ UF: {{ ufProgressPercent }}%</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -450,10 +584,20 @@
               (click)="activeChartTab = 'vitals'"
             ></button>
           </div>
-          <span class="chart-data-note">Dữ liệu từ {{ vitalSigns.length }} lần đo</span>
+          <div class="chart-toolbar-actions">
+            <span class="chart-data-note mr-2">Dữ liệu từ {{ vitalSigns.length }} lần đo</span>
+            <button
+              pButton
+              type="button"
+              [icon]="isChartCollapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+              [label]="isChartCollapsed ? 'Mở rộng đồ thị' : 'Thu gọn đồ thị'"
+              class="p-button-text p-button-sm p-button-secondary"
+              (click)="toggleChartCollapse()"
+            ></button>
+          </div>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container" *ngIf="!isChartCollapsed">
           <p-chart
             *ngIf="activeChartTab === 'bp'"
             type="line"
@@ -966,6 +1110,70 @@
 
     <ng-template pTemplate="footer">
       <button pButton type="button" icon="pi pi-check" label="Đóng" class="p-button-secondary" (click)="showModelInfoModal = false"></button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- 1-Touch Bedside Emergency SOS Dialog -->
+  <p-dialog
+    [(visible)]="showSosDialog"
+    header="🚨 KÍCH HOẠT BÁO ĐỘNG SOS TẠI GIƯỜNG"
+    [modal]="true"
+    [style]="{ width: '560px', maxWidth: '95vw' }"
+    [closable]="!sosSaving"
+    styleClass="sos-dialog"
+  >
+    <div class="sos-dialog-content">
+      <div class="sos-dialog-warning">
+        <i class="pi pi-exclamation-triangle mr-2 text-danger" style="font-size: 1.5rem;"></i>
+        <span>Hệ thống sẽ ngay lập tức phát âm thanh cảnh báo, kích hoạt cờ cấp cứu cho phiên lọc và thông báo toàn kíp trực.</span>
+      </div>
+
+      <div class="sos-reasons-block">
+        <label class="font-bold block mb-2">Chọn triệu chứng / nguyên nhân cấp tính:</label>
+        <div class="sos-reasons-list">
+          <div
+            *ngFor="let opt of sosReasonOptions"
+            class="sos-reason-item"
+            [class.active]="sosReason === opt"
+            (click)="sosReason = opt"
+          >
+            <input type="radio" [id]="opt" name="sosReason" [value]="opt" [(ngModel)]="sosReason" />
+            <label [for]="opt" class="reason-label">{{ opt }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label for="sosNotesInput" class="font-bold block mb-1">Ghi chú lâm sàng bổ sung (nếu có):</label>
+        <textarea
+          id="sosNotesInput"
+          pInputTextarea
+          [(ngModel)]="sosNotes"
+          rows="2"
+          placeholder="Ví dụ: Bệnh nhân chóng mặt dữ dội, vã mồ hôi, HA tụt còn 75/40 mmHg..."
+          class="w-full"
+        ></textarea>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button
+        pButton
+        type="button"
+        label="Hủy bỏ"
+        class="p-button-text p-button-secondary"
+        (click)="showSosDialog = false"
+        [disabled]="sosSaving"
+      ></button>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bell"
+        label="XÁC NHẬN PHÁT BÁO ĐỘNG"
+        class="p-button-danger p-button-raised"
+        (click)="submitSos()"
+        [loading]="sosSaving"
+      ></button>
     </ng-template>
   </p-dialog>
 </div>

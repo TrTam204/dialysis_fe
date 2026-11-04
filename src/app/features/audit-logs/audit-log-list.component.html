@@ -1,78 +1,76 @@
-<div class="audit-log-page p-3">
+<div class="audit-log-page">
   <p-toast></p-toast>
 
-  <p-card styleClass="p-shadow-2">
-    <!-- Header -->
-    <ng-template pTemplate="header">
-      <div class="header-container px-4 pt-4 pb-2">
-        <div class="flex align-items-center justify-content-between flex-wrap gap-2">
-          <div>
-            <h2 class="m-0 text-900 font-bold flex align-items-center gap-2">
-              <i class="pi pi-history text-primary text-2xl"></i>
-              Nhật ký hệ thống (Audit Log)
-            </h2>
-            <p class="text-500 m-0 mt-1">
-              Ghi nhận toàn bộ thao tác thêm, sửa, xóa dữ liệu trên các thực thể y tế và vận hành
-            </p>
-          </div>
-          <div class="flex align-items-center gap-2">
-            <button
-              pButton
-              type="button"
-              icon="pi pi-refresh"
-              label="Làm mới"
-              class="p-button-outlined p-button-sm"
-              [loading]="loading"
-              (click)="onRefresh()"
-            ></button>
-          </div>
-        </div>
-      </div>
-    </ng-template>
+  <!-- Page Header Container -->
+  <div class="page-header-container">
+    <div class="header-left">
+      <h2 class="page-title flex align-items-center gap-2">
+        <i class="pi pi-history text-primary text-2xl"></i>
+        Nhật ký hệ thống (Audit Log)
+      </h2>
+      <p class="page-subtitle">
+        Ghi nhận toàn bộ thao tác thêm, sửa, xóa dữ liệu trên các thực thể y tế và vận hành
+      </p>
+    </div>
+    <div class="header-right">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-refresh"
+        label="Làm mới"
+        class="p-button-outlined p-button-sm refresh-btn"
+        [loading]="loading"
+        (click)="onRefresh()"
+      ></button>
+    </div>
+  </div>
 
-    <!-- Filter Toolbar -->
-    <div class="filter-toolbar mb-3 p-3 surface-ground border-round flex flex-wrap gap-3 align-items-center">
-      <div class="filter-item">
-        <label class="block text-500 text-xs font-semibold mb-1">Hành động</label>
-        <p-dropdown
-          [options]="actionOptions"
-          [(ngModel)]="selectedAction"
-          optionLabel="label"
-          optionValue="value"
-          (onChange)="onFilterChange()"
-          styleClass="w-full md:w-14rem"
-        ></p-dropdown>
-      </div>
-
-      <div class="filter-item">
-        <label class="block text-500 text-xs font-semibold mb-1">Đối tượng thực thể</label>
-        <p-dropdown
-          [options]="entityTypeOptions"
-          [(ngModel)]="selectedEntityType"
-          optionLabel="label"
-          optionValue="value"
-          (onChange)="onFilterChange()"
-          styleClass="w-full md:w-16rem"
-        ></p-dropdown>
-      </div>
-
-      <div class="filter-item flex-1 min-w-16rem">
-        <label class="block text-500 text-xs font-semibold mb-1">Tìm kiếm từ khóa</label>
-        <span class="p-input-icon-left w-full">
-          <i class="pi pi-search"></i>
-          <input
-            pInputText
-            type="text"
-            class="w-full"
-            placeholder="Tìm theo mã ID, đối tượng, tài khoản..."
-            [(ngModel)]="searchKeyword"
-            (ngModelChange)="onSearchChange()"
-          />
-        </span>
-      </div>
+  <!-- Filter Card Grid (1 Horizontal Row) -->
+  <div class="filter-card-grid">
+    <div class="filter-field">
+      <label class="filter-label">Hành động</label>
+      <p-dropdown
+        [options]="actionOptions"
+        [(ngModel)]="selectedAction"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onFilterChange()"
+        styleClass="w-full"
+        placeholder="Tất cả hành động"
+      ></p-dropdown>
     </div>
 
-    <!-- Table -->
+    <div class="filter-field">
+      <label class="filter-label">Đối tượng thực thể</label>
+      <p-dropdown
+        [options]="entityTypeOptions"
+        [(ngModel)]="selectedEntityType"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onFilterChange()"
+        styleClass="w-full"
+        placeholder="Tất cả đối tượng"
+      ></p-dropdown>
+    </div>
+
+    <div class="filter-field search-field">
+      <label class="filter-label">Tìm kiếm từ khóa</label>
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          class="w-full search-input"
+          placeholder="Tìm theo mã ID, đối tượng, người thực hiện..."
+          [(ngModel)]="searchKeyword"
+          (ngModelChange)="onSearchChange()"
+        />
+      </span>
+    </div>
+  </div>
+
+  <!-- Main Table Card with 7 Distinct Columns -->
+  <div class="audit-table-card">
     <p-table
       [value]="logs"
       [lazy]="true"
@@ -85,59 +83,78 @@
       [rowsPerPageOptions]="[10, 25, 50]"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Hiển thị {first} - {last} trong tổng số {totalRecords} bản ghi"
-      styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped"
+      styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped audit-table"
       [responsiveLayout]="'scroll'"
     >
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 170px">Thời gian</th>
-          <th style="min-width: 180px">Người thực hiện</th>
-          <th style="width: 130px; text-align: center">Hành động</th>
+          <th style="width: 175px">Thời gian</th>
+          <th style="min-width: 200px">Người thực hiện</th>
+          <th style="width: 135px" class="text-center">Chức vụ</th>
+          <th style="width: 130px" class="text-center">Hành động</th>
           <th style="min-width: 150px">Thực thể</th>
-          <th style="min-width: 140px">Mã ID</th>
-          <th style="width: 100px; text-align: center">Chi tiết</th>
+          <th style="width: 130px" class="text-center">Mã ID</th>
+          <th style="width: 90px" class="text-center">Chi tiết</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-log>
         <tr>
-          <td>
-            <div class="font-medium text-800 text-sm">
-              {{ log.timestamp | date:'dd/MM/yyyy' }}
+          <!-- Cột 1: Thời gian -->
+          <td class="col-time">
+            <span class="date-text">{{ log.timestamp | date:'dd/MM/yyyy' }}</span>
+            <span class="time-text">{{ log.timestamp | date:'HH:mm:ss' }}</span>
+          </td>
+
+          <!-- Cột 2: Người thực hiện (Avatar + Name + @username, NO role badge) -->
+          <td class="col-actor">
+            <div class="actor-cell">
+              <div class="actor-avatar" [class.avatar-system]="!log.actor">
+                {{ getInitials(log.actor_name || log.user_full_name || log.username) }}
+              </div>
+              <div class="actor-meta">
+                <span class="actor-fullname">{{ log.actor_name || log.user_full_name || 'Hệ thống' }}</span>
+                <span class="actor-username" *ngIf="log.actor_username || log.username">
+                  &#64;{{ log.actor_username || log.username }}
+                </span>
+              </div>
             </div>
-            <div class="text-xs text-500 font-mono">
-              {{ log.timestamp | date:'HH:mm:ss' }}
-            </div>
           </td>
-          <td>
-            <div class="flex align-items-center gap-2">
-              <span class="font-semibold text-900">{{ log.actor_name || 'Hệ thống' }}</span>
-              <p-tag
-                *ngIf="log.actor_role"
-                [value]="log.actor_role"
-                [severity]="getRoleSeverity(log.actor_role)"
-                styleClass="text-xs"
-              ></p-tag>
-            </div>
+
+          <!-- Cột 3: Chức vụ (Role) độc lập căn giữa -->
+          <td class="col-role text-center">
+            <span [class]="'role-badge ' + getRoleBadge(log.actor_role || log.user_role).cssClass">
+              {{ getRoleBadge(log.actor_role || log.user_role).label }}
+            </span>
           </td>
-          <td style="text-align: center">
-            <p-tag
-              [value]="log.action"
-              [severity]="getActionSeverity(log.action)"
-            ></p-tag>
+
+          <!-- Cột 4: Hành động -->
+          <td class="col-action text-center">
+            <span [class]="'action-badge ' + getActionBadge(log.action).cssClass">
+              {{ getActionBadge(log.action).label }}
+            </span>
           </td>
-          <td>
-            <span class="font-semibold text-primary">{{ log.entity_type }}</span>
+
+          <!-- Cột 5: Thực thể -->
+          <td class="col-entity">
+            <span class="entity-name">{{ getEntityLabel(log.entity_type) }}</span>
+            <span class="entity-raw" *ngIf="log.entity_type !== getEntityLabel(log.entity_type)">
+              ({{ log.entity_type }})
+            </span>
           </td>
-          <td>
-            <span class="id-badge font-mono">{{ log.entity_id }}</span>
+
+          <!-- Cột 6: Mã ID -->
+          <td class="col-id text-center">
+            <span class="id-chip font-mono">{{ log.entity_id }}</span>
           </td>
-          <td style="text-align: center">
+
+          <!-- Cột 7: Chi tiết -->
+          <td class="col-detail text-center">
             <button
               pButton
               type="button"
               icon="pi pi-eye"
-              class="p-button-text p-button-sm p-button-info"
+              class="p-button-text p-button-sm p-button-info view-detail-btn"
               pTooltip="Xem chi tiết thay đổi"
               tooltipPosition="top"
               (click)="viewDetails(log)"
@@ -148,16 +165,17 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="6" class="text-center p-4">
-            <div class="text-500">
-              <i class="pi pi-inbox text-3xl mb-2 block"></i>
-              Không tìm thấy bản ghi nhật ký phù hợp.
+          <td colspan="7" class="text-center p-5">
+            <div class="text-500 empty-state-box">
+              <i class="pi pi-inbox text-4xl mb-3 block text-400"></i>
+              <div class="font-medium text-base text-700">Không tìm thấy bản ghi nhật ký phù hợp</div>
+              <p class="text-sm text-500 mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
             </div>
           </td>
         </tr>
       </ng-template>
     </p-table>
-  </p-card>
+  </div>
 
   <!-- Detail Dialog -->
   <p-dialog
@@ -165,7 +183,7 @@
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [style]="{ width: '720px', maxWidth: '95vw' }"
+    [style]="{ width: '740px', maxWidth: '95vw' }"
     styleClass="audit-detail-dialog"
   >
     <ng-template pTemplate="header">
@@ -179,46 +197,45 @@
 
     <div *ngIf="selectedLog" class="dialog-body">
       <!-- Summary Info Box -->
-      <div class="surface-ground border-round p-3 mb-3 grid m-0">
+      <div class="summary-info-card mb-3 p-3 surface-100 border-round border-1 surface-border grid m-0">
         <div class="col-12 md:col-6 p-2">
           <div class="text-500 text-xs font-semibold">Thời gian:</div>
-          <div class="font-medium text-900">
+          <div class="font-medium text-900 mt-1">
             {{ selectedLog.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}
           </div>
         </div>
+
         <div class="col-12 md:col-6 p-2">
-          <div class="text-500 text-xs font-semibold">Người thực hiện:</div>
+          <div class="text-500 text-xs font-semibold">Người thực hiện & Chức vụ:</div>
           <div class="flex align-items-center gap-2 mt-1">
-            <span class="font-medium text-900">{{ selectedLog.actor_name || 'Hệ thống' }}</span>
-            <p-tag
-              *ngIf="selectedLog.actor_role"
-              [value]="selectedLog.actor_role"
-              [severity]="getRoleSeverity(selectedLog.actor_role)"
-            ></p-tag>
+            <span class="font-medium text-900">{{ selectedLog.actor_name || selectedLog.user_full_name || 'Hệ thống' }}</span>
+            <span [class]="'role-badge ' + getRoleBadge(selectedLog.actor_role || selectedLog.user_role).cssClass">
+              {{ getRoleBadge(selectedLog.actor_role || selectedLog.user_role).label }}
+            </span>
           </div>
         </div>
+
         <div class="col-12 md:col-6 p-2">
           <div class="text-500 text-xs font-semibold">Hành động:</div>
           <div class="mt-1">
-            <p-tag
-              [value]="selectedLog.action"
-              [severity]="getActionSeverity(selectedLog.action)"
-            ></p-tag>
+            <span [class]="'action-badge ' + getActionBadge(selectedLog.action).cssClass">
+              {{ getActionBadge(selectedLog.action).label }}
+            </span>
           </div>
         </div>
+
         <div class="col-12 md:col-6 p-2">
           <div class="text-500 text-xs font-semibold">Thực thể tác động:</div>
-          <div class="font-medium text-900 mt-1">
-            <span class="text-primary font-semibold">{{ selectedLog.entity_type }}</span>
-            <span class="mx-1 text-400">/</span>
-            <span class="font-mono text-sm id-badge">{{ selectedLog.entity_id }}</span>
+          <div class="font-medium text-900 mt-1 flex align-items-center gap-2">
+            <span class="text-primary font-semibold">{{ getEntityLabel(selectedLog.entity_type) }}</span>
+            <span class="id-chip font-mono text-xs">{{ selectedLog.entity_id }}</span>
           </div>
         </div>
       </div>
 
       <!-- Toggle View Mode -->
       <div class="flex justify-content-between align-items-center mb-2">
-        <h4 class="m-0 text-800 font-semibold">Dữ liệu thay đổi (Changes)</h4>
+        <h4 class="m-0 text-800 font-semibold text-base">Dữ liệu thay đổi (Changes Log)</h4>
         <button
           pButton
           type="button"

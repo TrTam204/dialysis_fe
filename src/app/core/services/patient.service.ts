@@ -32,6 +32,13 @@ export class PatientService {
     return this.http.patch<Patient>(`${this.apiBase}/patients/${patientId}/`, data);
   }
 
+  transferDepartment(patientId: string, targetDepartmentId: number, reason?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiBase}/patients/${patientId}/transfer/`, {
+      target_department_id: targetDepartmentId,
+      reason,
+    });
+  }
+
   delete(patientId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiBase}/patients/${patientId}/`);
   }

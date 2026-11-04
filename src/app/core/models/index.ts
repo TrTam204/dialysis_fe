@@ -24,6 +24,7 @@ export interface CustomUser {
   role: 'ADMIN' | 'DOCTOR' | 'NURSE';
   is_active: boolean;
   avatar_url?: string | null;
+  last_seen?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -37,6 +38,13 @@ export interface Patient {
   medical_history?: string;
   dry_weight?: number | null;
   location?: string | { type: string; coordinates: [number, number] } | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance_km?: number | null;
+  center_name?: string | null;
+  center_address?: string | null;
+  center_lat?: number | null;
+  center_lon?: number | null;
   status: 'ACTIVE' | 'IN_TREATMENT' | 'STABLE' | 'DISCHARGED';
   department?: number | null;
   department_name?: string | null;
@@ -86,6 +94,8 @@ export interface DialysisSession {
   during_dialysis_bp?: string;
   post_dialysis_bp?: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  is_emergency?: boolean;
+  emergency_details?: any;
   notes?: string;
   patient_name?: string;
   patient_code?: string;
@@ -214,3 +224,87 @@ export * from './schedule-plan.model';
 export * from './topsis.model';
 export * from './kmeans.model';
 export * from './idh-prediction.model';
+
+
+export interface OnlineStaff {
+  id: number;
+  username: string;
+  full_name: string;
+  role: 'ADMIN' | 'DOCTOR' | 'NURSE';
+  department_id?: number | null;
+  department_name?: string | null;
+  is_online: boolean;
+  last_seen?: string | null;
+}
+
+export interface MedicalMentionRef {
+  ref_type: 'PATIENT' | 'MACHINE' | 'STAFF';
+  id: string | number;
+  code: string;
+  title: string;
+  subtitle?: string;
+  doc_summary?: string;
+  link: string;
+}
+
+export interface MentionSuggestionsResponse {
+  patients: MedicalMentionRef[];
+  machines: MedicalMentionRef[];
+  staff: MedicalMentionRef[];
+  all: MedicalMentionRef[];
+}
+
+export interface MedicalMessage {
+  id?: number;
+  sender: number;
+  sender_name?: string;
+  sender_role?: string;
+  receiver?: number | null;
+  receiver_name?: string;
+  department?: number;
+  department_name?: string;
+  content: string;
+  session_reference?: string | null;
+  session_code?: string | null;
+  is_read?: boolean;
+  read_by_users?: number[];
+  attachment_file?: string | null;
+  attachment_url?: string | null;
+  attachment_type?: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'FILE' | null;
+  attachment_name?: string | null;
+  metadata?: { mentions?: MedicalMentionRef[] } | null;
+  created_at?: string;
+}
+
+export interface ChatConversation {
+  id: number;
+  username: string;
+  full_name: string;
+  role: 'ADMIN' | 'DOCTOR' | 'NURSE';
+  department_id?: number | null;
+  department_name?: string | null;
+  is_online: boolean;
+  last_seen?: string | null;
+  status_text: string;
+  unread_count?: number;
+  last_message?: string | null;
+  is_last_from_me: boolean;
+  last_message_at?: string | null;
+}
+
+export interface PinnedChannel {
+  id: string; // 'department'
+  name: string;
+  pinned: boolean;
+  unread_count?: number;
+  last_message?: string | null;
+  last_message_at?: string | null;
+}
+
+export interface ConversationsResponse {
+  pinned_channel: PinnedChannel;
+  conversations: ChatConversation[];
+  contacts: ChatConversation[];
+  count_online: number;
+  total_unread?: number;
+}

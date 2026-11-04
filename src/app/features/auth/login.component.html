@@ -52,6 +52,29 @@
         <!-- Error Messages using PrimeNG Messages -->
         <p-messages [(value)]="messages" [enableService]="false" [closable]="true"></p-messages>
 
+        <!-- Remaining Attempts Warning Badge -->
+        <div class="remaining-attempts-badge mt-2 mb-3" *ngIf="remainingAttempts !== null && remainingAttempts > 0 && !isLocked">
+          <div class="p-3 surface-100 border-round border-left-3 border-orange-500">
+            <p class="text-sm text-900 m-0 font-semibold">
+              <i class="pi pi-exclamation-triangle text-orange-500 mr-2"></i>
+              Cảnh báo: Bạn còn <strong class="text-red-600 font-bold">{{ remainingAttempts }}/5</strong> lần thử trước khi tài khoản bị tạm khóa 15 phút.
+            </p>
+          </div>
+        </div>
+
+        <!-- Lockout Direct Link -->
+        <div class="lockout-action-banner mt-2 mb-3" *ngIf="isLocked">
+          <div class="p-3 surface-100 border-round border-left-3 border-red-500">
+            <p class="text-sm text-700 m-0 mb-2">
+              <i class="pi pi-shield text-red-500 mr-2"></i>
+              Tài khoản bị tạm khóa do nhập sai mật khẩu 5 lần liên tiếp. Nếu bạn quên mật khẩu, vui lòng khôi phục qua email:
+            </p>
+            <a routerLink="/auth/forgot-password" class="p-button p-button-sm p-button-danger p-button-outlined w-full text-center font-semibold">
+              <i class="pi pi-key mr-2"></i> Khôi phục mật khẩu qua Email / OTP
+            </a>
+          </div>
+        </div>
+
         <form [formGroup]="form" (ngSubmit)="submit()" [class.shake]="shakeError">
           <div class="field form-group">
             <label for="username">Tên đăng nhập</label>
