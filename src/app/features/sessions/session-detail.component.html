@@ -1023,8 +1023,8 @@
           <span class="s-val">{{ modelInfo.sequence_length || 3 }} bước</span>
         </div>
         <div class="summary-item full-width">
-          <span class="s-label">Đặc trưng đầu vào (6 features):</span>
-          <span class="s-val">{{ (modelInfo.input_features || ['systolic_bp', 'diastolic_bp', 'map', 'heart_rate', 'uf_rate', 'cumulative_uf']).join(', ') }}</span>
+          <span class="s-label">Đặc trưng chuỗi thời gian (8 đặc trưng lâm sàng):</span>
+          <span class="s-val">{{ (modelInfo.input_features || ['systolic_bp', 'diastolic_bp', 'map', 'sbp_drop_from_baseline', 'heart_rate', 'ufr_ml_kg_h', 'cumulative_uf_pct', 'time_elapsed_min']).join(', ') }}</span>
         </div>
       </div>
 
@@ -1105,6 +1105,48 @@
       <h4 class="section-title"><i class="pi pi-chart-line"></i> Biểu đồ Tiến trình Huấn luyện (Loss & Accuracy qua 30 Epochs)</h4>
       <div class="training-chart-wrapper" *ngIf="trainingCurvesChartData">
         <p-chart type="line" [data]="trainingCurvesChartData" [options]="trainingCurvesChartOptions" height="280px"></p-chart>
+      </div>
+
+      <!-- Hyperparameter Tuning Grid Search Table -->
+      <h4 class="section-title"><i class="pi pi-cog"></i> Kết quả Tinh chỉnh Siêu tham số (Hyperparameter Tuning - Grid Search)</h4>
+      <p class="section-desc">Đối sánh thực nghiệm các bộ siêu tham số số tầng LSTM, hidden dimension, dropout và learning rate trên tập Validation để xác định kiến trúc tối ưu (Tuần 10 - Kế hoạch Đề cương).</p>
+      <div class="tuning-table-wrapper" *ngIf="modelInfo.hyperparameter_tuning?.length">
+        <table class="tuning-table">
+          <thead>
+            <tr>
+              <th>Mã TN</th>
+              <th style="text-align: center;">Số tầng</th>
+              <th style="text-align: center;">Hidden Dim</th>
+              <th style="text-align: center;">Dropout</th>
+              <th style="text-align: center;">Learning Rate</th>
+              <th style="text-align: center;">Val Loss</th>
+              <th style="text-align: center;">Val Accuracy</th>
+              <th style="text-align: center;">Val F1-Score</th>
+              <th style="text-align: center;">ROC-AUC</th>
+              <th>Đánh giá & Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let exp of modelInfo.hyperparameter_tuning" [class.selected-row]="exp.selected">
+              <td class="font-mono font-bold">{{ exp.exp_id }}</td>
+              <td style="text-align: center;">{{ exp.num_layers }}</td>
+              <td style="text-align: center;">{{ exp.hidden_dim }}</td>
+              <td style="text-align: center;">{{ exp.dropout }}</td>
+              <td style="text-align: center;" class="font-mono">{{ exp.learning_rate }}</td>
+              <td style="text-align: center;" class="font-mono" [class.highlight-best]="exp.selected">{{ exp.val_loss.toFixed(4) }}</td>
+              <td style="text-align: center;" class="font-mono">{{ (exp.val_accuracy * 100).toFixed(1) }}%</td>
+              <td style="text-align: center;" class="font-mono" [class.highlight-best]="exp.selected"><strong>{{ (exp.val_f1 * 100).toFixed(1) }}%</strong></td>
+              <td style="text-align: center;" class="font-mono">{{ (exp.val_roc_auc * 100).toFixed(1) }}%</td>
+              <td>
+                <div class="note-container">
+                  <span class="badge-optimal" *ngIf="exp.selected">★ TỐI ƯU NHẤT</span>
+                  <span class="badge-candidate" *ngIf="!exp.selected">Ứng viên</span>
+                  <span class="exp-note">{{ exp.note }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

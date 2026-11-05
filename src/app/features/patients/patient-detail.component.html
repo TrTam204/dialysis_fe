@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <div class="action-buttons flex gap-2">
+      <div class="top-bar-actions">
         <button
           pButton
           *ngIf="canEdit"
@@ -37,6 +37,7 @@
           type="button"
           icon="pi pi-pencil"
           label="Sửa"
+          class="p-button-primary"
           [routerLink]="['/patients', patient.patient_id, 'edit']"
         ></a>
       </div>

@@ -43,6 +43,21 @@ export interface LstmMetricsSet {
   sample_count: number;
 }
 
+export interface LstmHyperparameterExperiment {
+  exp_id: string;
+  num_layers: number;
+  hidden_dim: number;
+  dropout: number;
+  learning_rate: number;
+  batch_size: number;
+  val_loss: number;
+  val_accuracy: number;
+  val_f1: number;
+  val_roc_auc: number;
+  selected: boolean;
+  note: string;
+}
+
 export interface LstmModelInfoResponse {
   model_name: string;
   framework?: string;
@@ -57,5 +72,7 @@ export interface LstmModelInfoResponse {
     test?: LstmMetricsSet;
   };
   training_history?: LstmTrainingEpoch[];
+  training_hyperparameters?: Record<string, any>;
+  hyperparameter_tuning?: LstmHyperparameterExperiment[];
   status?: string;
 }

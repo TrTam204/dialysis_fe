@@ -16,6 +16,29 @@
   padding: 8px 0;
 }
 
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+
+  button, a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+}
+
 .title-wrap {
   flex: 1;
 }
