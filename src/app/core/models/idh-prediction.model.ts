@@ -1,3 +1,17 @@
+export interface IdhInputWindowStep {
+  step: number;
+  systolic_bp: number;
+  diastolic_bp: number;
+  map?: number;
+  sbp_drop_from_baseline?: number;
+  heart_rate: number;
+  ufr_ml_kg_h?: number;
+  cumulative_uf_pct?: number;
+  time_elapsed_min: number;
+  uf_rate?: number;
+  cumulative_uf?: number;
+}
+
 export interface IdhPredictionResponse {
   has_prediction: boolean;
   status: 'READY' | 'INSUFFICIENT_DATA';
@@ -12,7 +26,11 @@ export interface IdhPredictionResponse {
   contributing_factors?: string[];
   clinical_recommendations?: string[];
   sequence_length_received?: number;
-  inference_source?: 'FASTAPI_MICROSERVICE' | 'LOCAL_LSTM_ENGINE';
+  inference_source?: 'FASTAPI_MICROSERVICE' | 'LOCAL_PYTORCH_FALLBACK' | 'LOCAL_LSTM_ENGINE' | string;
+  service_url?: string;
+  fastapi_inference_ms?: number;
+  round_trip_latency_ms?: number;
+  input_window_payload?: IdhInputWindowStep[];
   is_interpolated?: boolean;
   is_padded?: boolean;
   recorded_vitals_count?: number;

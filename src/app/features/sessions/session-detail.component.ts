@@ -85,6 +85,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
 
   // LSTM Model Info Modal state
   showModelInfoModal = false;
+  showApiPayload = false;
   modelInfo: LstmModelInfoResponse | null = null;
   loadingModelInfo = false;
   trainingCurvesChartData: any = null;
@@ -856,6 +857,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
           this.vitalSignSaving = false;
           this.vitalSignDialog = false;
           this.loadVitalSigns(this.session!.session_id);
+          this.loadIdhPrediction(this.session!.session_id, true);
           this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã cập nhật sinh hiệu.' });
         },
         error: (err) => {
@@ -870,6 +872,7 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
           this.vitalSignSaving = false;
           this.vitalSignDialog = false;
           this.loadVitalSigns(this.session!.session_id);
+          this.loadIdhPrediction(this.session!.session_id, true);
           this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã ghi nhận sinh hiệu mới.' });
         },
         error: (err) => {
@@ -906,19 +909,73 @@ export class SessionDetailComponent implements OnInit, OnDestroy {
   }
 
   // LSTM IDH Prediction & Model Info Methods
-  loadIdhPrediction(sessionId: string): void {
+  loadIdhPrediction(sessionId: string, triggerAlertToast: boolean = false): void {
     this.loadingIdh = true;
     this.idhError = false;
     this.sessionService.getIdhPrediction(sessionId).subscribe({
       next: (res: IdhPredictionResponse) => {
         this.idhPrediction = res;
         this.loadingIdh = false;
+
+        // Auto-Alert Toast for Nurse/Doctor when Risk is HIGH or MEDIUM (Muc 2.3 & Muc 7 De Cuong)
+        if (triggerAlertToast && res.has_prediction) {
+          const probPct = ((res.risk_probability ?? 0) * 100).toFixed(1);
+          if (res.risk_level === 'HIGH') {
+            this.messageService.add({
+              severity: 'error',
+              summary: '🚨 Cảnh báo sớm AI (LSTM)',
+              detail: `Nguy cơ tụt huyết áp (IDH) ở mức CAO (${probPct}%). Đề nghị kiểm tra huyết áp và giảm tốc độ siêu lọc (UF) theo phác đồ!`,
+              life: 8000,
+            });
+          } else if (res.risk_level === 'MEDIUM') {
+            this.messageService.add({
+              severity: 'warn',
+              summary: '⚠️ Cảnh báo sớm AI (LSTM)',
+              detail: `Nguy cơ tụt huyết áp (IDH) ở mức TRUNG BÌNH (${probPct}%). Đề nghị theo dõi sát sinh hiệu!`,
+              life: 8000,
+            });
+          }
+        }
       },
       error: () => {
         this.loadingIdh = false;
         this.idhError = true;
       },
     });
+  }
+
+  toggleApiPayload(): void {
+    this.showApiPayload = !this.showApiPayload;
+  }
+
+  getPayloadJsonSnippet(): string {
+    if (!this.idhPrediction) return '{}';
+    const reqPayload = {
+      patient_id: this.idhPrediction.patient_id || this.session?.patient,
+      session_id: this.idhPrediction.session_id || this.session?.session_id,
+      dry_weight: this.idhPrediction.dry_weight || 60.0,
+      threshold: this.idhPrediction.threshold_used || 0.5,
+      vitals_sequence: this.idhPrediction.input_window_payload || [],
+    };
+    const respPayload = {
+      prediction_id: this.idhPrediction.prediction_id,
+      risk_probability: this.idhPrediction.risk_probability,
+      risk_level: this.idhPrediction.risk_level,
+      is_idh_predicted: this.idhPrediction.is_idh_predicted,
+      threshold_used: this.idhPrediction.threshold_used,
+      inference_source: this.idhPrediction.inference_source,
+      service_url: this.idhPrediction.service_url,
+      fastapi_inference_ms: this.idhPrediction.fastapi_inference_ms,
+      round_trip_latency_ms: this.idhPrediction.round_trip_latency_ms,
+      contributing_factors: this.idhPrediction.contributing_factors,
+      clinical_recommendations: this.idhPrediction.clinical_recommendations,
+    };
+    return `// HTTP POST ${this.idhPrediction.service_url || 'http://127.0.0.1:8001/predict-idh'}
+// Request Payload (Django -> FastAPI):
+${JSON.stringify(reqPayload, null, 2)}
+
+// Response Payload (FastAPI -> Django, Round-trip: ${this.idhPrediction.round_trip_latency_ms ?? 0} ms):
+${JSON.stringify(respPayload, null, 2)}`;
   }
 
   openModelInfoModal(): void {

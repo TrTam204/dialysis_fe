@@ -221,7 +221,33 @@
     .source-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+
+      &.source-fastapi {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        i {
+          color: #10b981;
+        }
+      }
+
+      &.source-fallback {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        i {
+          color: #f59e0b;
+        }
+      }
+
+      .latency-text {
+        font-weight: 600;
+        margin-left: 2px;
+      }
     }
 
     .padding-badge {
@@ -1041,4 +1067,246 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ==========================================================================
+   API Payload & Microservice Latency Inspector Styles (Mục 2.7 & 3.6 Đề Cương)
+   ========================================================================== */
+.api-payload-section {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #cbd5e1;
+
+  .payload-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    .payload-toggle-btn {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #1e40af;
+      border-color: #93c5fd;
+      background: #eff6ff;
+
+      &:hover {
+        background: #dbeafe;
+        border-color: #3b82f6;
+      }
+    }
+
+    .payload-quick-info {
+      font-size: 0.8rem;
+      color: #64748b;
+      strong {
+        color: #0f172a;
+      }
+    }
+  }
+
+  .api-payload-panel {
+    margin-top: 0.85rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+
+    .payload-header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 0.85rem;
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+
+        .meta-label {
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .meta-val {
+          font-weight: 600;
+          color: #1e293b;
+
+          &.code-font {
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+          }
+
+          &.badge-status {
+            padding: 0.1rem 0.45rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+
+            &.badge-status-online {
+              background: #d1fae5;
+              color: #065f46;
+            }
+
+            &.badge-status-fallback {
+              background: #fef3c7;
+              color: #92400e;
+            }
+          }
+
+          &.highlight-ms {
+            color: #2563eb;
+            font-family: monospace;
+            font-size: 0.85rem;
+          }
+        }
+      }
+    }
+
+    .panel-section-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      i {
+        color: #3b82f6;
+      }
+    }
+
+    .payload-table-wrapper {
+      margin-bottom: 1rem;
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      .payload-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        text-align: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        overflow: hidden;
+
+        th {
+          background: #f1f5f9;
+          color: #475569;
+          font-weight: 600;
+          padding: 0.5rem 0.4rem;
+          border-bottom: 1px solid #cbd5e1;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 0.45rem 0.4rem;
+          border-bottom: 1px solid #f1f5f9;
+          color: #1e293b;
+
+          &.font-bold {
+            font-weight: 700;
+            color: #0f172a;
+          }
+
+          &.val-alert {
+            color: #dc2626;
+            font-weight: 700;
+            background: #fef2f2;
+          }
+
+          .step-badge {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.72rem;
+          }
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+      }
+    }
+
+    .payload-json-box {
+      .json-code {
+        margin: 0;
+        padding: 0.75rem;
+        background: #0f172a;
+        color: #38bdf8;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-family: monospace;
+        max-height: 240px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+    }
+  }
+}
+
+/* Service Live Banner in Model Info Modal */
+.service-live-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+
+  &.banner-online {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    .banner-status {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      i {
+        color: #10b981;
+      }
+    }
+  }
+
+  &.banner-fallback {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    .banner-status {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      i {
+        color: #f59e0b;
+      }
+    }
+  }
+
+  .banner-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    font-size: 0.8rem;
+    color: #475569;
+    strong {
+      color: #1e293b;
+    }
+  }
 }

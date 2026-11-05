@@ -484,8 +484,19 @@
                   [styleClass]="'risk-progress-' + (idhPrediction.risk_level || 'low').toLowerCase()"
                 ></p-progressBar>
                 <div class="meter-meta">
-                  <span class="source-badge">
-                    <i class="pi pi-server"></i> Nguồn: {{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'FastAPI Microservice (Port 8001)' : 'Local PyTorch Engine' }}
+                  <span
+                    class="source-badge"
+                    [class.source-fastapi]="idhPrediction.inference_source === 'FASTAPI_MICROSERVICE'"
+                    [class.source-fallback]="idhPrediction.inference_source !== 'FASTAPI_MICROSERVICE'"
+                  >
+                    <i class="pi" [ngClass]="idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'pi-check-circle' : 'pi-exclamation-triangle'"></i>
+                    {{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? '🟢 FastAPI AI Service (Port 8001)' : '🟡 Chế độ Dự phòng Nội tại (Fallback Mode)' }}
+                    <span *ngIf="idhPrediction.round_trip_latency_ms != null" class="latency-text">
+                      • Phản hồi: {{ idhPrediction.round_trip_latency_ms }} ms
+                    </span>
+                  </span>
+                  <span *ngIf="idhPrediction.fastapi_inference_ms != null" class="source-badge">
+                    <i class="pi pi-bolt"></i> Suy luận: {{ idhPrediction.fastapi_inference_ms }} ms
                   </span>
                   <span *ngIf="idhPrediction.model_version" class="source-badge">
                     <i class="pi pi-tag"></i> Phiên bản: v{{ idhPrediction.model_version }}
@@ -493,8 +504,8 @@
                   <span *ngIf="idhPrediction.predicted_at" class="source-badge">
                     <i class="pi pi-clock"></i> {{ idhPrediction.predicted_at | date : 'HH:mm dd/MM/yyyy' }}
                   </span>
-                  <span *ngIf="idhPrediction.is_padded" class="padding-badge" pTooltip="Dữ liệu được left-padded từ {{ idhPrediction.recorded_vitals_count }} lần đo để đáp ứng chiều dài chuỗi đầu vào">
-                    <i class="pi pi-info-circle"></i> Chuỗi đệm (Padded)
+                  <span *ngIf="idhPrediction.is_padded" class="padding-badge" pTooltip="Dữ liệu được nội suy từ {{ idhPrediction.recorded_vitals_count }} lần đo để đáp ứng chuỗi đầu vào">
+                    <i class="pi pi-info-circle"></i> Chuỗi nội suy (Interpolated)
                   </span>
                 </div>
               </div>
@@ -556,6 +567,91 @@
             <div class="medical-disclaimer">
               <i class="pi pi-shield text-muted"></i>
               <span>{{ idhPrediction.disclaimer || 'Cảnh báo từ mô hình AI chỉ mang tính chất hỗ trợ theo dõi sớm, không thay thế quyết định chuyên môn của bác sĩ.' }}</span>
+            </div>
+
+            <!-- API Communication & Payload Inspector (Django <-> FastAPI Microservice - Mục 2.7 & 3.6 Đề Cương) -->
+            <div class="api-payload-section" *ngIf="idhPrediction.has_prediction">
+              <div class="payload-toggle-row">
+                <button
+                  pButton
+                  type="button"
+                  [label]="showApiPayload ? 'Thu gọn Payload Giao tiếp API' : '🔍 Xem Payload Giao tiếp API (Django → FastAPI)'"
+                  [icon]="showApiPayload ? 'pi pi-chevron-up' : 'pi pi-code'"
+                  class="p-button-outlined p-button-sm payload-toggle-btn"
+                  (click)="toggleApiPayload()"
+                ></button>
+                <span class="payload-quick-info text-muted">
+                  Độ trễ khứ hồi: <strong>{{ idhPrediction.round_trip_latency_ms ?? 0 }} ms</strong> | Cửa sổ trích xuất: <strong>{{ idhPrediction.input_window_payload?.length || 3 }} bước x 8 đặc trưng</strong>
+                </span>
+              </div>
+
+              <div *ngIf="showApiPayload" class="api-payload-panel">
+                <div class="payload-header-meta">
+                  <div class="meta-item">
+                    <span class="meta-label">Endpoint API:</span>
+                    <span class="meta-val code-font">{{ idhPrediction.service_url || 'http://127.0.0.1:8001/predict-idh' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Trạng thái kết nối:</span>
+                    <span class="meta-val badge-status" [class.badge-status-online]="idhPrediction.inference_source === 'FASTAPI_MICROSERVICE'" [class.badge-status-fallback]="idhPrediction.inference_source !== 'FASTAPI_MICROSERVICE'">
+                      {{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? '🟢 Online (Port 8001)' : '🟡 Fallback Nội tại' }}
+                    </span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Tổng độ trễ HTTP khứ hồi:</span>
+                    <span class="meta-val highlight-ms">{{ idhPrediction.round_trip_latency_ms ?? 0 }} ms</span>
+                  </div>
+                  <div class="meta-item" *ngIf="idhPrediction.fastapi_inference_ms != null">
+                    <span class="meta-label">Thời gian suy luận FastAPI:</span>
+                    <span class="meta-val highlight-ms">{{ idhPrediction.fastapi_inference_ms }} ms</span>
+                  </div>
+                </div>
+
+                <!-- 3 steps x 8 dynamic features table -->
+                <div class="payload-table-wrapper" *ngIf="idhPrediction.input_window_payload && idhPrediction.input_window_payload.length">
+                  <div class="panel-section-title">
+                    <i class="pi pi-table"></i> Cửa sổ 3 Bước Thời Gian & 8 Đặc Trưng Động Học Gửi Sang FastAPI (Mục 2.7 Đề Cương):
+                  </div>
+                  <div class="table-responsive">
+                    <table class="payload-table">
+                      <thead>
+                        <tr>
+                          <th>Thời điểm (t)</th>
+                          <th>HA tâm thu (mmHg)</th>
+                          <th>HA tâm trương (mmHg)</th>
+                          <th>MAP (mmHg)</th>
+                          <th>Δ SBP Giảm (mmHg)</th>
+                          <th>Nhịp tim (bpm)</th>
+                          <th>UFR Chuẩn hóa (mL/kg/h)</th>
+                          <th>Tích lũy UF (% cân khô)</th>
+                          <th>Thời gian (phút)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let s of idhPrediction.input_window_payload">
+                          <td><span class="step-badge">Bước {{ s.step }}/3</span></td>
+                          <td class="font-bold">{{ s.systolic_bp }}</td>
+                          <td>{{ s.diastolic_bp }}</td>
+                          <td>{{ s.map }}</td>
+                          <td [class.val-alert]="(s.sbp_drop_from_baseline ?? 0) > 15">{{ s.sbp_drop_from_baseline }}</td>
+                          <td>{{ s.heart_rate }}</td>
+                          <td>{{ s.ufr_ml_kg_h }}</td>
+                          <td>{{ s.cumulative_uf_pct }}%</td>
+                          <td>{{ s.time_elapsed_min }}'</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- JSON snippet preview -->
+                <div class="payload-json-box">
+                  <div class="panel-section-title">
+                    <i class="pi pi-file-code"></i> Dữ liệu JSON Request/Response thực tế (Django ↔ FastAPI):
+                  </div>
+                  <pre class="json-code"><code>{{ getPayloadJsonSnippet() }}</code></pre>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1147,6 +1243,24 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Live Microservice Connection & Integration Info (Mục 3.6 Đề Cương) -->
+    <div class="model-info-section" *ngIf="idhPrediction">
+      <h4 class="section-title">
+        <i class="pi pi-server"></i> Giao Tiếp Liên Dịch Vụ AI Inference Service (Mục 3.6 Đề Cương)
+      </h4>
+      <div class="service-live-banner" [class.banner-online]="idhPrediction.inference_source === 'FASTAPI_MICROSERVICE'" [class.banner-fallback]="idhPrediction.inference_source !== 'FASTAPI_MICROSERVICE'">
+        <div class="banner-status">
+          <i class="pi" [ngClass]="idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'pi-check-circle' : 'pi-exclamation-triangle'"></i>
+          <span>{{ idhPrediction.inference_source === 'FASTAPI_MICROSERVICE' ? 'Đã kết nối FastAPI AI Microservice (Port 8001)' : 'Đang chạy Chế độ Dự phòng Nội tại (PyTorch Fallback)' }}</span>
+        </div>
+        <div class="banner-details">
+          <span><strong>URL:</strong> {{ idhPrediction.service_url || 'http://127.0.0.1:8001/predict-idh' }}</span>
+          <span *ngIf="idhPrediction.round_trip_latency_ms != null"><strong>Độ trễ khứ hồi:</strong> {{ idhPrediction.round_trip_latency_ms }} ms</span>
+          <span *ngIf="idhPrediction.fastapi_inference_ms != null"><strong>Độ trễ suy luận:</strong> {{ idhPrediction.fastapi_inference_ms }} ms</span>
+        </div>
       </div>
     </div>
 
