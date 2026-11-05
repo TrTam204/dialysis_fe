@@ -38,6 +38,7 @@ export interface IdhPredictionResponse {
   model_version?: string;
   predicted_at?: string;
   disclaimer?: string;
+  dataset_reference?: string;
 }
 
 export interface LstmTrainingEpoch {
@@ -83,6 +84,7 @@ export interface LstmModelInfoResponse {
   input_features?: string[];
   sequence_length?: number;
   split_strategy?: string;
+  dataset_reference?: string;
   dataset_splits?: Record<string, any>;
   metrics?: {
     train?: LstmMetricsSet;

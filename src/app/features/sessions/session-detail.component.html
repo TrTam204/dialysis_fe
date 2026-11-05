@@ -1244,6 +1244,30 @@
           </tbody>
         </table>
       </div>
+      <!-- International Open Medical Dataset & Preprocessing Pipeline (Mục 4.2 & 5.3 Đề Cương) -->
+      <div class="model-info-section dataset-source-section">
+        <h4 class="section-title">
+          <i class="pi pi-database"></i> Nguồn Dữ Liệu Y Khoa Quốc Tế & Quy Trình Tiền Xử Lý (Mục 4.2 & 5.3 Đề Cương)
+        </h4>
+        <div class="dataset-source-card">
+          <div class="dataset-ref-title">
+            <i class="pi pi-bookmark text-primary mr-2"></i>
+            <strong>HEMOBP Dataset</strong> — <em>Nature Scientific Data</em> (Lin et al., 2019, DOI: 10.1038/s41597-019-0319-8) &amp; Kaggle HD Dataset
+          </div>
+          <p class="dataset-ref-desc">
+            Bộ dữ liệu được chuẩn hóa theo phân phối lâm sàng Table 1 với 1.200 phiên lọc máu thực tế (10.800 bản ghi đo đạc). Tiền xử lý tự động sàng lọc ngoại lai SBP [30, 200] mmHg, bù khuyết bằng nội suy tuyến tính và trích xuất 7.200 cửa sổ trượt (L=3 bước x 8 đặc trưng động học) gắn nhãn IDH theo tiêu chuẩn KDOQI / EBPG.
+          </p>
+          <div class="dataset-split-badges">
+            <span class="split-pill pill-train"><i class="pi pi-file mr-1"></i> <strong>train_windows.csv</strong>: 840 phiên (5.040 mẫu - 70%)</span>
+            <span class="split-pill pill-val"><i class="pi pi-file mr-1"></i> <strong>val_windows.csv</strong>: 180 phiên (1.080 mẫu - 15%)</span>
+            <span class="split-pill pill-test"><i class="pi pi-file mr-1"></i> <strong>test_windows.csv</strong>: 180 phiên (1.080 mẫu - 15%)</span>
+          </div>
+          <div class="dataset-meta-row" *ngIf="modelInfo.dataset_reference || idhPrediction?.dataset_reference">
+            <span class="meta-label">Chuỗi xác thực API:</span>
+            <span class="meta-code">{{ modelInfo.dataset_reference || idhPrediction?.dataset_reference }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Live Microservice Connection & Integration Info (Mục 3.6 Đề Cương) -->
