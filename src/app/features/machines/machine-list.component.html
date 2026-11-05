@@ -104,7 +104,7 @@
           <th pSortableColumn="status" style="width: 150px" class="text-center">
             Trạng thái <p-sortIcon field="status"></p-sortIcon>
           </th>
-          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+          <th *ngIf="canUpdateMaintenance" style="width: 105px" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -138,7 +138,7 @@
               {{ getStatusLabel(machine.status) }}
             </span>
           </td>
-          <td *ngIf="isAdmin" class="text-center">
+          <td *ngIf="canUpdateMaintenance" class="text-center">
             <div class="action-cell">
               <a
                 pButton
@@ -147,10 +147,11 @@
                 class="p-button-text p-button-rounded p-button-sm p-button-info"
                 [routerLink]="['/machines', machine.machine_id, 'edit']"
                 [attr.aria-label]="'Sửa ' + machine.name"
-                pTooltip="Sửa thông tin"
+                [pTooltip]="isAdmin ? 'Sửa thông tin máy' : 'Cập nhật trạng thái / Bảo trì'"
                 tooltipPosition="top"
               ></a>
               <button
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 icon="pi pi-trash"
@@ -166,7 +167,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="isAdmin ? 8 : 7" class="text-center empty-cell">
+          <td [attr.colspan]="canUpdateMaintenance ? 8 : 7" class="text-center empty-cell">
             <i class="pi pi-inbox empty-icon"></i>
             <div>Không tìm thấy máy lọc nào</div>
           </td>
@@ -174,6 +175,4 @@
       </ng-template>
     </p-table>
   </div>
-
-  <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
 </div>

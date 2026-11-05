@@ -61,7 +61,7 @@ export const routes: Routes = [
       {
         path: 'machines/:id/edit',
         loadComponent: () => import('./features/machines/machine-form.component').then((m) => m.MachineFormComponent),
-        data: { roles: ['ADMIN'] },
+        data: { roles: ['ADMIN', 'NURSE'] },
       },
       { path: 'schedule-plans', loadComponent: () => import('./features/schedule-plans/schedule-plan-list.component').then((m) => m.SchedulePlanListComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
       { path: 'schedule-plans/:id', loadComponent: () => import('./features/schedule-plans/schedule-plan-detail.component').then((m) => m.SchedulePlanDetailComponent), data: { roles: ['ADMIN', 'DOCTOR'] } },
@@ -100,3 +100,4 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' },
 ];
+

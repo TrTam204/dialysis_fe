@@ -65,6 +65,8 @@ export class MachineListComponent implements OnInit, OnDestroy {
   sortOrder = 1;
 
   isAdmin = false;
+  isNurse = false;
+  canUpdateMaintenance = false;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -79,6 +81,8 @@ export class MachineListComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.isAdmin = this.authService.hasRole('ADMIN');
+    this.isNurse = this.authService.hasRole('NURSE');
+    this.canUpdateMaintenance = this.isAdmin || this.isNurse;
 
     this.searchSubject
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -220,3 +224,4 @@ export class MachineListComponent implements OnInit, OnDestroy {
     });
   }
 }
+

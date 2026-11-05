@@ -11,6 +11,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { MessageService } from 'primeng/api';
 import { MachineService } from '../../core/services/machine.service';
 import { DepartmentService } from '../../core/services/department.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DialysisMachine, Department } from '../../core/models';
 
 @Component({
@@ -36,6 +37,9 @@ export class MachineFormComponent implements OnInit {
   saving = false;
   today = new Date();
 
+  isAdmin = false;
+  isNurse = false;
+
   departments: Department[] = [];
   statusOptions = [
     { label: 'Sẵn sàng', value: 'AVAILABLE' },
@@ -52,6 +56,7 @@ export class MachineFormComponent implements OnInit {
     private router: Router,
     private machineService: MachineService,
     private departmentService: DepartmentService,
+    private authService: AuthService,
     private messageService: MessageService
   ) {
     this.form = this.fb.group({
@@ -65,6 +70,9 @@ export class MachineFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isAdmin = this.authService.hasRole('ADMIN');
+    this.isNurse = this.authService.hasRole('NURSE');
+
     this.loadDepartments();
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -73,6 +81,13 @@ export class MachineFormComponent implements OnInit {
       this.currentMachineId = idParam;
       this.loadMachine(idParam);
     }
+  }
+
+  getCardTitle(): string {
+    if (this.isNurse && this.editMode) {
+      return 'Cập nhật Trạng thái & Bảo trì Máy lọc';
+    }
+    return this.editMode ? 'Sửa Máy lọc' : 'Thêm Máy lọc';
   }
 
   loadDepartments() {
@@ -98,6 +113,11 @@ export class MachineFormComponent implements OnInit {
           last_maintenance_date: machine.last_maintenance_date ? new Date(machine.last_maintenance_date) : null,
           maintenance_log: machine.maintenance_log,
         });
+        if (this.isNurse) {
+          this.form.get('machine_id')?.disable();
+          this.form.get('name')?.disable();
+          this.form.get('department')?.disable();
+        }
         this.loading = false;
       },
       error: () => {
@@ -131,23 +151,42 @@ export class MachineFormComponent implements OnInit {
 
     this.saving = true;
     this.clearServerErrors();
-    const raw = this.form.value;
+    const raw = this.form.getRawValue();
 
     const maintDate: Date | null = raw.last_maintenance_date;
     const maintDateStr = maintDate ? this.formatDate(maintDate) : null;
 
-    const payload: DialysisMachine = {
-      machine_id: (raw.machine_id || '').trim().toUpperCase(),
-      name: (raw.name || '').trim(),
-      department: raw.department,
-      status: raw.status,
-      last_maintenance_date: maintDateStr,
-      maintenance_log: raw.maintenance_log || '',
-    };
-
-    const request = this.editMode && this.currentMachineId
-      ? this.machineService.update(this.currentMachineId, payload)
-      : this.machineService.create(payload);
+    let request;
+    if (this.editMode && this.currentMachineId) {
+      if (this.isNurse) {
+        // Nurse only sends clinical maintenance fields
+        request = this.machineService.patch(this.currentMachineId, {
+          status: raw.status,
+          last_maintenance_date: maintDateStr,
+          maintenance_log: raw.maintenance_log || '',
+        });
+      } else {
+        const payload: DialysisMachine = {
+          machine_id: (raw.machine_id || '').trim().toUpperCase(),
+          name: (raw.name || '').trim(),
+          department: raw.department,
+          status: raw.status,
+          last_maintenance_date: maintDateStr,
+          maintenance_log: raw.maintenance_log || '',
+        };
+        request = this.machineService.update(this.currentMachineId, payload);
+      }
+    } else {
+      const payload: DialysisMachine = {
+        machine_id: (raw.machine_id || '').trim().toUpperCase(),
+        name: (raw.name || '').trim(),
+        department: raw.department,
+        status: raw.status,
+        last_maintenance_date: maintDateStr,
+        maintenance_log: raw.maintenance_log || '',
+      };
+      request = this.machineService.create(payload);
+    }
 
     request.subscribe({
       next: () => {

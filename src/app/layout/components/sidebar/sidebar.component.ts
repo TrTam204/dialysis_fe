@@ -67,9 +67,9 @@ export class SidebarComponent {
   ];
 
   isItemVisible(item: NavItem): boolean {
-    // Nurse-focused view: only 3 core operational items
+    // Nurse-focused view: 4 core operational items matching outline
     if (this.currentUserRole === 'NURSE') {
-      return ['/sessions', '/schedule', '/patients'].includes(item.route);
+      return ['/sessions', '/schedule', '/patients', '/machines'].includes(item.route);
     }
 
     if (!item.roles || item.roles.length === 0) {
@@ -83,6 +83,7 @@ export class SidebarComponent {
       if (item.route === '/sessions') return 'Phiên lọc hôm nay';
       if (item.route === '/schedule') return 'Lịch làm việc tuần';
       if (item.route === '/patients') return 'Hồ sơ bệnh nhân';
+      if (item.route === '/machines') return 'Máy lọc & Bảo trì';
     }
     return item.label;
   }
