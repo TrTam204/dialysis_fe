@@ -286,26 +286,26 @@
         </div>
 
         <div class="cluster-centroid-metrics mb-3">
-          <div class="metric-row">
-            <span class="metric-key">Tuổi TB:</span>
+          <div class="metric-col">
+            <span class="metric-key">Tuổi TB</span>
             <span class="metric-val"><strong>{{ summary.centroid.age }}</strong> tuổi</span>
           </div>
-          <div class="metric-row">
-            <span class="metric-key">Hemoglobin TB:</span>
+          <div class="metric-col">
+            <span class="metric-key">Hemoglobin TB</span>
             <span class="metric-val"><strong>{{ summary.centroid.avg_hemoglobin }}</strong> g/dL</span>
           </div>
-          <div class="metric-row">
-            <span class="metric-key">Kali máu TB:</span>
+          <div class="metric-col">
+            <span class="metric-key">Kali máu TB</span>
             <span class="metric-val"><strong>{{ summary.centroid.avg_potassium }}</strong> mmol/L</span>
           </div>
-          <div class="metric-row">
-            <span class="metric-key">Tăng cân gian lọc (% IDWG):</span>
+          <div class="metric-col">
+            <span class="metric-key">Tăng cân gian lọc (% IDWG)</span>
             <span class="metric-val"><strong>{{ summary.centroid.avg_uf }}</strong>%</span>
           </div>
         </div>
 
         <div class="cluster-recommendation">
-          <i class="pi pi-info-circle mr-1 text-primary"></i>
+          <i class="pi pi-info-circle text-primary"></i>
           <span>{{ summary.recommendation }}</span>
         </div>
       </div>
@@ -326,12 +326,12 @@
       </div>
 
       <div class="table-filter-group">
-        <span>Lọc cụm:</span>
+        <span class="filter-label">Lọc cụm:</span>
         <button
           pButton
           type="button"
-          label="Tất cả"
-          class="p-button-sm mr-2"
+          [label]="'Tất cả (' + result.patients.length + ')'"
+          class="p-button-sm cluster-filter-btn"
           [class.p-button-outlined]="selectedClusterFilter !== null"
           (click)="selectedClusterFilter = null"
         ></button>
@@ -339,8 +339,8 @@
           *ngFor="let summary of result.cluster_summaries; let c = index"
           pButton
           type="button"
-          [label]="'Cụm ' + (c + 1)"
-          class="p-button-sm mr-1"
+          [label]="'Cụm ' + (c + 1) + ' (' + summary.patient_count + ')'"
+          class="p-button-sm cluster-filter-btn"
           [class.p-button-outlined]="selectedClusterFilter !== c"
           (click)="selectedClusterFilter = c"
         ></button>
@@ -364,14 +364,14 @@
           <th>Kali TB (mmol/L)</th>
           <th>% IDWG TB (%)</th>
           <th>Trạng thái</th>
-          <th style="width: 100px; text-align: center">Thao tác</th>
+          <th style="width: 110px; text-align: center">Thao tác</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-p>
         <tr>
           <td>
-            <strong>{{ p.patient_id }}</strong>
+            <strong class="font-mono">{{ p.patient_id }}</strong>
             <p-tag
               *ngIf="p.is_imputed"
               value="Nội suy"
@@ -382,41 +382,45 @@
               tooltipPosition="top"
             ></p-tag>
           </td>
-          <td>{{ p.full_name }}</td>
+          <td class="font-semibold">{{ p.full_name }}</td>
           <td>
             <span
               class="cluster-table-pill"
-              [style.backgroundColor]="clusterColors[p.cluster_id % clusterColors.length].border"
+              [style.backgroundColor]="clusterColors[(p.cluster_id ?? p.cluster ?? 0) % clusterColors.length].border"
             >
-              Cụm {{ p.cluster_id + 1 }}
+              Cụm {{ (p.cluster_id ?? p.cluster ?? 0) + 1 }}
             </span>
           </td>
-          <td>{{ p.features.age }}</td>
+          <td>{{ p.age ?? p.features?.age ?? p.raw_features?.age ?? '-' }}</td>
           <td>
-            <span [class.text-danger]="p.features.avg_hemoglobin < 9.5">
-              {{ p.features.avg_hemoglobin }}
-            </span>
-          </td>
-          <td>
-            <span [class.text-danger]="p.features.avg_potassium > 5.5">
-              {{ p.features.avg_potassium }}
+            <span [class.text-danger]="(p.avg_hemoglobin ?? p.features?.avg_hemoglobin ?? p.raw_features?.avg_hemoglobin) < 9.5">
+              {{ p.avg_hemoglobin ?? p.features?.avg_hemoglobin ?? p.raw_features?.avg_hemoglobin ?? '-' }}
             </span>
           </td>
           <td>
-            <span [class.text-warning]="p.features.avg_uf > 4.5">
-              {{ p.features.avg_uf }}%
+            <span [class.text-danger]="(p.avg_potassium ?? p.features?.avg_potassium ?? p.raw_features?.avg_potassium) > 5.5">
+              {{ p.avg_potassium ?? p.features?.avg_potassium ?? p.raw_features?.avg_potassium ?? '-' }}
             </span>
           </td>
           <td>
-            <p-tag [value]="p.status" severity="info"></p-tag>
+            <span [class.text-warning]="(p.avg_idwg_pct ?? p.features?.avg_idwg_pct ?? p.raw_features?.avg_idwg_pct ?? p.avg_uf) > 4.5">
+              {{ (p.avg_idwg_pct ?? p.features?.avg_idwg_pct ?? p.raw_features?.avg_idwg_pct ?? p.avg_uf) }}%
+            </span>
+          </td>
+          <td>
+            <p-tag
+              [value]="p.status || 'ACTIVE'"
+              [severity]="(p.status === 'ACTIVE' || !p.status) ? 'success' : 'warning'"
+            ></p-tag>
           </td>
           <td style="text-align: center">
             <button
               pButton
               type="button"
-              icon="pi pi-external-link"
-              class="p-button-text p-button-sm"
-              pTooltip="Xem hồ sơ bệnh nhân"
+              icon="pi pi-user"
+              label="Hồ sơ"
+              class="p-button-outlined p-button-sm p-button-info view-patient-btn"
+              pTooltip="Xem chi tiết hồ sơ bệnh nhân"
               (click)="viewPatient(p.patient_id)"
             ></button>
           </td>

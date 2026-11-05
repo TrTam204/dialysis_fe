@@ -1,64 +1,268 @@
+:host {
+  display: block;
+}
+
 .page-shell {
-  padding: 24px;
-  max-width: 640px;
+  padding: 24px 16px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.machine-form-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  padding: 28px 32px;
+}
+
+.form-header-bar {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 18px;
+
+  .back-link-btn {
+    padding: 0;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    color: #475569;
+
+    &:hover {
+      color: #2563eb;
+      background: transparent;
+    }
+  }
+
+  .header-titles {
+    .form-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+    }
+
+    .form-subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+}
+
+.loading-box {
+  padding: 40px 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+
+  i {
+    margin-right: 8px;
+    color: #2563eb;
+  }
 }
 
 .nurse-notice-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   color: #1e40af;
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 24px;
   font-size: 0.875rem;
-  line-height: 1.45;
+  line-height: 1.5;
 
   i {
     font-size: 1.25rem;
     color: #2563eb;
+    margin-top: 2px;
     flex-shrink: 0;
   }
+}
+
+/* Nurse Read-only Device Summary Grid */
+.device-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .summary-label {
+      font-size: 0.725rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .summary-val {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #1e293b;
+
+      &.highlight-dept {
+        color: #2563eb;
+      }
+    }
+  }
+}
+
+/* Admin Editable 3-column Device Grid */
+.admin-device-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Status & Maintenance Date 2-column Grid */
+.status-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  width: 100%;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+
+    .required {
+      color: #ef4444;
+      margin-left: 2px;
+    }
+  }
+
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .field-hint {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+  }
+}
+
+.maintenance-field {
+  margin-bottom: 24px;
+}
+
+/* Quick Tags Section */
+.quick-tags-section {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-bottom: 18px;
-}
 
-label {
-  font-weight: 600;
-}
+  .quick-tags-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
 
-.required {
-  color: red;
-}
+    i {
+      color: #f59e0b;
+      margin-right: 4px;
+    }
+  }
 
-.p-error {
-  color: #f87171;
-  font-size: 0.875rem;
+  .quick-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .quick-tag-chip {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.775rem;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+        color: #0369a1;
+        transform: translateY(-1px);
+      }
+    }
+  }
 }
 
 .form-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
 }
 
-.loading-box {
-  padding: 32px 0;
-  color: #64748b;
+.p-error {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
 
-  i {
-    margin-right: 8px;
+/* Explicit full widths for all PrimeNG inputs */
+::ng-deep .machine-form-card {
+  .p-dropdown {
+    width: 100% !important;
+  }
+
+  .p-calendar {
+    width: 100% !important;
+    display: flex !important;
+
+    .p-inputtext {
+      width: 100% !important;
+      flex: 1 1 auto;
+    }
+  }
+
+  .p-inputtext,
+  textarea {
+    width: 100% !important;
+    box-sizing: border-box;
+    font-family: inherit;
   }
 }
 
-::ng-deep .p-calendar {
-  width: 100%;
+@media (max-width: 768px) {
+  .machine-form-card {
+    padding: 20px 16px;
+  }
+
+  .device-summary-grid,
+  .admin-device-grid,
+  .status-date-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }

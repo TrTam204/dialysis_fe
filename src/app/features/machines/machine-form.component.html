@@ -1,81 +1,181 @@
 <div class="page-shell">
-  <p-card [header]="getCardTitle()">
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+  <div class="machine-form-card">
+    <!-- Header with Back Button -->
+    <div class="form-header-bar">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Quay lại danh sách máy"
+        class="p-button-text p-button-sm back-link-btn"
+        (click)="cancel()"
+      ></button>
+      <div class="header-titles">
+        <h2 class="form-title">{{ getCardTitle() }}</h2>
+        <p class="form-subtitle">
+          {{ editMode ? 'Quản lý thông tin định danh, trạng thái vận hành và nhật ký bảo trì thiết bị' : 'Đăng ký máy lọc máu mới vào hệ thống quản lý trung tâm' }}
+        </p>
+      </div>
     </div>
 
-    <div *ngIf="isNurse && editMode" class="nurse-notice-bar">
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu máy lọc...
+    </div>
+
+    <!-- Nurse Notice Banner -->
+    <div *ngIf="isNurse && editMode && !loading" class="nurse-notice-bar">
       <i class="pi pi-shield"></i>
-      <span>Phân quyền Điều dưỡng: Được phép kiểm tra và cập nhật trạng thái hoạt động, ngày bảo trì và nhật ký sự cố của máy lọc máu. Các thông tin định danh máy được khóa an toàn.</span>
+      <div class="notice-text">
+        <strong>Phân quyền Điều dưỡng:</strong> Được phép kiểm tra và cập nhật trạng thái hoạt động, ngày bảo trì và nhật ký sự cố của máy lọc máu. Các thông tin định danh máy được khóa an toàn.
+      </div>
     </div>
 
     <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-      <div class="field">
-        <label for="machine_id">Mã máy <span class="required">*</span></label>
-        <input id="machine_id" pInputText formControlName="machine_id" class="w-full font-mono font-bold" [readonly]="editMode || isNurse" />
-        <small class="p-error" *ngIf="hasError('machine_id', 'required')">Mã máy không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('machine_id', 'server')">{{ form.get('machine_id')?.errors?.['server'] }}</small>
+      <!-- Read-only Summary Grid for Nurse -->
+      <div *ngIf="isNurse && editMode" class="device-summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">MÃ THIẾT BỊ</span>
+          <span class="summary-val font-mono">{{ form.get('machine_id')?.value }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">TÊN MÁY LỌC</span>
+          <span class="summary-val">{{ form.get('name')?.value }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">KHOA QUẢN LÝ</span>
+          <span class="summary-val highlight-dept">{{ getDepartmentName(form.get('department')?.value) }}</span>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="name">Tên máy <span class="required">*</span></label>
-        <input id="name" pInputText formControlName="name" class="w-full" [readonly]="isNurse" />
-        <small class="p-error" *ngIf="hasError('name', 'required')">Tên máy không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('name', 'server')">{{ form.get('name')?.errors?.['server'] }}</small>
+      <!-- Editable Device Grid for Admin -->
+      <div *ngIf="!isNurse" class="admin-device-grid">
+        <div class="field">
+          <label for="machine_id">Mã máy <span class="required">*</span></label>
+          <input
+            id="machine_id"
+            pInputText
+            formControlName="machine_id"
+            class="w-full font-mono font-bold"
+            [readonly]="editMode"
+            placeholder="VD: M-01"
+          />
+          <small class="p-error" *ngIf="hasError('machine_id', 'required')">Mã máy không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('machine_id', 'server')">{{ form.get('machine_id')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="name">Tên máy <span class="required">*</span></label>
+          <input
+            id="name"
+            pInputText
+            formControlName="name"
+            class="w-full"
+            placeholder="VD: Fresenius 4008S"
+          />
+          <small class="p-error" *ngIf="hasError('name', 'required')">Tên máy không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('name', 'server')">{{ form.get('name')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="department">Khoa / Phòng ban <span class="required">*</span></label>
+          <p-dropdown
+            id="department"
+            [options]="departments"
+            optionLabel="name"
+            optionValue="id"
+            formControlName="department"
+            [showClear]="false"
+            placeholder="-- Chọn khoa công tác --"
+            styleClass="w-full"
+          ></p-dropdown>
+          <small class="p-error" *ngIf="hasError('department', 'required')">Khoa/Phòng ban không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('department', 'server')">{{ form.get('department')?.errors?.['server'] }}</small>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="department">Khoa/Phòng ban <span class="required">*</span></label>
-        <p-dropdown
-          id="department"
-          [options]="departments"
-          optionLabel="name"
-          optionValue="id"
-          formControlName="department"
-          [showClear]="false"
-          [disabled]="isNurse"
+      <!-- Status & Maintenance Date: 2-column grid -->
+      <div class="status-date-grid">
+        <div class="field">
+          <label for="status">Trạng thái hoạt động <span class="required">*</span></label>
+          <p-dropdown
+            id="status"
+            [options]="statusOptions"
+            formControlName="status"
+            [showClear]="false"
+            styleClass="w-full"
+          ></p-dropdown>
+          <small class="p-error" *ngIf="hasError('status', 'required')">Trạng thái không được rỗng</small>
+          <small class="p-error" *ngIf="hasError('status', 'server')">{{ form.get('status')?.errors?.['server'] }}</small>
+        </div>
+
+        <div class="field">
+          <label for="last_maintenance_date">Ngày bảo trì gần nhất</label>
+          <p-calendar
+            id="last_maintenance_date"
+            formControlName="last_maintenance_date"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            [maxDate]="today"
+            placeholder="dd/mm/yyyy"
+            styleClass="w-full"
+            appendTo="body"
+          ></p-calendar>
+          <small class="p-error" *ngIf="hasError('last_maintenance_date', 'server')">{{ form.get('last_maintenance_date')?.errors?.['server'] }}</small>
+        </div>
+      </div>
+
+      <!-- Maintenance Log & Quick Tags -->
+      <div class="field maintenance-field">
+        <div class="field-label-row">
+          <label for="maintenance_log">Nhật ký bảo trì & Mô tả sự cố kỹ thuật</label>
+          <span class="field-hint">Ghi chép tình trạng thiết bị, màng lọc, RO hoặc thay thế phụ tùng</span>
+        </div>
+        <textarea
+          id="maintenance_log"
+          pInputTextarea
+          formControlName="maintenance_log"
           class="w-full"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('department', 'required')">Khoa/Phòng ban không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('department', 'server')">{{ form.get('department')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="status">Trạng thái hoạt động <span class="required">*</span></label>
-        <p-dropdown
-          id="status"
-          [options]="statusOptions"
-          formControlName="status"
-          [showClear]="false"
-          class="w-full"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('status', 'required')">Trạng thái không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('status', 'server')">{{ form.get('status')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="last_maintenance_date">Ngày bảo trì gần nhất</label>
-        <p-calendar
-          id="last_maintenance_date"
-          formControlName="last_maintenance_date"
-          dateFormat="dd/mm/yy"
-          [showIcon]="true"
-          [maxDate]="today"
-          appendTo="body"
-        ></p-calendar>
-        <small class="p-error" *ngIf="hasError('last_maintenance_date', 'server')">{{ form.get('last_maintenance_date')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="maintenance_log">Nhật ký bảo trì / Mô tả sự cố</label>
-        <textarea id="maintenance_log" pInputTextarea formControlName="maintenance_log" class="w-full" rows="3" placeholder="Nhập mô tả tình trạng bảo trì, sự cố hoặc linh kiện thay thế..."></textarea>
+          rows="4"
+          placeholder="Nhập chi tiết mô tả bảo trì, hiện tượng báo lỗi hoặc linh kiện đã xử lý..."
+        ></textarea>
         <small class="p-error" *ngIf="hasError('maintenance_log', 'server')">{{ form.get('maintenance_log')?.errors?.['server'] }}</small>
+
+        <!-- Quick Tags -->
+        <div class="quick-tags-section">
+          <span class="quick-tags-label"><i class="pi pi-bolt"></i> Thêm nhanh mẫu ghi chú:</span>
+          <div class="quick-tags-list">
+            <button
+              *ngFor="let tag of quickTags"
+              type="button"
+              class="quick-tag-chip"
+              (click)="insertQuickTag(tag)"
+            >
+              + {{ tag }}
+            </button>
+          </div>
+        </div>
       </div>
 
+      <!-- Footer Buttons -->
       <div class="form-footer">
-        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-        <button pButton type="submit" [label]="isNurse ? 'Lưu bảo trì' : (editMode ? 'Cập nhật' : 'Thêm mới')" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+        <button
+          pButton
+          type="button"
+          label="Hủy"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary"
+          (click)="cancel()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="isNurse ? 'Lưu bảo trì' : (editMode ? 'Cập nhật' : 'Thêm mới')"
+          icon="pi pi-check"
+          class="p-button-primary"
+          [disabled]="form.invalid || saving"
+          [loading]="saving"
+        ></button>
       </div>
     </form>
-  </p-card>
+  </div>
 </div>

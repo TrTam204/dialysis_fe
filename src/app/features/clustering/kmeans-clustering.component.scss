@@ -279,31 +279,54 @@
     .cluster-centroid-metrics {
       background-color: #f8fafc;
       border: 1px solid #edf2f7;
-      border-radius: 6px;
-      padding: 10px 12px;
+      border-radius: 8px;
+      padding: 12px 14px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      gap: 10px 14px;
+      margin-bottom: 12px;
 
-      .metric-row {
-        font-size: 12px;
-        color: #475569;
+      .metric-col {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
 
         .metric-key {
-          margin-right: 4px;
+          font-size: 0.725rem;
+          color: #64748b;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+
+        .metric-val {
+          font-size: 0.95rem;
+          color: #1e293b;
+          font-weight: 700;
         }
       }
     }
 
     .cluster-recommendation {
-      font-size: 12px;
-      color: #334155;
-      line-height: 1.45;
-      background-color: #f0fdf4;
-      border-left: 3px solid #10b981;
-      padding: 8px 10px;
-      border-radius: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #1e293b;
+      line-height: 1.5;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #3b82f6;
+      padding: 10px 12px;
+      border-radius: 6px;
       margin-top: auto;
+
+      i {
+        font-size: 1rem;
+        color: #2563eb;
+        margin-top: 1px;
+        flex-shrink: 0;
+      }
     }
   }
 }
@@ -320,7 +343,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
     gap: 12px;
 
@@ -340,18 +363,36 @@
     .table-filter-group {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: #475569;
-      font-weight: 500;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .filter-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .cluster-filter-btn {
+        white-space: nowrap;
+        min-width: 80px;
+        padding: 5px 12px;
+        font-size: 0.825rem;
+        font-weight: 600;
+      }
     }
+  }
+
+  .view-patient-btn {
+    white-space: nowrap;
+    font-size: 0.775rem;
+    padding: 4px 10px;
   }
 
   .cluster-table-pill {
     color: #ffffff;
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 12px;
     display: inline-block;
   }

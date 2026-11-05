@@ -48,6 +48,13 @@ export class MachineFormComponent implements OnInit {
     { label: 'Hỏng', value: 'BROKEN' },
   ];
 
+  quickTags: string[] = [
+    'Vệ sinh & khử trùng nhiệt sau ca lọc',
+    'Thay màng lọc & kiểm tra áp lực TMP',
+    'Bảo trì định kỳ hệ thống RO',
+    'Báo lỗi cảm biến / chờ kỹ thuật kiểm tra',
+  ];
+
   private currentMachineId: string | null = null;
 
   constructor(
@@ -88,6 +95,24 @@ export class MachineFormComponent implements OnInit {
       return 'Cập nhật Trạng thái & Bảo trì Máy lọc';
     }
     return this.editMode ? 'Sửa Máy lọc' : 'Thêm Máy lọc';
+  }
+
+  getDepartmentName(deptId: any): string {
+    if (!deptId) return 'Chưa phân khoa';
+    const found = this.departments.find(
+      (d) => d.id === deptId || String(d.id) === String(deptId)
+    );
+    return found ? found.name : `Khoa #${deptId}`;
+  }
+
+  insertQuickTag(tag: string): void {
+    const currentVal = this.form.get('maintenance_log')?.value || '';
+    const formattedTag = `• ${tag}`;
+    const newVal = currentVal.trim()
+      ? `${currentVal.trim()}\n${formattedTag}`
+      : formattedTag;
+    this.form.patchValue({ maintenance_log: newVal });
+    this.form.get('maintenance_log')?.markAsDirty();
   }
 
   loadDepartments() {
