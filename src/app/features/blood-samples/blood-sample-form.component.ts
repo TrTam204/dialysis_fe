@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { CalendarModule } from 'primeng/calendar';
@@ -21,6 +22,7 @@ import { BloodSample, Patient } from '../../core/models';
     ReactiveFormsModule,
     CardModule,
     ButtonModule,
+    InputTextModule,
     InputTextareaModule,
     InputNumberModule,
     CalendarModule,
@@ -48,23 +50,37 @@ export class BloodSampleFormComponent implements OnInit {
     private messageService: MessageService
   ) {
     this.form = this.fb.group({
+      // Phân vùng 1: Định danh mẫu & Bệnh nhân
       sample_id: ['', Validators.required],
       patient: ['', Validators.required],
       collection_date: [null, Validators.required],
-      hemoglobin_level: [null, Validators.required],
-      potassium_level: [null, Validators.required],
+
+      // Phân vùng 2: Huyết học & Điện giải đồ
+      hemoglobin_level: [null, [Validators.required, Validators.min(1), Validators.max(25)]],
+      potassium_level: [null, [Validators.required, Validators.min(1), Validators.max(12)]],
+      sodium_level: [null, [Validators.min(100), Validators.max(180)]],
+      calcium_level: [null, [Validators.min(0.5), Validators.max(5.0)]],
+      phosphorus_level: [null, [Validators.min(0.2), Validators.max(6.0)]],
+
+      // Phân vùng 3: Độc chất thận & Hiệu quả lọc máu
+      urea_level: [null, [Validators.min(1), Validators.max(80)]],
+      creatinine_level: [null, [Validators.min(50), Validators.max(2500)]],
+      albumin_level: [null, [Validators.min(1), Validators.max(7)]],
+      kt_v: [null, [Validators.min(0.1), Validators.max(3.5)]],
       notes: [''],
     });
   }
 
   ngOnInit() {
     this.loadPatients();
-
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam !== null) {
       this.editMode = true;
       this.currentSampleId = idParam;
-      this.loadBloodSample(idParam);
+      this.loadSample(idParam);
+    } else {
+      // Default collection date to now
+      this.form.patchValue({ collection_date: new Date() });
     }
   }
 
@@ -73,13 +89,11 @@ export class BloodSampleFormComponent implements OnInit {
       next: (data: any) => {
         this.patients = data?.results ?? data ?? [];
       },
-      error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách bệnh nhân.' });
-      },
+      error: () => {},
     });
   }
 
-  loadBloodSample(sampleId: string) {
+  loadSample(sampleId: string) {
     this.loading = true;
     this.bloodSampleService.getById(sampleId).subscribe({
       next: (sample: BloodSample) => {
@@ -89,7 +103,14 @@ export class BloodSampleFormComponent implements OnInit {
           collection_date: sample.collection_date ? new Date(sample.collection_date) : null,
           hemoglobin_level: sample.hemoglobin_level,
           potassium_level: sample.potassium_level,
-          notes: sample.notes,
+          sodium_level: sample.sodium_level ?? null,
+          calcium_level: sample.calcium_level ?? null,
+          phosphorus_level: sample.phosphorus_level ?? null,
+          urea_level: sample.urea_level ?? null,
+          creatinine_level: sample.creatinine_level ?? null,
+          albumin_level: sample.albumin_level ?? null,
+          kt_v: sample.kt_v ?? null,
+          notes: sample.notes || '',
         });
         this.loading = false;
       },
@@ -126,25 +147,32 @@ export class BloodSampleFormComponent implements OnInit {
     this.clearServerErrors();
     const raw = this.form.value;
 
-    const collDate: Date | null = raw.collection_date;
-    const collDateStr = collDate ? this.formatDateTime(collDate) : '';
+    const colDate: Date | null = raw.collection_date;
+    const colDateStr = colDate ? (colDate instanceof Date ? colDate.toISOString() : colDate) : new Date().toISOString();
 
-    const payload: BloodSample = {
+    const payload: Partial<BloodSample> = {
       sample_id: (raw.sample_id || '').trim().toUpperCase(),
       patient: raw.patient,
-      collection_date: collDateStr,
-      hemoglobin_level: raw.hemoglobin_level,
-      potassium_level: raw.potassium_level,
-      notes: raw.notes || undefined,
-      created_by: 0,
+      collection_date: colDateStr,
+      hemoglobin_level: Number(raw.hemoglobin_level),
+      potassium_level: Number(raw.potassium_level),
+      sodium_level: raw.sodium_level !== null && raw.sodium_level !== undefined ? Number(raw.sodium_level) : null,
+      calcium_level: raw.calcium_level !== null && raw.calcium_level !== undefined ? Number(raw.calcium_level) : null,
+      phosphorus_level: raw.phosphorus_level !== null && raw.phosphorus_level !== undefined ? Number(raw.phosphorus_level) : null,
+      urea_level: raw.urea_level !== null && raw.urea_level !== undefined ? Number(raw.urea_level) : null,
+      creatinine_level: raw.creatinine_level !== null && raw.creatinine_level !== undefined ? Number(raw.creatinine_level) : null,
+      albumin_level: raw.albumin_level !== null && raw.albumin_level !== undefined ? Number(raw.albumin_level) : null,
+      kt_v: raw.kt_v !== null && raw.kt_v !== undefined ? Number(raw.kt_v) : null,
+      notes: raw.notes || '',
     };
 
     const request = this.editMode && this.currentSampleId
-      ? this.bloodSampleService.update(this.currentSampleId, payload)
-      : this.bloodSampleService.create(payload);
+      ? this.bloodSampleService.update(this.currentSampleId, payload as BloodSample)
+      : this.bloodSampleService.create(payload as BloodSample);
 
     request.subscribe({
       next: () => {
+        this.saving = false;
         this.messageService.add({
           severity: 'success',
           summary: 'Thành công',
@@ -181,10 +209,6 @@ export class BloodSampleFormComponent implements OnInit {
       summary: 'Lỗi',
       detail: fieldErrors?.detail || 'Không thể lưu mẫu xét nghiệm. Vui lòng thử lại.',
     });
-  }
-
-  private formatDateTime(date: Date): string {
-    return date.toISOString();
   }
 
   cancel() {

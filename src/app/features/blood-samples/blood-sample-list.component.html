@@ -96,7 +96,7 @@
           <th pSortableColumn="created_at" style="width: 130px">
             Ngày tạo <p-sortIcon field="created_at"></p-sortIcon>
           </th>
-          <th *ngIf="canWrite" style="width: 105px" class="text-center">Thao tác</th>
+          <th style="width: 120px" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -104,7 +104,7 @@
         <tr>
           <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
           <td>
-            <span class="code-badge">{{ sample.sample_id }}</span>
+            <span class="code-badge sample-clickable" (click)="openDetailDialog(sample)" pTooltip="Xem phiếu kết quả xét nghiệm">{{ sample.sample_id }}</span>
           </td>
           <td>
             <span class="patient-name">{{ sample.patient_name || sample.patient }}</span>
@@ -128,9 +128,19 @@
           <td>
             <span class="date-text">{{ sample.created_at | date: 'dd/MM/yyyy' }}</span>
           </td>
-          <td *ngIf="canWrite" class="text-center">
+          <td class="text-center">
             <div class="action-cell">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                class="p-button-text p-button-rounded p-button-sm p-button-secondary"
+                (click)="openDetailDialog(sample)"
+                pTooltip="Xem phiếu xét nghiệm"
+                tooltipPosition="top"
+              ></button>
               <a
+                *ngIf="canWrite"
                 pButton
                 type="button"
                 icon="pi pi-pencil"
@@ -141,6 +151,7 @@
                 tooltipPosition="top"
               ></a>
               <button
+                *ngIf="canWrite"
                 pButton
                 type="button"
                 icon="pi pi-trash"
@@ -156,7 +167,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="canWrite ? 8 : 7" class="text-center empty-cell">
+          <td colspan="8" class="text-center empty-cell">
             <i class="pi pi-inbox empty-icon"></i>
             <div>Không tìm thấy mẫu xét nghiệm nào</div>
           </td>
@@ -166,4 +177,250 @@
   </div>
 
   <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+
+  <!-- MODAL XEM CHI TIẾT PHIẾU XÉT NGHIỆM -->
+  <p-dialog
+    [(visible)]="showDetailDialog"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '780px', maxWidth: '95vw' }"
+    styleClass="sample-detail-dialog"
+    header="Phiếu Kết Quả Xét Nghiệm Sinh Hóa Máu (Clinical Lab Report)"
+  >
+    <div *ngIf="selectedSample" class="sample-detail-container">
+      <!-- Patient & Sample Info Banner -->
+      <div class="sample-hero-banner">
+        <div class="sample-meta-col">
+          <div class="sample-title-row">
+            <span class="sample-code-tag font-mono font-bold">{{ selectedSample.sample_id }}</span>
+            <h3 class="sample-patient-name">{{ selectedSample.patient_name || selectedSample.patient }}</h3>
+            <span class="sample-patient-id font-mono">({{ selectedSample.patient }})</span>
+          </div>
+          <div class="sample-sub-meta">
+            <span class="meta-item">
+              <i class="pi pi-calendar text-xs text-slate-400"></i>
+              Ngày lấy mẫu: <strong>{{ selectedSample.collection_date | date: 'dd/MM/yyyy HH:mm' }}</strong>
+            </span>
+            <span class="meta-item">
+              <i class="pi pi-user text-xs text-slate-400"></i>
+              Bác sĩ chỉ định: <strong>{{ selectedSample.created_by_name || 'Bác sĩ điều trị' }}</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9 Clinical Markers Table -->
+      <div class="lab-table-wrapper">
+        <table class="lab-table">
+          <thead>
+            <tr>
+              <th style="width: 28%">Chỉ số xét nghiệm</th>
+              <th style="width: 22%" class="text-right">Kết quả đo</th>
+              <th style="width: 26%">Dải tham chiếu chuẩn</th>
+              <th style="width: 24%" class="text-center">Đánh giá lâm sàng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- 1. Hemoglobin -->
+            <tr>
+              <td>
+                <div class="marker-title">Hemoglobin (Hb)</div>
+                <div class="marker-sub">Độ bão hòa huyết sắc tố</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.hemoglobin_level }} <span class="unit-text">g/dL</span>
+              </td>
+              <td class="text-xs text-slate-500">10.0 - 12.0 g/dL (Mục tiêu lọc máu)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('hemoglobin', selectedSample.hemoglobin_level).label"
+                  [severity]="getMarkerAssessment('hemoglobin', selectedSample.hemoglobin_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 2. Potassium -->
+            <tr>
+              <td>
+                <div class="marker-title">Kali máu (K⁺)</div>
+                <div class="marker-sub">Điện giải đồ kali huyết thanh</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.potassium_level }} <span class="unit-text">mmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">3.5 - 5.0 mmol/L (mEq/L)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('potassium', selectedSample.potassium_level).label"
+                  [severity]="getMarkerAssessment('potassium', selectedSample.potassium_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 3. Sodium -->
+            <tr>
+              <td>
+                <div class="marker-title">Natri máu (Na⁺)</div>
+                <div class="marker-sub">Áp suất thẩm thấu dịch ngoại bào</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.sodium_level !== null && selectedSample.sodium_level !== undefined ? selectedSample.sodium_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.sodium_level">mmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">135 - 145 mmol/L</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('sodium', selectedSample.sodium_level).label"
+                  [severity]="getMarkerAssessment('sodium', selectedSample.sodium_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 4. Calcium -->
+            <tr>
+              <td>
+                <div class="marker-title">Canxi máu (Ca²⁺)</div>
+                <div class="marker-sub">Canxi toàn phần huyết thanh</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.calcium_level !== null && selectedSample.calcium_level !== undefined ? selectedSample.calcium_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.calcium_level">mmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">2.10 - 2.60 mmol/L</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('calcium', selectedSample.calcium_level).label"
+                  [severity]="getMarkerAssessment('calcium', selectedSample.calcium_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 5. Phosphorus -->
+            <tr>
+              <td>
+                <div class="marker-title">Phospho vô cơ (P)</div>
+                <div class="marker-sub">Cân bằng khoáng chất & xương CKD-MBD</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.phosphorus_level !== null && selectedSample.phosphorus_level !== undefined ? selectedSample.phosphorus_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.phosphorus_level">mmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">1.13 - 1.78 mmol/L (Mục tiêu CKD-5)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('phosphorus', selectedSample.phosphorus_level).label"
+                  [severity]="getMarkerAssessment('phosphorus', selectedSample.phosphorus_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 6. Urea -->
+            <tr>
+              <td>
+                <div class="marker-title">Ure máu (BUN)</div>
+                <div class="marker-sub">Độc chất chuyển hóa protein</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.urea_level !== null && selectedSample.urea_level !== undefined ? selectedSample.urea_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.urea_level">mmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">15 - 35 mmol/L (Trước lọc)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('urea', selectedSample.urea_level).label"
+                  [severity]="getMarkerAssessment('urea', selectedSample.urea_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 7. Creatinine -->
+            <tr>
+              <td>
+                <div class="marker-title">Creatinine huyết thanh</div>
+                <div class="marker-sub">Độc chất tích tụ suy thận giai đoạn cuối</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.creatinine_level !== null && selectedSample.creatinine_level !== undefined ? selectedSample.creatinine_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.creatinine_level">µmol/L</span>
+              </td>
+              <td class="text-xs text-slate-500">400 - 1000 µmol/L (Lọc máu)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('creatinine', selectedSample.creatinine_level).label"
+                  [severity]="getMarkerAssessment('creatinine', selectedSample.creatinine_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 8. Albumin -->
+            <tr>
+              <td>
+                <div class="marker-title">Albumin huyết thanh</div>
+                <div class="marker-sub">Chỉ số dinh dưỡng & áp lực keo</div>
+              </td>
+              <td class="text-right font-mono font-bold text-slate-800">
+                {{ selectedSample.albumin_level !== null && selectedSample.albumin_level !== undefined ? selectedSample.albumin_level : '—' }}
+                <span class="unit-text" *ngIf="selectedSample.albumin_level">g/dL</span>
+              </td>
+              <td class="text-xs text-slate-500">3.5 - 5.0 g/dL (Bình thường)</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('albumin', selectedSample.albumin_level).label"
+                  [severity]="getMarkerAssessment('albumin', selectedSample.albumin_level).severity"
+                ></p-tag>
+              </td>
+            </tr>
+
+            <!-- 9. Kt/V -->
+            <tr class="highlight-row">
+              <td>
+                <div class="marker-title text-primary font-bold">Chỉ số Kt/V</div>
+                <div class="marker-sub">Hiệu quả thanh thải ure của quả lọc</div>
+              </td>
+              <td class="text-right font-mono font-bold text-primary">
+                {{ selectedSample.kt_v !== null && selectedSample.kt_v !== undefined ? selectedSample.kt_v : '—' }}
+              </td>
+              <td class="text-xs text-slate-500">≥ 1.20 (Chuẩn KDOQI), Tối ưu ≥ 1.40</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="getMarkerAssessment('kt_v', selectedSample.kt_v).label"
+                  [severity]="getMarkerAssessment('kt_v', selectedSample.kt_v).severity"
+                ></p-tag>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Notes block -->
+      <div class="sample-notes-box">
+        <span class="notes-label"><i class="pi pi-comment mr-1"></i> Ghi chú lâm sàng từ phòng xét nghiệm:</span>
+        <p class="notes-content">{{ selectedSample.notes || 'Không có ghi chú bất thường từ phòng xét nghiệm.' }}</p>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="sample-modal-footer">
+        <button
+          *ngIf="canWrite"
+          pButton
+          type="button"
+          icon="pi pi-pencil"
+          label="Sửa mẫu xét nghiệm"
+          class="p-button-primary p-button-sm"
+          (click)="editSampleFromDetail()"
+        ></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-times"
+          label="Đóng"
+          class="p-button-text p-button-secondary p-button-sm"
+          (click)="closeDetailDialog()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
 </div>

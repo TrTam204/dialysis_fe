@@ -1,97 +1,264 @@
-<div class="page-shell">
-  <p-card [header]="editMode ? 'Sửa Nhân sự' : 'Thêm Nhân sự'">
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+<div class="form-page-shell">
+  <div class="form-card">
+    <!-- Header with Back Button -->
+    <div class="form-header-bar">
+      <div class="header-titles">
+        <h2 class="form-title">
+          <i class="pi pi-user-plus text-primary mr-2" *ngIf="!editMode"></i>
+          <i class="pi pi-user-edit text-primary mr-2" *ngIf="editMode"></i>
+          {{ editMode ? 'Cập nhật Hồ sơ Cán bộ Y tế' : 'Thêm Cán bộ Y tế Mới' }}
+        </h2>
+        <p class="form-subtitle">
+          Quản lý tài khoản, thông tin định danh cá nhân CCCD và hồ sơ chứng chỉ hành nghề y khoa
+        </p>
+      </div>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Quay lại danh sách"
+        class="p-button-outlined p-button-secondary back-btn"
+        (click)="cancel()"
+      ></button>
     </div>
 
-    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-      <div class="field">
-        <label for="username">Tên đăng nhập <span class="required">*</span></label>
-        <input id="username" pInputText formControlName="username" class="w-full" />
-        <small class="p-error" *ngIf="hasError('username', 'required')">Tên đăng nhập không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('username', 'server')">{{ form.get('username')?.errors?.['server'] }}</small>
-      </div>
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu cán bộ y tế...
+    </div>
 
-      <div class="field">
-        <label for="email">Email <span class="required">*</span></label>
-        <input id="email" pInputText type="email" formControlName="email" class="w-full" />
-        <small class="p-error" *ngIf="hasError('email', 'required')">Email không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('email', 'email')">Email không hợp lệ</small>
-        <small class="p-error" *ngIf="hasError('email', 'server')">{{ form.get('email')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="form-row">
-        <div class="field">
-          <label for="first_name">Tên</label>
-          <input id="first_name" pInputText formControlName="first_name" class="w-full" />
-          <small class="p-error" *ngIf="hasError('first_name', 'server')">{{ form.get('first_name')?.errors?.['server'] }}</small>
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()" class="main-form">
+      <!-- PHÂN VÙNG 1: TÀI KHOẢN & PHÂN QUYỀN -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-shield"></i>
+          <span>1. Thông tin Tài khoản & Phân quyền Hệ thống</span>
         </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="employee_code">Mã cán bộ y tế</label>
+            <input
+              id="employee_code"
+              pInputText
+              formControlName="employee_code"
+              placeholder="VD: BS-KLM-01, DD-KLM-02, AD-001"
+              class="w-full font-mono font-bold"
+            />
+            <small class="hint-text">Mã định danh cán bộ nội bộ bệnh viện</small>
+          </div>
 
-        <div class="field">
-          <label for="last_name">Họ</label>
-          <input id="last_name" pInputText formControlName="last_name" class="w-full" />
-          <small class="p-error" *ngIf="hasError('last_name', 'server')">{{ form.get('last_name')?.errors?.['server'] }}</small>
+          <div class="field">
+            <label for="username">Tên đăng nhập <span class="required">*</span></label>
+            <input
+              id="username"
+              pInputText
+              formControlName="username"
+              placeholder="VD: bs_thien, nurse_mai"
+              class="w-full font-mono"
+              [readonly]="editMode"
+            />
+            <small class="error-text" *ngIf="hasError('username', 'required')">Tên đăng nhập không được để trống</small>
+            <small class="error-text" *ngIf="hasError('username', 'server')">{{ form.get('username')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="password">
+              Mật khẩu {{ editMode ? '(để trống nếu không đổi)' : '' }} <span class="required" *ngIf="!editMode">*</span>
+            </label>
+            <p-password
+              id="password"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+              placeholder="Tối thiểu 6 ký tự"
+            ></p-password>
+            <small class="error-text" *ngIf="hasError('password', 'required')">Mật khẩu không được để trống</small>
+          </div>
+
+          <div class="field">
+            <label for="role">Vai trò công tác <span class="required">*</span></label>
+            <p-dropdown
+              id="role"
+              [options]="roleOptions"
+              formControlName="role"
+              placeholder="Chọn vai trò hệ thống"
+              styleClass="w-full"
+            ></p-dropdown>
+            <small class="error-text" *ngIf="hasError('role', 'required')">Vui lòng chọn vai trò</small>
+          </div>
+
+          <div class="field">
+            <label for="department">Khoa / Phòng ban công tác <span class="required">*</span></label>
+            <p-dropdown
+              id="department"
+              [options]="departments"
+              optionLabel="name"
+              optionValue="id"
+              formControlName="department"
+              placeholder="Chọn khoa/phòng làm việc"
+              styleClass="w-full"
+            ></p-dropdown>
+            <small class="error-text" *ngIf="hasError('department', 'required')">Vui lòng chọn khoa/phòng ban</small>
+          </div>
+
+          <div class="field field-checkbox">
+            <p-checkbox
+              id="is_active"
+              formControlName="is_active"
+              [binary]="true"
+              label="Tài khoản đang hoạt động (Được phép đăng nhập hệ thống)"
+            ></p-checkbox>
+          </div>
         </div>
       </div>
 
-      <div class="field">
-        <label for="phone_number">Số điện thoại</label>
-        <input id="phone_number" pInputText formControlName="phone_number" class="w-full" />
-        <small class="p-error" *ngIf="hasError('phone_number', 'server')">{{ form.get('phone_number')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 2: CÁ NHÂN & ĐỊNH DANH CCCD -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-id-card"></i>
+          <span>2. Thông tin Cá nhân & Định danh CCCD</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="last_name">Họ và chữ lót</label>
+            <input id="last_name" pInputText formControlName="last_name" placeholder="VD: Nguyễn Hồ An" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="first_name">Tên</label>
+            <input id="first_name" pInputText formControlName="first_name" placeholder="VD: Thiên" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="gender">Giới tính</label>
+            <p-dropdown
+              id="gender"
+              [options]="genderOptions"
+              formControlName="gender"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="date_of_birth">Ngày tháng năm sinh</label>
+            <input id="date_of_birth" type="date" pInputText formControlName="date_of_birth" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="citizen_id">Số CCCD / Định danh cá nhân (12 số)</label>
+            <input
+              id="citizen_id"
+              pInputText
+              formControlName="citizen_id"
+              placeholder="VD: 079085001234"
+              maxlength="12"
+              class="w-full font-mono"
+            />
+          </div>
+
+          <div class="field">
+            <label for="phone_number">Số điện thoại liên hệ</label>
+            <input
+              id="phone_number"
+              pInputText
+              formControlName="phone_number"
+              placeholder="VD: 0903855123"
+              class="w-full"
+            />
+          </div>
+
+          <div class="field full-col">
+            <label for="email">Email nhận OTP & Cảnh báo an toàn <span class="required">*</span></label>
+            <input
+              id="email"
+              type="email"
+              pInputText
+              formControlName="email"
+              placeholder="VD: doctor.thien@dialysis.local hoặc gmail cá nhân"
+              class="w-full"
+            />
+            <small class="hint-text">Email này sẽ nhận mã OTP 6 chữ số khi thực hiện khôi phục mật khẩu</small>
+            <small class="error-text" *ngIf="hasError('email', 'required')">Email không được để trống</small>
+            <small class="error-text" *ngIf="hasError('email', 'email')">Định dạng email không hợp lệ</small>
+          </div>
+
+          <div class="field full-col">
+            <label for="address">Địa chỉ thường trú / Nơi ở hiện tại</label>
+            <input
+              id="address"
+              pInputText
+              formControlName="address"
+              placeholder="Số nhà, tên đường, phường/xã, quận/huyện, TP.HCM"
+              class="w-full"
+            />
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="role">Vai trò <span class="required">*</span></label>
-        <p-dropdown
-          id="role"
-          [options]="roleOptions"
-          formControlName="role"
-          [showClear]="false"
-          class="w-full"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('role', 'required')">Vai trò không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('role', 'server')">{{ form.get('role')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 3: HỒ SƠ CHUYÊN MÔN Y TẾ -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-briefcase"></i>
+          <span>3. Hồ sơ Chuyên môn Y tế & Chứng chỉ Hành nghề (CCHN)</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="degree_title">Học vị / Chức danh chuyên môn</label>
+            <p-dropdown
+              id="degree_title"
+              [options]="degreeOptions"
+              formControlName="degree_title"
+              [editable]="true"
+              placeholder="Chọn hoặc nhập học vị (BS.CKII, ThS.BS...)"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="license_number">Số Chứng chỉ hành nghề (CCHN)</label>
+            <input
+              id="license_number"
+              pInputText
+              formControlName="license_number"
+              placeholder="VD: 045812/HCM-CCHN"
+              class="w-full font-mono"
+            />
+            <small class="hint-text">Chứng chỉ hành nghề khám bệnh, chữa bệnh do Sở Y tế cấp</small>
+          </div>
+
+          <div class="field full-col">
+            <label for="specialization">Chuyên khoa sâu / Lĩnh vực phụ trách</label>
+            <input
+              id="specialization"
+              pInputText
+              formControlName="specialization"
+              placeholder="VD: Thận nhân tạo - Lọc máu ngoài cơ thể, Hồi sức Nội thận..."
+              class="w-full"
+            />
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="department">Khoa/Phòng ban <span class="required">*</span></label>
-        <p-dropdown
-          id="department"
-          [options]="departments"
-          optionLabel="name"
-          optionValue="id"
-          formControlName="department"
-          [showClear]="false"
-          class="w-full"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('department', 'required')">Khoa/Phòng ban không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('department', 'server')">{{ form.get('department')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="password">
-          Mật khẩu <span class="required" *ngIf="!editMode">*</span>
-          <span class="hint" *ngIf="editMode">(để trống nếu không đổi)</span>
-        </label>
-        <p-password
-          id="password"
-          formControlName="password"
-          [feedback]="false"
-          [toggleMask]="true"
-          class="w-full"
-        />
-        <small class="p-error" *ngIf="hasError('password', 'required')">Mật khẩu không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('password', 'server')">{{ form.get('password')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <p-checkbox formControlName="is_active" label="Hoạt động" [binary]="true"></p-checkbox>
-      </div>
-
+      <!-- Form Actions -->
       <div class="form-footer">
-        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+        <button
+          pButton
+          type="button"
+          label="Hủy bỏ"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary action-btn"
+          (click)="cancel()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="saving ? 'Đang lưu...' : (editMode ? 'Lưu thay đổi' : 'Tạo mới nhân sự')"
+          icon="pi pi-check"
+          class="p-button-primary action-btn"
+          [disabled]="saving || form.invalid"
+        ></button>
       </div>
     </form>
-  </p-card>
+  </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -29,13 +29,26 @@ import { AuthService } from '../../core/services/auth.service';
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.scss'],
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnDestroy {
   step: 'EMAIL' | 'OTP_RESET' = 'EMAIL';
   emailForm: FormGroup;
   resetForm: FormGroup;
   loading = false;
   messages: { severity: string; summary: string; detail: string }[] = [];
   simulatedOtp: string | null = null;
+  currentEmail = '';
+
+  // 5-Minute OTP Timer
+  countdownSeconds = 300;
+  countdownDisplay = '05:00';
+  private timerInterval: any = null;
+  canResend = false;
+
+  readonly demoAccounts = [
+    { label: 'Admin (Gmail thật)', email: 'admin.ttam.dialysis@gmail.com', role: 'Quản trị viên' },
+    { label: 'Bác sĩ An', email: 'doctor1@dialysis.local', role: 'Bác sĩ điều trị' },
+    { label: 'Điều dưỡng Mai', email: 'nurse1@dialysis.local', role: 'Điều dưỡng' },
+  ];
 
   constructor(
     private fb: FormBuilder,
@@ -48,19 +61,58 @@ export class ForgotPasswordComponent {
     });
 
     this.resetForm = this.fb.group({
-      otp: ['', [Validators.required, Validators.minLength(4)]],
+      otp: ['', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
     });
   }
 
-  sendOtp() {
+  ngOnDestroy(): void {
+    this.stopCountdown();
+  }
+
+  fillEmail(email: string): void {
+    this.emailForm.patchValue({ email });
+    this.messages = [];
+  }
+
+  private startCountdown(): void {
+    this.stopCountdown();
+    this.countdownSeconds = 300;
+    this.canResend = false;
+    this.updateCountdownDisplay();
+
+    this.timerInterval = setInterval(() => {
+      this.countdownSeconds--;
+      this.updateCountdownDisplay();
+      if (this.countdownSeconds <= 0) {
+        this.stopCountdown();
+        this.canResend = true;
+      }
+    }, 1000);
+  }
+
+  private stopCountdown(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+
+  private updateCountdownDisplay(): void {
+    const mins = Math.floor(this.countdownSeconds / 60);
+    const secs = this.countdownSeconds % 60;
+    this.countdownDisplay = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  sendOtp(): void {
     if (this.emailForm.invalid) {
       this.emailForm.markAllAsTouched();
       return;
     }
 
-    const email = this.emailForm.value.email;
+    const email = this.emailForm.value.email.trim();
+    this.currentEmail = email;
     this.loading = true;
     this.messages = [];
 
@@ -68,6 +120,7 @@ export class ForgotPasswordComponent {
       next: (res: any) => {
         this.loading = false;
         this.step = 'OTP_RESET';
+        this.startCountdown();
         if (res?.otp) {
           this.simulatedOtp = res.otp;
         }
@@ -75,19 +128,31 @@ export class ForgotPasswordComponent {
           {
             severity: 'success',
             summary: 'Đã gửi mã OTP',
-            detail: res?.detail || 'Vui lòng kiểm tra email của bạn để lấy mã OTP đặt lại mật khẩu.',
+            detail: res?.detail || `Đã gửi mã xác thực 6 chữ số tới ${email}. Vui lòng kiểm tra hộp thư.`,
           },
         ];
       },
       error: (err) => {
         this.loading = false;
-        const detail = err?.error?.detail || 'Không thể gửi mã OTP. Vui lòng thử lại sau.';
-        this.messages = [{ severity: 'error', summary: 'Lỗi', detail }];
+        const detail = err?.error?.detail || 'Không thể gửi mã OTP. Vui lòng kiểm tra lại email hoặc liên hệ Quản trị viên.';
+        this.messages = [{ severity: 'error', summary: 'Không tìm thấy tài khoản', detail }];
       },
     });
   }
 
-  resetPassword() {
+  resendOtp(): void {
+    if (!this.canResend && this.countdownSeconds > 0) return;
+    this.sendOtp();
+  }
+
+  backToEmailStep(): void {
+    this.step = 'EMAIL';
+    this.stopCountdown();
+    this.messages = [];
+    this.resetForm.reset();
+  }
+
+  resetPassword(): void {
     if (this.resetForm.invalid) {
       this.resetForm.markAllAsTouched();
       return;
@@ -99,32 +164,32 @@ export class ForgotPasswordComponent {
         {
           severity: 'error',
           summary: 'Mật khẩu không khớp',
-          detail: 'Mật khẩu mới và xác nhận mật khẩu phải giống nhau.',
+          detail: 'Mật khẩu mới và xác nhận mật khẩu phải hoàn toàn trùng khớp.',
         },
       ];
       return;
     }
 
-    const email = this.emailForm.value.email;
     this.loading = true;
     this.messages = [];
 
-    this.authService.resetPassword(email, otp, password).subscribe({
-      next: () => {
+    this.authService.resetPassword(this.currentEmail, otp.trim(), password).subscribe({
+      next: (res: any) => {
         this.loading = false;
+        this.stopCountdown();
         this.messageService.add({
           severity: 'success',
           summary: 'Thành công',
-          detail: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.',
+          detail: res?.detail || 'Đặt lại mật khẩu thành công! Tài khoản đã được mở khóa an toàn.',
         });
         setTimeout(() => {
-          this.router.navigate(['/auth/login']);
+          this.router.navigate(['/auth/login'], { queryParams: { resetSuccess: '1' } });
         }, 1500);
       },
       error: (err) => {
         this.loading = false;
-        const detail = err?.error?.detail || 'Đặt lại mật khẩu thất bại. Mã OTP có thể đã hết hạn.';
-        this.messages = [{ severity: 'error', summary: 'Lỗi', detail }];
+        const detail = err?.error?.detail || 'Đặt lại mật khẩu thất bại. Mã OTP không đúng hoặc đã hết hạn.';
+        this.messages = [{ severity: 'error', summary: 'Xác thực thất bại', detail }];
       },
     });
   }

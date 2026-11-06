@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -13,6 +13,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 import { BloodSampleService } from '../../core/services/blood-sample.service';
 import { PatientService } from '../../core/services/patient.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -33,6 +34,7 @@ import { BloodSample, Patient } from '../../core/models';
     DropdownModule,
     TagModule,
     TooltipModule,
+    DialogModule,
   ],
   templateUrl: './blood-sample-list.component.html',
   styleUrls: ['./blood-sample-list.component.scss'],
@@ -56,6 +58,8 @@ export class BloodSampleListComponent implements OnInit, OnDestroy {
   sortOrder = -1;
 
   canWrite = false;
+  showDetailDialog = false;
+  selectedSample: BloodSample | null = null;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -65,7 +69,8 @@ export class BloodSampleListComponent implements OnInit, OnDestroy {
     private patientService: PatientService,
     private authService: AuthService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -159,6 +164,69 @@ export class BloodSampleListComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
     });
+  }
+
+  
+  openDetailDialog(sample: BloodSample): void {
+    this.selectedSample = sample;
+    this.showDetailDialog = true;
+  }
+
+  closeDetailDialog(): void {
+    this.showDetailDialog = false;
+    this.selectedSample = null;
+  }
+
+  editSampleFromDetail(): void {
+    if (this.selectedSample?.sample_id) {
+      const id = this.selectedSample.sample_id;
+      this.closeDetailDialog();
+      this.router.navigate(['/blood-samples', id, 'edit']);
+    }
+  }
+
+  getMarkerAssessment(marker: string, val: number | null | undefined): { label: string; severity: 'success' | 'warning' | 'danger' | 'info' } {
+    if (val === null || val === undefined) return { label: 'Chưa xét nghiệm', severity: 'info' };
+    switch (marker) {
+      case 'hemoglobin':
+        if (val < 10.0) return { label: 'Thiếu máu (< 10.0)', severity: 'danger' };
+        if (val > 13.0) return { label: 'Cao (> 13.0)', severity: 'warning' };
+        return { label: 'Đạt mục tiêu (10 - 12)', severity: 'success' };
+      case 'potassium':
+        if (val < 3.5) return { label: 'Hạ Kali (< 3.5)', severity: 'warning' };
+        if (val > 5.5) return { label: 'Tăng Kali nguy cơ (> 5.5)', severity: 'danger' };
+        if (val > 5.0) return { label: 'Hơi cao (5.1 - 5.5)', severity: 'warning' };
+        return { label: 'Bình thường (3.5 - 5.0)', severity: 'success' };
+      case 'sodium':
+        if (val < 135) return { label: 'Hạ Natri (< 135)', severity: 'warning' };
+        if (val > 145) return { label: 'Tăng Natri (> 145)', severity: 'warning' };
+        return { label: 'Bình thường (135 - 145)', severity: 'success' };
+      case 'calcium':
+        if (val < 2.1) return { label: 'Hạ Canxi (< 2.1)', severity: 'warning' };
+        if (val > 2.6) return { label: 'Tăng Canxi (> 2.6)', severity: 'warning' };
+        return { label: 'Bình thường (2.1 - 2.6)', severity: 'success' };
+      case 'phosphorus':
+        if (val < 1.1) return { label: 'Hạ Phospho (< 1.1)', severity: 'warning' };
+        if (val > 1.8) return { label: 'Tăng Phospho (> 1.8)', severity: 'danger' };
+        return { label: 'Đạt mục tiêu (1.1 - 1.8)', severity: 'success' };
+      case 'urea':
+        if (val > 35) return { label: 'Rất cao (> 35)', severity: 'danger' };
+        if (val > 20) return { label: 'Cao (CKD)', severity: 'warning' };
+        return { label: 'Kiểm soát tốt', severity: 'success' };
+      case 'creatinine':
+        if (val > 800) return { label: 'Rất cao (> 800)', severity: 'danger' };
+        if (val > 400) return { label: 'Mức lọc máu (400 - 800)', severity: 'warning' };
+        return { label: 'Bình thường', severity: 'success' };
+      case 'albumin':
+        if (val < 3.5) return { label: 'Hạ Albumin (< 3.5)', severity: 'danger' };
+        return { label: 'Bình thường (≥ 3.5)', severity: 'success' };
+      case 'kt_v':
+        if (val < 1.2) return { label: 'Chưa đạt (< 1.2)', severity: 'danger' };
+        if (val < 1.4) return { label: 'Đạt chuẩn (1.2 - 1.4)', severity: 'warning' };
+        return { label: 'Tối ưu (≥ 1.4)', severity: 'success' };
+      default:
+        return { label: 'Đã ghi nhận', severity: 'info' };
+    }
   }
 
   confirmDelete(sample: BloodSample) {

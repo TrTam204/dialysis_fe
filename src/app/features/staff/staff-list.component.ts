@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -73,6 +73,8 @@ export class StaffListComponent implements OnInit, OnDestroy {
   sortOrder = 1;
 
   isAdmin = false;
+  showDetailDialog = false;
+  selectedStaff: CustomUser | null = null;
   // Detailed Staff Permissions Dialog
   showPermissionDialog = false;
   editingStaff: CustomUser | null = null;
@@ -140,7 +142,8 @@ export class StaffListComponent implements OnInit, OnDestroy {
     private departmentService: DepartmentService,
     private authService: AuthService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -350,6 +353,51 @@ export class StaffListComponent implements OnInit, OnDestroy {
       },
     });
   }
+
+
+  
+  openDetailDialog(user: CustomUser): void {
+    this.selectedStaff = user;
+    this.showDetailDialog = true;
+  }
+
+  closeDetailDialog(): void {
+    this.showDetailDialog = false;
+    this.selectedStaff = null;
+  }
+
+  editStaffFromDetail(): void {
+    if (this.selectedStaff?.id) {
+      const id = this.selectedStaff.id;
+      this.closeDetailDialog();
+      this.router.navigate(['/staff', id, 'edit']);
+    }
+  }
+
+  openPermissionFromDetail(): void {
+    if (this.selectedStaff) {
+      const u = this.selectedStaff;
+      this.closeDetailDialog();
+      this.openPermissionDialog(u);
+    }
+  }
+
+  calculateAge(dobStr?: string | null): number | null {
+    if (!dobStr) return null;
+    const dob = new Date(dobStr);
+    if (isNaN(dob.getTime())) return null;
+    const ageDiffMs = Date.now() - dob.getTime();
+    const ageDate = new Date(ageDiffMs);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  }
+
+  getGenderLabel(gender?: string | null): string {
+    if (gender === 'MALE') return 'Nam (Male)';
+    if (gender === 'FEMALE') return 'Nữ (Female)';
+    if (gender === 'OTHER') return 'Khác (Other)';
+    return '—';
+  }
+
 
 
   openPermissionDialog(user: CustomUser): void {

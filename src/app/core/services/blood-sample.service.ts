@@ -24,7 +24,7 @@ export class BloodSampleService {
     return this.http.post<BloodSample>(`${this.apiBase}/blood-samples/`, data);
   }
 
-  update(sampleId: string, data: BloodSample): Observable<BloodSample> {
+  update(sampleId: string, data: BloodSample | Partial<BloodSample>): Observable<BloodSample> {
     return this.http.put<BloodSample>(`${this.apiBase}/blood-samples/${sampleId}/`, data);
   }
 

@@ -89,7 +89,7 @@
           <th pSortableColumn="is_active" style="width: 160px" class="text-center">
             Trạng thái <p-sortIcon field="is_active"></p-sortIcon>
           </th>
-          <th *ngIf="isAdmin" style="width: 105px" class="text-center">Thao tác</th>
+          <th style="width: 120px" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -97,10 +97,10 @@
         <tr>
           <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
           <td>
-            <span class="code-badge">{{ dept.code }}</span>
+            <span class="code-badge dept-clickable" (click)="openDetailDialog(dept)" pTooltip="Xem chi tiết khoa">{{ dept.code }}</span>
           </td>
           <td>
-            <span class="dept-title">{{ dept.name }}</span>
+            <span class="dept-title dept-clickable font-medium" (click)="openDetailDialog(dept)" pTooltip="Xem chi tiết khoa">{{ dept.name }}</span>
           </td>
           <td>
             <span class="desc-text">{{ dept.description || '-' }}</span>
@@ -114,9 +114,19 @@
               {{ dept.is_active ? 'Hoạt động' : 'Ngừng hoạt động' }}
             </span>
           </td>
-          <td *ngIf="isAdmin" class="text-center">
+          <td class="text-center">
             <div class="action-cell">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                class="p-button-text p-button-rounded p-button-sm p-button-secondary"
+                (click)="openDetailDialog(dept)"
+                pTooltip="Xem chi tiết khoa"
+                tooltipPosition="top"
+              ></button>
               <a
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 icon="pi pi-pencil"
@@ -127,6 +137,7 @@
                 tooltipPosition="top"
               ></a>
               <button
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 icon="pi pi-trash"
@@ -142,7 +153,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="isAdmin ? 7 : 6" class="text-center empty-cell">
+          <td colspan="7" class="text-center empty-cell">
             <i class="pi pi-inbox empty-icon"></i>
             <div>Không tìm thấy khoa/phòng ban nào</div>
           </td>
@@ -152,4 +163,93 @@
   </div>
 
   <p-confirmDialog header="Xác nhận xóa" icon="pi pi-exclamation-triangle" [style]="{ width: '420px' }"></p-confirmDialog>
+
+  <!-- MODAL XEM CHI TIẾT KHOA / PHÒNG BAN -->
+  <p-dialog
+    [(visible)]="showDetailDialog"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '700px', maxWidth: '95vw' }"
+    styleClass="dept-detail-dialog"
+    header="Chi Tiết Khoa / Phòng Ban Điều Trị"
+  >
+    <div *ngIf="selectedDept" class="dept-detail-container">
+      <div class="dept-hero-banner">
+        <div class="dept-icon-circle">
+          <i class="pi pi-building"></i>
+        </div>
+        <div class="dept-hero-info">
+          <div class="dept-name-row">
+            <h3 class="dept-fullname">{{ selectedDept.name }}</h3>
+            <span class="dept-code-tag font-mono">{{ selectedDept.code }}</span>
+          </div>
+          <div class="dept-status-row">
+            <span [class]="'status-pill ' + (selectedDept.is_active ? 'status-active' : 'status-inactive')">
+              <span class="dot"></span>
+              {{ selectedDept.is_active ? 'Đang hoạt động' : 'Ngừng hoạt động' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dept-info-grid">
+        <div class="dept-info-item">
+          <span class="info-label">Trưởng khoa phụ trách</span>
+          <span class="info-val font-semibold text-primary">
+            <i class="pi pi-user-md text-xs mr-1"></i>
+            {{ selectedDept.head_doctor_name || 'Chưa phân công' }}
+          </span>
+        </div>
+        <div class="dept-info-item">
+          <span class="info-label">Đường dây nóng (Hotline)</span>
+          <span class="info-val font-mono">
+            <i class="pi pi-phone text-xs mr-1"></i>
+            {{ selectedDept.hotline_phone || 'Chưa thiết lập' }}
+          </span>
+        </div>
+        <div class="dept-info-item">
+          <span class="info-label">Vị trí tầng / Khu điều trị</span>
+          <span class="info-val">
+            <i class="pi pi-map-marker text-xs mr-1"></i>
+            {{ selectedDept.location_floor || 'Chưa cập nhật' }}
+          </span>
+        </div>
+        <div class="dept-info-item">
+          <span class="info-label">Công suất máy lọc tối đa</span>
+          <span class="info-val font-bold">
+            <i class="pi pi-cog text-xs mr-1"></i>
+            {{ selectedDept.max_machine_capacity || 20 }} máy lọc máu
+          </span>
+        </div>
+        <div class="dept-info-item span-2">
+          <span class="info-label">Mô tả chức năng & nhiệm vụ</span>
+          <p class="dept-desc-text">{{ selectedDept.description || 'Không có mô tả chi tiết.' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="dept-modal-footer">
+        <button
+          *ngIf="isAdmin"
+          pButton
+          type="button"
+          icon="pi pi-pencil"
+          label="Chỉnh sửa khoa"
+          class="p-button-primary p-button-sm"
+          (click)="editDeptFromDetail()"
+        ></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-times"
+          label="Đóng"
+          class="p-button-text p-button-secondary p-button-sm"
+          (click)="closeDetailDialog()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
 </div>

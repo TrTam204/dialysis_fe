@@ -1,176 +1,360 @@
-<div class="page-shell">
-  <p-card [header]="editMode ? 'Sửa Bệnh nhân' : 'Thêm Bệnh nhân'">
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+<div class="form-page-shell">
+  <div class="form-card">
+    <!-- Header with Back Button -->
+    <div class="form-header-bar">
+      <div class="header-titles">
+        <h2 class="form-title">
+          <i class="pi pi-user-plus text-primary mr-2" *ngIf="!editMode"></i>
+          <i class="pi pi-user-edit text-primary mr-2" *ngIf="editMode"></i>
+          {{ editMode ? 'Cập nhật Hồ sơ Bệnh nhân Lọc máu' : 'Tiếp nhận Bệnh nhân Lọc máu Mới' }}
+        </h2>
+        <p class="form-subtitle">
+          Quản lý hồ sơ hành chính, thẻ BHYT, người thân liên hệ khẩn cấp, phác đồ lọc máu chu kỳ và tọa độ địa lý
+        </p>
+      </div>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Quay lại danh sách"
+        class="p-button-outlined p-button-secondary back-btn"
+        (click)="cancel()"
+      ></button>
     </div>
 
-    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-      <div class="field">
-        <label for="patient_id">Mã bệnh nhân <span class="required">*</span></label>
-        <input id="patient_id" pInputText formControlName="patient_id" class="w-full" [readonly]="editMode" />
-        <small class="p-error" *ngIf="hasError('patient_id', 'required')">Mã bệnh nhân không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('patient_id', 'server')">{{ form.get('patient_id')?.errors?.['server'] }}</small>
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu hồ sơ bệnh nhân...
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()" class="main-form">
+      <!-- PHÂN VÙNG 1: HỒ SƠ HÀNH CHÍNH & BẢO HIỂM Y TẾ -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-id-card"></i>
+          <span>1. Hồ sơ Hành chính & Thẻ Bảo hiểm Y tế (BHYT)</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="patient_id">Mã bệnh nhân <span class="required">*</span></label>
+            <input
+              id="patient_id"
+              pInputText
+              formControlName="patient_id"
+              placeholder="VD: P_A_01, BN-1002"
+              class="w-full font-mono font-bold"
+              [readonly]="editMode"
+            />
+            <small class="error-text" *ngIf="hasError('patient_id', 'required')">Mã bệnh nhân là bắt buộc</small>
+            <small class="error-text" *ngIf="hasError('patient_id', 'server')">{{ form.get('patient_id')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="full_name">Họ và tên bệnh nhân <span class="required">*</span></label>
+            <input
+              id="full_name"
+              pInputText
+              formControlName="full_name"
+              placeholder="VD: Nguyễn Văn A"
+              class="w-full font-bold"
+            />
+            <small class="error-text" *ngIf="hasError('full_name', 'required')">Họ và tên không được để trống</small>
+            <small class="error-text" *ngIf="hasError('full_name', 'server')">{{ form.get('full_name')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="date_of_birth">Ngày tháng năm sinh <span class="required">*</span></label>
+            <p-calendar
+              id="date_of_birth"
+              formControlName="date_of_birth"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              styleClass="w-full"
+              placeholder="Chọn ngày sinh"
+            ></p-calendar>
+            <small class="error-text" *ngIf="hasError('date_of_birth', 'required')">Vui lòng chọn ngày sinh</small>
+          </div>
+
+          <div class="field">
+            <label for="gender">Giới tính</label>
+            <p-dropdown
+              id="gender"
+              [options]="genderOptions"
+              formControlName="gender"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="citizen_id">Số CCCD / Định danh cá nhân (12 số)</label>
+            <input
+              id="citizen_id"
+              pInputText
+              formControlName="citizen_id"
+              placeholder="VD: 079158001234"
+              maxlength="12"
+              class="w-full font-mono"
+            />
+          </div>
+
+          <div class="field">
+            <label for="health_insurance_number">Số thẻ Bảo hiểm Y tế (BHYT 15 ký tự)</label>
+            <input
+              id="health_insurance_number"
+              pInputText
+              formControlName="health_insurance_number"
+              placeholder="VD: GD4797938192045"
+              maxlength="15"
+              class="w-full font-mono uppercase"
+            />
+            <small class="hint-text">Mã thẻ BHYT phục vụ thanh toán bảo hiểm chi phí lọc máu</small>
+          </div>
+
+          <div class="field">
+            <label for="phone_number">Số điện thoại liên hệ cá nhân</label>
+            <input
+              id="phone_number"
+              pInputText
+              formControlName="phone_number"
+              placeholder="VD: 0912345678"
+              class="w-full"
+            />
+          </div>
+
+          <div class="field full-col">
+            <label for="permanent_address">Địa chỉ thường trú / Nơi cư trú chi tiết</label>
+            <input
+              id="permanent_address"
+              pInputText
+              formControlName="permanent_address"
+              placeholder="Số nhà, tên đường, phường/xã, quận/huyện, TP.HCM"
+              class="w-full"
+            />
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="full_name">Họ và tên <span class="required">*</span></label>
-        <input id="full_name" pInputText formControlName="full_name" class="w-full" />
-        <small class="p-error" *ngIf="hasError('full_name', 'required')">Họ và tên không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('full_name', 'server')">{{ form.get('full_name')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="form-row">
-        <div class="field">
-          <label for="date_of_birth">Ngày sinh <span class="required">*</span></label>
-          <p-calendar
-            id="date_of_birth"
-            formControlName="date_of_birth"
-            dateFormat="dd/mm/yy"
-            [showIcon]="true"
-            appendTo="body"
-          ></p-calendar>
-          <small class="p-error" *ngIf="hasError('date_of_birth', 'required')">Ngày sinh không được rỗng</small>
-          <small class="p-error" *ngIf="hasError('date_of_birth', 'server')">{{ form.get('date_of_birth')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 2: THÔNG TIN NGƯỜI THÂN LIÊN HỆ KHẨN CẤP -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-phone"></i>
+          <span>2. Thông tin Người thân Liên hệ Khẩn cấp (Bedside Emergency)</span>
         </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="emergency_contact_name">Họ và tên người thân</label>
+            <input
+              id="emergency_contact_name"
+              pInputText
+              formControlName="emergency_contact_name"
+              placeholder="VD: Nguyễn Thị B (Vợ / Con)"
+              class="w-full"
+            />
+          </div>
 
-        <div class="field">
-          <label for="gender">Giới tính</label>
-          <p-dropdown
-            id="gender"
-            [options]="genderOptions"
-            formControlName="gender"
-            [showClear]="true"
-            class="w-full"
-          ></p-dropdown>
-          <small class="p-error" *ngIf="hasError('gender', 'server')">{{ form.get('gender')?.errors?.['server'] }}</small>
-        </div>
-      </div>
+          <div class="field">
+            <label for="emergency_contact_relationship">Mối quan hệ với người bệnh</label>
+            <p-dropdown
+              id="emergency_contact_relationship"
+              [options]="relationshipOptions"
+              optionLabel="label"
+              optionValue="value"
+              [editable]="true"
+              formControlName="emergency_contact_relationship"
+              placeholder="Chọn hoặc nhập quan hệ"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
 
-      <div class="form-row">
-        <div class="field">
-          <label for="phone_number">Số điện thoại</label>
-          <input id="phone_number" pInputText formControlName="phone_number" class="w-full" />
-          <small class="p-error" *ngIf="hasError('phone_number', 'server')">{{ form.get('phone_number')?.errors?.['server'] }}</small>
-        </div>
-
-        <div class="field">
-          <label for="dry_weight">Cân nặng khô (kg)</label>
-          <p-inputNumber id="dry_weight" formControlName="dry_weight" [min]="0" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
-          <small class="p-error" *ngIf="hasError('dry_weight', 'server')">{{ form.get('dry_weight')?.errors?.['server'] }}</small>
+          <div class="field full-col">
+            <label for="emergency_contact_phone">Số điện thoại khẩn cấp</label>
+            <input
+              id="emergency_contact_phone"
+              pInputText
+              formControlName="emergency_contact_phone"
+              placeholder="VD: 0903123456 (Ưu tiên số luôn liên lạc được)"
+              class="w-full font-bold"
+            />
+            <small class="hint-text">Dùng để kích hoạt gọi khẩn cấp khi người bệnh xảy ra biến chứng tụt huyết áp hoặc sốc phản vệ</small>
+          </div>
         </div>
       </div>
 
-      <div class="field">
-        <label for="status">Trạng thái <span class="required">*</span></label>
-        <p-dropdown
-          id="status"
-          [options]="statusOptions"
-          formControlName="status"
-          [showClear]="false"
-          class="w-full"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('status', 'required')">Trạng thái không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('status', 'server')">{{ form.get('status')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 3: LÂM SÀNG & PHÁC ĐỒ LỌC MÁU CHU KỲ -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-heart"></i>
+          <span>3. Thông số Lâm sàng & Phác đồ Lọc máu Chu kỳ</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="department">Khoa / Phòng điều trị</label>
+            <p-dropdown
+              id="department"
+              [options]="departments"
+              optionLabel="name"
+              optionValue="id"
+              formControlName="department"
+              placeholder="Chọn khoa điều trị"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="status">Trạng thái điều trị <span class="required">*</span></label>
+            <p-dropdown
+              id="status"
+              [options]="statusOptions"
+              formControlName="status"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="blood_type">Nhóm máu hệ ABO / Rh</label>
+            <p-dropdown
+              id="blood_type"
+              [options]="bloodTypeOptions"
+              formControlName="blood_type"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="dry_weight">Cân nặng khô mục tiêu (Dry Weight - kg)</label>
+            <p-inputNumber
+              id="dry_weight"
+              formControlName="dry_weight"
+              [min]="20"
+              [max]="200"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 58.5"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="hint-text">Trọng lượng cơ thể sau khi rút hết dịch thừa (chuẩn KDOQI)</small>
+          </div>
+
+          <div class="field">
+            <label for="vascular_access_type">Đường vào mạch máu (Vascular Access)</label>
+            <p-dropdown
+              id="vascular_access_type"
+              [options]="vascularAccessOptions"
+              formControlName="vascular_access_type"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field">
+            <label for="treatment_pattern">Chu kỳ lọc máu trong tuần</label>
+            <p-dropdown
+              id="treatment_pattern"
+              [options]="patternOptions"
+              formControlName="treatment_pattern"
+              placeholder="Chọn chu kỳ lọc máu"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field full-col">
+            <label for="preferred_shift">Ca lọc mong muốn (Shift Preference)</label>
+            <p-dropdown
+              id="preferred_shift"
+              [options]="shiftOptions"
+              formControlName="preferred_shift"
+              placeholder="Chọn ca lọc ưu tiên"
+              styleClass="w-full"
+            ></p-dropdown>
+          </div>
+
+          <div class="field full-col">
+            <label for="medical_history">Tiền sử bệnh lý nền & Dị ứng thuốc</label>
+            <textarea
+              id="medical_history"
+              pInputTextarea
+              formControlName="medical_history"
+              rows="3"
+              placeholder="VD: Suy thận mạn giai đoạn 5, Đái tháo đường Type 2, Tăng huyết áp, Tiền sử dị ứng Aspirin..."
+              class="w-full"
+            ></textarea>
+          </div>
+        </div>
       </div>
 
-      <div class="form-row">
-        <div class="field">
-          <label for="preferred_shift">Ca lọc máu mong muốn</label>
-          <p-dropdown
-            id="preferred_shift"
-            [options]="shiftOptions"
-            formControlName="preferred_shift"
-            [showClear]="true"
-            placeholder="Chọn ca lọc máu"
-            class="w-full"
-          ></p-dropdown>
-          <small class="p-error" *ngIf="hasError('preferred_shift', 'server')">{{ form.get('preferred_shift')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 4: TỌA ĐỘ KHÔNG GIAN POSTGIS (TOPSIS C5 & BẢN ĐỒ) -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-map-marker"></i>
+          <span>4. Tọa độ Địa lý Không gian PostGIS (Khoảng cách đến Bệnh viện Chợ Rẫy)</span>
         </div>
 
-        <div class="field">
-          <label for="treatment_pattern">Chu kỳ điều trị</label>
-          <p-dropdown
-            id="treatment_pattern"
-            [options]="patternOptions"
-            formControlName="treatment_pattern"
-            [showClear]="true"
-            placeholder="Chọn chu kỳ điều trị"
-            class="w-full"
-          ></p-dropdown>
-          <small class="p-error" *ngIf="hasError('treatment_pattern', 'server')">{{ form.get('treatment_pattern')?.errors?.['server'] }}</small>
-        </div>
-      </div>
+        <p class="section-desc">
+          Tọa độ phục vụ chỉ số $C_5$ trong Thuật toán Phân tầng Nguy cơ TOPSIS và tính toán cự ly đưa đón bệnh nhân lọc máu chu kỳ.
+        </p>
 
-
-      <!-- PostGIS Coordinates Section -->
-      <div class="field-coords-block p-3 surface-50 border-round border-1 surface-border my-3">
-        <div class="flex align-items-center justify-content-between mb-2">
-          <label class="font-bold text-900 m-0">
-            <i class="pi pi-map-marker text-primary mr-1"></i> Tọa độ địa lý (PostGIS - Phục vụ TOPSIS C5)
-          </label>
-          <span class="text-xs text-500">Giới hạn TP.HCM (10.3-11.2° N, 106.3-107.1° E)</span>
-        </div>
-
-        <div class="form-row">
-          <div class="field mb-2">
-            <label for="latitude">Vĩ độ (Latitude °N)</label>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="latitude">Vĩ độ (Latitude: 10.3° - 11.2° N)</label>
             <p-inputNumber
               id="latitude"
               formControlName="latitude"
-              [min]="10.3"
-              [max]="11.2"
               [minFractionDigits]="4"
               [maxFractionDigits]="6"
-              placeholder="Ví dụ: 10.7915"
-              class="w-full"
+              placeholder="VD: 10.7554"
+              styleClass="w-full font-mono"
             ></p-inputNumber>
-            <small class="p-error" *ngIf="hasError('latitude', 'min') || hasError('latitude', 'max')">Vĩ độ TP.HCM nằm trong khoảng 10.3 - 11.2</small>
-            <small class="p-error" *ngIf="hasError('latitude', 'server')">{{ form.get('latitude')?.errors?.['server'] }}</small>
           </div>
 
-          <div class="field mb-2">
-            <label for="longitude">Kinh độ (Longitude °E)</label>
+          <div class="field">
+            <label for="longitude">Kinh độ (Longitude: 106.3° - 107.1° E)</label>
             <p-inputNumber
               id="longitude"
               formControlName="longitude"
-              [min]="106.3"
-              [max]="107.1"
               [minFractionDigits]="4"
               [maxFractionDigits]="6"
-              placeholder="Ví dụ: 106.6650"
-              class="w-full"
+              placeholder="VD: 106.6621"
+              styleClass="w-full font-mono"
             ></p-inputNumber>
-            <small class="p-error" *ngIf="hasError('longitude', 'min') || hasError('longitude', 'max')">Kinh độ TP.HCM nằm trong khoảng 106.3 - 107.1</small>
-            <small class="p-error" *ngIf="hasError('longitude', 'server')">{{ form.get('longitude')?.errors?.['server'] }}</small>
           </div>
         </div>
 
-        <!-- Quick Pick Buttons -->
-        <div class="quick-pick-box mt-2">
-          <span class="text-xs font-semibold text-600 block mb-1">⚡ Chọn nhanh địa điểm mẫu tại TP.HCM:</span>
-          <div class="flex flex-wrap gap-1">
+        <!-- Quick Pick Locations -->
+        <div class="quick-locations-block">
+          <span class="quick-loc-title">
+            <i class="pi pi-compass mr-1"></i> Chọn nhanh khu vực thường trú tại TP. Hồ Chí Minh:
+          </span>
+          <div class="quick-loc-chips">
             <button
               *ngFor="let loc of quickLocations"
-              pButton
               type="button"
-              [label]="loc.label"
-              class="p-button-outlined p-button-xs p-button-secondary text-xs py-1 px-2"
+              class="quick-loc-chip"
               (click)="onQuickPickLocation(loc)"
-            ></button>
+            >
+              <i class="pi pi-map-pin mr-1"></i>
+              {{ loc.label }}
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="field" *ngIf="!isNurse || !editMode">
-        <label for="medical_history">Tiền sử bệnh lý</label>
-        <textarea id="medical_history" pInputTextarea formControlName="medical_history" class="w-full" rows="3"></textarea>
-        <small class="p-error" *ngIf="hasError('medical_history', 'server')">{{ form.get('medical_history')?.errors?.['server'] }}</small>
-      </div>
-
+      <!-- Form Actions -->
       <div class="form-footer">
-        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+        <button
+          pButton
+          type="button"
+          label="Hủy bỏ"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary action-btn"
+          (click)="cancel()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="saving ? 'Đang lưu...' : (editMode ? 'Lưu thay đổi' : 'Tiếp nhận bệnh nhân')"
+          icon="pi pi-check"
+          class="p-button-primary action-btn"
+          [disabled]="saving || form.invalid"
+        ></button>
       </div>
     </form>
-  </p-card>
+  </div>
 </div>

@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
@@ -13,6 +13,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 import { DepartmentService } from '../../core/services/department.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Department } from '../../core/models';
@@ -32,6 +33,7 @@ import { Department } from '../../core/models';
     DropdownModule,
     TagModule,
     TooltipModule,
+    DialogModule,
   ],
   templateUrl: './department-list.component.html',
   styleUrls: ['./department-list.component.scss'],
@@ -55,6 +57,8 @@ export class DepartmentListComponent implements OnInit, OnDestroy {
   sortOrder = 1;
 
   isAdmin = false;
+  showDetailDialog = false;
+  selectedDept: Department | null = null;
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -63,7 +67,8 @@ export class DepartmentListComponent implements OnInit, OnDestroy {
     private departmentService: DepartmentService,
     private authService: AuthService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -142,6 +147,25 @@ export class DepartmentListComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
     });
+  }
+
+  
+  openDetailDialog(dept: Department): void {
+    this.selectedDept = dept;
+    this.showDetailDialog = true;
+  }
+
+  closeDetailDialog(): void {
+    this.showDetailDialog = false;
+    this.selectedDept = null;
+  }
+
+  editDeptFromDetail(): void {
+    if (this.selectedDept?.id) {
+      const id = this.selectedDept.id;
+      this.closeDetailDialog();
+      this.router.navigate(['/departments', id, 'edit']);
+    }
   }
 
   confirmDelete(dept: Department) {

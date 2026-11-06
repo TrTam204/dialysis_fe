@@ -38,9 +38,25 @@ export class StaffFormComponent implements OnInit {
 
   departments: Department[] = [];
   roleOptions = [
-    { label: 'Admin', value: 'ADMIN' },
-    { label: 'Doctor', value: 'DOCTOR' },
-    { label: 'Nurse', value: 'NURSE' },
+    { label: 'Quản trị viên (Admin)', value: 'ADMIN' },
+    { label: 'Bác sĩ điều trị (Doctor)', value: 'DOCTOR' },
+    { label: 'Điều dưỡng (Nurse)', value: 'NURSE' },
+  ];
+
+  genderOptions = [
+    { label: 'Nam (Male)', value: 'MALE' },
+    { label: 'Nữ (Female)', value: 'FEMALE' },
+    { label: 'Khác (Other)', value: 'OTHER' },
+  ];
+
+  degreeOptions = [
+    { label: 'BS.CKII - Bác sĩ Chuyên khoa II', value: 'BS.CKII' },
+    { label: 'BS.CKI - Bác sĩ Chuyên khoa I', value: 'BS.CKI' },
+    { label: 'ThS.BS - Thạc sĩ Bác sĩ', value: 'ThS.BS' },
+    { label: 'Bác sĩ Đa khoa', value: 'Bác sĩ Đa khoa' },
+    { label: 'Cử nhân Điều dưỡng', value: 'Cử nhân Điều dưỡng' },
+    { label: 'Điều dưỡng Cao đẳng', value: 'Điều dưỡng Cao đẳng' },
+    { label: 'Kỹ sư CNTT / Quản trị Y tế', value: 'Kỹ sư CNTT / Quản trị' },
   ];
 
   constructor(
@@ -52,15 +68,28 @@ export class StaffFormComponent implements OnInit {
     private messageService: MessageService
   ) {
     this.form = this.fb.group({
+      // Phân vùng 1: Tài khoản & Phân quyền
+      employee_code: [''],
       username: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      first_name: [''],
-      last_name: [''],
-      phone_number: [''],
+      password: [''],
       role: ['', Validators.required],
       department: [null, Validators.required],
-      password: [''],
       is_active: [true],
+
+      // Phân vùng 2: Cá nhân & Định danh CCCD
+      first_name: [''],
+      last_name: [''],
+      gender: ['MALE'],
+      date_of_birth: [''],
+      citizen_id: [''],
+      phone_number: [''],
+      email: ['', [Validators.required, Validators.email]],
+      address: [''],
+
+      // Phân vùng 3: Chuyên môn y tế
+      degree_title: [''],
+      license_number: [''],
+      specialization: [''],
     });
   }
 
@@ -101,14 +130,22 @@ export class StaffFormComponent implements OnInit {
     this.staffService.getById(this.staffId!).subscribe({
       next: (staff: CustomUser) => {
         this.form.patchValue({
+          employee_code: staff.employee_code || '',
           username: staff.username,
           email: staff.email,
-          first_name: staff.first_name,
-          last_name: staff.last_name,
-          phone_number: staff.phone_number,
+          first_name: staff.first_name || '',
+          last_name: staff.last_name || '',
+          gender: staff.gender || 'MALE',
+          date_of_birth: staff.date_of_birth || '',
+          citizen_id: staff.citizen_id || '',
+          phone_number: staff.phone_number || '',
+          address: staff.address || '',
           role: staff.role,
           department: staff.department,
           is_active: staff.is_active,
+          degree_title: staff.degree_title || '',
+          license_number: staff.license_number || '',
+          specialization: staff.specialization || '',
           password: '',
         });
         this.loading = false;
@@ -120,20 +157,9 @@ export class StaffFormComponent implements OnInit {
     });
   }
 
-  hasError(controlName: string, errorName: string): boolean {
-    const control = this.form.get(controlName);
-    return !!control && !!control.errors && control.errors[errorName] !== undefined && (control.touched || control.dirty || errorName === 'server');
-  }
-
-  clearServerErrors() {
-    Object.keys(this.form.controls).forEach((key) => {
-      const control = this.form.get(key);
-      if (control?.errors?.['server']) {
-        const errors = { ...control.errors };
-        delete errors['server'];
-        control.setErrors(Object.keys(errors).length ? errors : null);
-      }
-    });
+  hasError(field: string, error: string): boolean {
+    const ctrl = this.form.get(field);
+    return !!(ctrl && ctrl.hasError(error) && (ctrl.touched || ctrl.dirty));
   }
 
   save() {
@@ -143,64 +169,40 @@ export class StaffFormComponent implements OnInit {
     }
 
     this.saving = true;
-    this.clearServerErrors();
-    const raw = this.form.value;
-    const payload: any = {
-      username: (raw.username || '').trim(),
-      email: (raw.email || '').trim(),
-      first_name: (raw.first_name || '').trim(),
-      last_name: (raw.last_name || '').trim(),
-      phone_number: raw.phone_number || null,
-      role: raw.role,
-      department: raw.department,
-      is_active: raw.is_active,
-    };
-
-    if (raw.password) {
-      payload.password = raw.password;
+    const val = { ...this.form.value };
+    if (this.editMode && !val.password) {
+      delete val.password;
     }
 
-    const request = this.editMode
-      ? this.staffService.update(this.staffId!, payload)
-      : this.staffService.create(payload);
+    const obs = this.editMode
+      ? this.staffService.update(this.staffId!, val)
+      : this.staffService.create(val);
 
-    request.subscribe({
+    obs.subscribe({
       next: () => {
+        this.saving = false;
         this.messageService.add({
           severity: 'success',
           summary: 'Thành công',
-          detail: this.editMode ? 'Cập nhật nhân sự thành công' : 'Thêm nhân sự thành công',
+          detail: this.editMode ? 'Cập nhật hồ sơ nhân sự thành công.' : 'Thêm nhân sự mới thành công.',
         });
         this.router.navigate(['/staff']);
       },
       error: (err) => {
         this.saving = false;
-        this.applyServerErrors(err);
-      },
-    });
-  }
-
-  applyServerErrors(err: any) {
-    const fieldErrors = err?.error;
-    if (fieldErrors && typeof fieldErrors === 'object' && !fieldErrors.detail) {
-      let mapped = false;
-      Object.keys(fieldErrors).forEach((key) => {
-        const control = this.form.get(key);
-        if (control) {
-          const messages = Array.isArray(fieldErrors[key]) ? fieldErrors[key].join(', ') : String(fieldErrors[key]);
-          control.setErrors({ ...(control.errors || {}), server: messages });
-          mapped = true;
+        if (err.status === 400 && err.error) {
+          Object.keys(err.error).forEach((key) => {
+            const ctrl = this.form.get(key);
+            if (ctrl) {
+              const msgs = Array.isArray(err.error[key]) ? err.error[key].join(' ') : err.error[key];
+              ctrl.setErrors({ server: msgs });
+            }
+          });
+          this.messageService.add({ severity: 'error', summary: 'Lỗi xác thực', detail: 'Vui lòng kiểm tra lại các trường báo lỗi.' });
+        } else {
+          this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể lưu thông tin nhân sự. Vui lòng thử lại.' });
         }
-      });
-      if (mapped) {
-        this.messageService.add({ severity: 'warn', summary: 'Dữ liệu chưa hợp lệ', detail: 'Vui lòng kiểm tra lại các trường được đánh dấu.' });
-        return;
-      }
-    }
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Lỗi',
-      detail: fieldErrors?.detail || 'Không thể lưu nhân sự. Vui lòng thử lại.',
+      },
     });
   }
 

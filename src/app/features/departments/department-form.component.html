@@ -1,41 +1,153 @@
-<div class="page-shell">
-  <p-card [header]="editMode ? 'Sửa Khoa/Phòng ban' : 'Thêm Khoa/Phòng ban'">
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+<div class="form-page-shell">
+  <div class="form-card">
+    <!-- Header with Back Button -->
+    <div class="form-header-bar">
+      <div class="header-titles">
+        <h2 class="form-title">
+          <i class="pi pi-building text-primary mr-2"></i>
+          {{ editMode ? 'Cập nhật Thông tin Khoa / Phòng ban' : 'Thêm Khoa / Phòng ban Mới' }}
+        </h2>
+        <p class="form-subtitle">
+          Quản lý cơ cấu tổ chức, nhân sự lãnh đạo, vị trí địa lý trong bệnh viện và định biên máy lọc máu
+        </p>
+      </div>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Quay lại danh sách"
+        class="p-button-outlined p-button-secondary back-btn"
+        (click)="cancel()"
+      ></button>
     </div>
 
-    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-      <div class="field">
-        <label for="name">Tên <span class="required">*</span></label>
-        <input id="name" pInputText formControlName="name" class="w-full" placeholder="VD: Khoa Lọc Máu" />
-        <small class="p-error" *ngIf="hasError('name', 'required')">Tên không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('name', 'maxlength')">Tên tối đa 120 ký tự</small>
-        <small class="p-error" *ngIf="hasError('name', 'server')">{{ form.get('name')?.errors?.['server'] }}</small>
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu khoa/phòng ban...
+    </div>
+
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()" class="main-form">
+      <!-- PHÂN VÙNG 1: THÔNG TIN ĐỊNH DANH & QUY MÔ -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-info-circle"></i>
+          <span>1. Thông tin Định danh & Quy mô Tiếp nhận</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="code">Mã khoa / phòng ban <span class="required">*</span></label>
+            <input
+              id="code"
+              pInputText
+              formControlName="code"
+              placeholder="VD: KLM_A, KLM_B, CC_LOCMAU"
+              class="w-full font-mono font-bold uppercase"
+              [readonly]="editMode"
+            />
+            <small class="error-text" *ngIf="hasError('code', 'required')">Mã khoa không được để trống</small>
+            <small class="error-text" *ngIf="hasError('code', 'server')">{{ form.get('code')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="name">Tên khoa / phòng ban <span class="required">*</span></label>
+            <input
+              id="name"
+              pInputText
+              formControlName="name"
+              placeholder="VD: Khoa Lọc Máu A (Thận Nhân Tạo Chu Kỳ)"
+              class="w-full font-bold"
+            />
+            <small class="error-text" *ngIf="hasError('name', 'required')">Tên khoa không được để trống</small>
+            <small class="error-text" *ngIf="hasError('name', 'server')">{{ form.get('name')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="head_doctor_name">Trưởng khoa / Bác sĩ phụ trách chuyên môn</label>
+            <input
+              id="head_doctor_name"
+              pInputText
+              formControlName="head_doctor_name"
+              placeholder="VD: BS.CKII Nguyễn Hồ An Thiên"
+              class="w-full font-semibold"
+            />
+          </div>
+
+          <div class="field">
+            <label for="hotline_phone">Điện thoại trực khoa / Hotline cấp cứu</label>
+            <input
+              id="hotline_phone"
+              pInputText
+              formControlName="hotline_phone"
+              placeholder="VD: (028) 3855 4137 - Ext: 301"
+              class="w-full"
+            />
+          </div>
+
+          <div class="field">
+            <label for="location_floor">Vị trí khu điều trị / Tòa nhà</label>
+            <input
+              id="location_floor"
+              pInputText
+              formControlName="location_floor"
+              placeholder="VD: Khu B - Tầng 3, Trung tâm Thận Nhân Tạo"
+              class="w-full"
+            />
+          </div>
+
+          <div class="field">
+            <label for="max_machine_capacity">Định biên máy lọc máu tối đa (Capacity)</label>
+            <p-inputNumber
+              id="max_machine_capacity"
+              formControlName="max_machine_capacity"
+              [min]="1"
+              [max]="200"
+              placeholder="VD: 20"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="hint-text">Quy mô máy lọc dùng để kiểm soát thuật toán lập lịch di truyền GA</small>
+          </div>
+
+          <div class="field full-col field-checkbox">
+            <p-checkbox
+              id="is_active"
+              formControlName="is_active"
+              [binary]="true"
+              label="Khoa/Phòng ban đang hoạt động (Được phân công bệnh nhân và máy lọc)"
+            ></p-checkbox>
+          </div>
+
+          <div class="field full-col">
+            <label for="description">Mô tả chức năng nhiệm vụ chuyên môn</label>
+            <textarea
+              id="description"
+              pInputTextarea
+              formControlName="description"
+              rows="3"
+              placeholder="Mô tả phạm vi tiếp nhận điều trị, trang thiết bị màng lọc chuyên dụng và quy trình chăm sóc người bệnh..."
+              class="w-full"
+            ></textarea>
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="code">Mã <span class="required">*</span></label>
-        <input id="code" pInputText formControlName="code" class="w-full code-input" placeholder="VD: KLM" maxlength="30" />
-        <small class="hint">Mã được chuẩn hóa thành chữ in hoa (tối đa 30 ký tự)</small>
-        <small class="p-error" *ngIf="hasError('code', 'required')">Mã không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('code', 'maxlength')">Mã tối đa 30 ký tự</small>
-        <small class="p-error" *ngIf="hasError('code', 'server')">{{ form.get('code')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="description">Mô tả</label>
-        <textarea id="description" pInputTextarea formControlName="description" class="w-full" rows="3"></textarea>
-        <small class="p-error" *ngIf="hasError('description', 'server')">{{ form.get('description')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <p-checkbox formControlName="is_active" label="Hoạt động" [binary]="true"></p-checkbox>
-      </div>
-
+      <!-- Form Actions -->
       <div class="form-footer">
-        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+        <button
+          pButton
+          type="button"
+          label="Hủy bỏ"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary action-btn"
+          (click)="cancel()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="saving ? 'Đang lưu...' : (editMode ? 'Lưu thay đổi' : 'Tạo mới khoa/phòng')"
+          icon="pi pi-check"
+          class="p-button-primary action-btn"
+          [disabled]="saving || form.invalid"
+        ></button>
       </div>
     </form>
-  </p-card>
+  </div>
 </div>

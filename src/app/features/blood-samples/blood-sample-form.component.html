@@ -1,73 +1,271 @@
-<div class="page-shell">
-  <p-card [header]="editMode ? 'Sửa Mẫu xét nghiệm' : 'Thêm Mẫu xét nghiệm'">
-    <div *ngIf="loading" class="loading-box">
-      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu...
+<div class="form-page-shell">
+  <div class="form-card">
+    <!-- Header with Back Button -->
+    <div class="form-header-bar">
+      <div class="header-titles">
+        <h2 class="form-title">
+          <i class="pi pi-filter text-primary mr-2"></i>
+          {{ editMode ? 'Cập nhật Kết quả Xét nghiệm Máu' : 'Nhập Kết quả Xét nghiệm Máu Mới' }}
+        </h2>
+        <p class="form-subtitle">
+          Theo dõi các chỉ số sinh hóa thận, điện giải đồ và đánh giá hiệu quả lọc máu (Kt/V) theo chuẩn KDOQI
+        </p>
+      </div>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Quay lại danh sách"
+        class="p-button-outlined p-button-secondary back-btn"
+        (click)="cancel()"
+      ></button>
     </div>
 
-    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()">
-      <div class="field">
-        <label for="sample_id">Mã mẫu xét nghiệm <span class="required">*</span></label>
-        <input id="sample_id" pInputText formControlName="sample_id" class="w-full" [readonly]="editMode" />
-        <small class="p-error" *ngIf="hasError('sample_id', 'required')">Mã mẫu không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('sample_id', 'server')">{{ form.get('sample_id')?.errors?.['server'] }}</small>
-      </div>
+    <div *ngIf="loading" class="loading-box">
+      <i class="pi pi-spin pi-spinner"></i> Đang tải dữ liệu mẫu xét nghiệm...
+    </div>
 
-      <div class="field">
-        <label for="patient">Bệnh nhân <span class="required">*</span></label>
-        <p-dropdown
-          id="patient"
-          [options]="patients"
-          optionLabel="full_name"
-          optionValue="patient_id"
-          formControlName="patient"
-          [showClear]="false"
-          class="w-full"
-          placeholder="Chọn bệnh nhân"
-        ></p-dropdown>
-        <small class="p-error" *ngIf="hasError('patient', 'required')">Bệnh nhân không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('patient', 'server')">{{ form.get('patient')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="field">
-        <label for="collection_date">Ngày lấy mẫu <span class="required">*</span></label>
-        <p-calendar
-          id="collection_date"
-          formControlName="collection_date"
-          dateFormat="dd/mm/yy"
-          [showIcon]="true"
-          [maxDate]="today"
-          appendTo="body"
-        ></p-calendar>
-        <small class="p-error" *ngIf="hasError('collection_date', 'required')">Ngày lấy mẫu không được rỗng</small>
-        <small class="p-error" *ngIf="hasError('collection_date', 'server')">{{ form.get('collection_date')?.errors?.['server'] }}</small>
-      </div>
-
-      <div class="form-row">
-        <div class="field">
-          <label for="hemoglobin_level">Hemoglobin (g/dL) <span class="required">*</span></label>
-          <p-inputNumber id="hemoglobin_level" formControlName="hemoglobin_level" [min]="0" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
-          <small class="p-error" *ngIf="hasError('hemoglobin_level', 'required')">Hemoglobin không được rỗng</small>
-          <small class="p-error" *ngIf="hasError('hemoglobin_level', 'server')">{{ form.get('hemoglobin_level')?.errors?.['server'] }}</small>
+    <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="save()" class="main-form">
+      <!-- PHÂN VÙNG 1: THÔNG TIN MẪU & BỆNH NHÂN -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-id-card"></i>
+          <span>1. Thông tin Mẫu & Người bệnh Xét nghiệm</span>
         </div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label for="sample_id">Mã mẫu xét nghiệm <span class="required">*</span></label>
+            <input
+              id="sample_id"
+              pInputText
+              formControlName="sample_id"
+              placeholder="VD: BS-2026-001"
+              class="w-full font-mono font-bold"
+              [readonly]="editMode"
+            />
+            <small class="error-text" *ngIf="hasError('sample_id', 'required')">Mã mẫu là bắt buộc</small>
+            <small class="error-text" *ngIf="hasError('sample_id', 'server')">{{ form.get('sample_id')?.errors?.['server'] }}</small>
+          </div>
 
-        <div class="field">
-          <label for="potassium_level">Kali (mEq/L) <span class="required">*</span></label>
-          <p-inputNumber id="potassium_level" formControlName="potassium_level" [min]="0" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
-          <small class="p-error" *ngIf="hasError('potassium_level', 'required')">Kali không được rỗng</small>
-          <small class="p-error" *ngIf="hasError('potassium_level', 'server')">{{ form.get('potassium_level')?.errors?.['server'] }}</small>
+          <div class="field">
+            <label for="patient">Bệnh nhân <span class="required">*</span></label>
+            <p-dropdown
+              id="patient"
+              [options]="patients"
+              optionLabel="full_name"
+              optionValue="patient_id"
+              [filter]="true"
+              filterBy="full_name,patient_id"
+              formControlName="patient"
+              placeholder="Chọn hoặc tìm bệnh nhân"
+              styleClass="w-full"
+            ></p-dropdown>
+            <small class="error-text" *ngIf="hasError('patient', 'required')">Vui lòng chọn bệnh nhân</small>
+            <small class="error-text" *ngIf="hasError('patient', 'server')">{{ form.get('patient')?.errors?.['server'] }}</small>
+          </div>
+
+          <div class="field">
+            <label for="collection_date">Thời gian lấy mẫu <span class="required">*</span></label>
+            <p-calendar
+              id="collection_date"
+              formControlName="collection_date"
+              [showTime]="true"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              styleClass="w-full"
+              placeholder="Chọn ngày giờ lấy máu"
+            ></p-calendar>
+            <small class="error-text" *ngIf="hasError('collection_date', 'required')">Vui lòng chọn thời gian</small>
+          </div>
         </div>
       </div>
 
-      <div class="field">
-        <label for="notes">Ghi chú</label>
-        <textarea id="notes" pInputTextarea formControlName="notes" class="w-full" rows="3"></textarea>
-        <small class="p-error" *ngIf="hasError('notes', 'server')">{{ form.get('notes')?.errors?.['server'] }}</small>
+      <!-- PHÂN VÙNG 2: HUYẾT HỌC & ĐIỆN GIẢI ĐỒ -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-heart"></i>
+          <span>2. Chỉ số Huyết học & Điện giải đồ (Serum Electrolytes)</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="hemoglobin_level">Hemoglobin — Hb (g/dL) <span class="required">*</span></label>
+            <p-inputNumber
+              id="hemoglobin_level"
+              formControlName="hemoglobin_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 10.5"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Khoảng tham chiếu KDOQI: <strong>11.0 – 13.0 g/dL</strong> (Dưới 10: Thiếu máu nặng)
+            </small>
+            <small class="error-text" *ngIf="hasError('hemoglobin_level', 'required')">Hb là bắt buộc</small>
+          </div>
+
+          <div class="field">
+            <label for="potassium_level">Kali máu — K⁺ (mmol/L) <span class="required">*</span></label>
+            <p-inputNumber
+              id="potassium_level"
+              formControlName="potassium_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 4.8"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Khoảng an toàn: <strong>3.5 – 5.0 mmol/L</strong> (Trên 5.5: Nguy cơ loạn nhịp tim)
+            </small>
+            <small class="error-text" *ngIf="hasError('potassium_level', 'required')">Kali máu là bắt buộc</small>
+          </div>
+
+          <div class="field">
+            <label for="sodium_level">Natri máu — Na⁺ (mmol/L)</label>
+            <p-inputNumber
+              id="sodium_level"
+              formControlName="sodium_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 138.0"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Bình thường: <strong>135 – 145 mmol/L</strong>
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="calcium_level">Canxi toàn phần — Ca²⁺ (mmol/L)</label>
+            <p-inputNumber
+              id="calcium_level"
+              formControlName="calcium_level"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              placeholder="VD: 2.25"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Bình thường: <strong>2.10 – 2.55 mmol/L</strong>
+            </small>
+          </div>
+
+          <div class="field full-col">
+            <label for="phosphorus_level">Phốt-pho vô cơ — PO₄³⁻ (mmol/L)</label>
+            <p-inputNumber
+              id="phosphorus_level"
+              formControlName="phosphorus_level"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              placeholder="VD: 1.45"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Mục tiêu bệnh thận mạn: <strong>0.81 – 1.45 mmol/L</strong> (Tăng phốt-pho gây vôi hóa mạch máu)
+            </small>
+          </div>
+        </div>
       </div>
 
+      <!-- PHÂN VÙNG 3: ĐỘC CHẤT THẬN & HIỆU QUẢ LỌC MÁU -->
+      <div class="form-section">
+        <div class="section-header">
+          <i class="pi pi-sliders-h"></i>
+          <span>3. Chỉ số Độc chất Thận & Hiệu quả Lọc máu (Kt/V)</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="field">
+            <label for="urea_level">Ure máu trước lọc (mmol/L)</label>
+            <p-inputNumber
+              id="urea_level"
+              formControlName="urea_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 24.5"
+              styleClass="w-full font-mono"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Ngưỡng tích tụ độc chất trước lọc: <strong>15.0 – 35.0 mmol/L</strong>
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="creatinine_level">Creatinine huyết thanh (µmol/L)</label>
+            <p-inputNumber
+              id="creatinine_level"
+              formControlName="creatinine_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="1"
+              placeholder="VD: 850.0"
+              styleClass="w-full font-mono"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Ngưỡng bệnh thận mạn giai đoạn cuối: <strong>500 – 1200 µmol/L</strong>
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="albumin_level">Albumin huyết thanh (g/dL)</label>
+            <p-inputNumber
+              id="albumin_level"
+              formControlName="albumin_level"
+              [minFractionDigits]="1"
+              [maxFractionDigits]="2"
+              placeholder="VD: 3.8"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Đánh giá dinh dưỡng: <strong>3.5 – 5.0 g/dL</strong> (Dưới 3.5: Nguy cơ suy dinh dưỡng cao)
+            </small>
+          </div>
+
+          <div class="field">
+            <label for="kt_v">Chỉ số Hiệu quả Lọc máu (Kt/V)</label>
+            <p-inputNumber
+              id="kt_v"
+              formControlName="kt_v"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              placeholder="VD: 1.42"
+              styleClass="w-full font-bold"
+            ></p-inputNumber>
+            <small class="ref-range-note">
+              <i class="pi pi-info-circle mr-1 text-primary"></i> Mục tiêu KDOQI cho ca 3 lần/tuần: <strong>≥ 1.20</strong> (Lý tưởng 1.40)
+            </small>
+          </div>
+
+          <div class="field full-col">
+            <label for="notes">Ghi chú y lệnh & Đánh giá lâm sàng của Bác sĩ</label>
+            <textarea
+              id="notes"
+              pInputTextarea
+              formControlName="notes"
+              rows="3"
+              placeholder="Nhận định lâm sàng về kết quả xét nghiệm, chỉ định điều chỉnh thuốc gắn phốt-pho hoặc Erythropoietin (EPO)..."
+              class="w-full"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
       <div class="form-footer">
-        <button pButton type="button" label="Hủy" icon="pi pi-times" class="p-button-text" (click)="cancel()"></button>
-        <button pButton type="submit" [label]="editMode ? 'Cập nhật' : 'Thêm mới'" icon="pi pi-check" [disabled]="form.invalid || saving" [loading]="saving"></button>
+        <button
+          pButton
+          type="button"
+          label="Hủy bỏ"
+          icon="pi pi-times"
+          class="p-button-outlined p-button-secondary action-btn"
+          (click)="cancel()"
+        ></button>
+        <button
+          pButton
+          type="submit"
+          [label]="saving ? 'Đang lưu...' : (editMode ? 'Lưu thay đổi' : 'Lưu kết quả xét nghiệm')"
+          icon="pi pi-check"
+          class="p-button-primary action-btn"
+          [disabled]="saving || form.invalid"
+        ></button>
       </div>
     </form>
-  </p-card>
+  </div>
 </div>

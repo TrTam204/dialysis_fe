@@ -79,8 +79,24 @@
               <span class="value">{{ patient.phone_number || '-' }}</span>
             </div>
             <div class="info-item">
+              <span class="label">Số CCCD</span>
+              <span class="value font-mono">{{ patient.citizen_id || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Thẻ BHYT</span>
+              <span class="value font-mono uppercase text-primary font-bold">{{ patient.health_insurance_number || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Nhóm máu</span>
+              <span class="value font-bold text-red-600">{{ patient.blood_type || '-' }}</span>
+            </div>
+            <div class="info-item">
               <span class="label">Cân nặng khô</span>
               <span class="value">{{ patient.dry_weight != null ? (patient.dry_weight + ' kg') : '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Địa chỉ thường trú</span>
+              <span class="value">{{ patient.permanent_address || '-' }}</span>
             </div>
             <div class="info-item">
               <span class="label">Trạng thái</span>
@@ -111,6 +127,14 @@
             <div class="summary-item">
               <span class="summary-label">Chu kỳ điều trị</span>
               <strong>{{ getPatternLabel(patient.treatment_pattern) }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Đường vào mạch máu</span>
+              <strong>{{ patient.vascular_access_type || 'AVF' }}</strong>
+            </div>
+            <div class="summary-item full-width" *ngIf="patient.emergency_contact_name">
+              <span class="summary-label">Người thân liên hệ khẩn cấp</span>
+              <strong>{{ patient.emergency_contact_name }} ({{ patient.emergency_contact_relationship || 'Người thân' }}) — SĐT: <span class="text-primary font-mono">{{ patient.emergency_contact_phone || '-' }}</span></strong>
             </div>
             <div class="summary-item">
               <span class="summary-label">Tổng số phiên</span>

@@ -114,7 +114,7 @@
           <th pSortableColumn="is_active" style="width: 135px; white-space: nowrap;" class="text-center">
             Trạng thái <p-sortIcon field="is_active"></p-sortIcon>
           </th>
-          <th *ngIf="isAdmin" style="width: 105px; white-space: nowrap;" class="text-center">Thao tác</th>
+          <th style="width: 140px; white-space: nowrap;" class="text-center">Thao tác</th>
         </tr>
       </ng-template>
 
@@ -122,10 +122,14 @@
         <tr>
           <td class="text-center font-mono col-stt">{{ formatIndex(first + rowIndex + 1) }}</td>
           <td>
-            <span class="code-badge">{{ user.username }}</span>
+            <span class="code-badge staff-clickable" (click)="openDetailDialog(user)" pTooltip="Xem hồ sơ chi tiết">
+              {{ user.employee_code || user.username }}
+            </span>
           </td>
           <td>
-            <span class="user-name">{{ getUserFullName(user) }}</span>
+            <span class="user-name staff-clickable font-medium" (click)="openDetailDialog(user)" pTooltip="Xem hồ sơ chi tiết">
+              {{ getUserFullName(user) }}
+            </span>
           </td>
           <td>
             <span class="email-text">{{ user.email }}</span>
@@ -148,9 +152,19 @@
               {{ user.is_active ? 'Hoạt động' : 'Vô hiệu' }}
             </span>
           </td>
-          <td *ngIf="isAdmin" class="text-center">
+          <td class="text-center">
             <div class="action-cell">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                class="p-button-text p-button-rounded p-button-sm p-button-secondary"
+                (click)="openDetailDialog(user)"
+                pTooltip="Xem chi tiết hồ sơ nhân sự"
+                tooltipPosition="top"
+              ></button>
               <a
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 icon="pi pi-pencil"
@@ -161,15 +175,17 @@
                 tooltipPosition="top"
               ></a>
               <button
+                *ngIf="isAdmin"
                 pButton
                 type="button"
-                icon="pi pi-key"
+                icon="pi pi-shield"
                 class="p-button-text p-button-rounded p-button-sm p-button-secondary"
                 (click)="openPermissionDialog(user)"
                 pTooltip="Phân quyền chi tiết & Điều chuyển khoa"
                 tooltipPosition="top"
               ></button>
               <button
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 [icon]="user.is_active ? 'pi pi-lock' : 'pi pi-lock-open'"
@@ -179,6 +195,7 @@
                 tooltipPosition="top"
               ></button>
               <button
+                *ngIf="isAdmin"
                 pButton
                 type="button"
                 icon="pi pi-trash"
@@ -194,7 +211,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="isAdmin ? 8 : 7" class="text-center empty-cell">
+          <td colspan="8" class="text-center empty-cell">
             <i class="pi pi-inbox empty-icon"></i>
             <div>Không tìm thấy nhân sự nào</div>
           </td>
@@ -358,4 +375,183 @@
       ></button>
     </ng-template>
   </p-dialog>
+
+  <!-- MODAL XEM CHI TIẾT HỒ SƠ CÁN BỘ Y TẾ -->
+  <p-dialog
+    [(visible)]="showDetailDialog"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '780px', maxWidth: '95vw' }"
+    styleClass="staff-detail-dialog"
+    header="Hồ Sơ Chi Tiết Cán Bộ Y Tế"
+  >
+    <div *ngIf="selectedStaff" class="staff-detail-container">
+      <!-- Header Banner Nhân sự -->
+      <div class="staff-hero-banner">
+        <div class="avatar-circle">
+          <span>{{ getUserInitials(selectedStaff) }}</span>
+        </div>
+        <div class="hero-info">
+          <div class="hero-name-row">
+            <h3 class="hero-fullname">
+              <span class="hero-degree" *ngIf="selectedStaff.degree_title">{{ selectedStaff.degree_title }} </span>
+              {{ getUserFullName(selectedStaff) }}
+            </h3>
+            <span class="hero-code-badge font-mono">{{ selectedStaff.employee_code || selectedStaff.username }}</span>
+          </div>
+          <div class="hero-badges-row">
+            <span [class]="'role-badge role-' + (selectedStaff.role || '').toLowerCase()">
+              <i class="pi" [ngClass]="getRoleIcon(selectedStaff.role)"></i>
+              {{ getRoleLabel(selectedStaff.role) }}
+            </span>
+            <span class="dept-badge">
+              <i class="pi pi-building"></i>
+              {{ selectedStaff.department_name || getDepartmentName(selectedStaff.department) }}
+            </span>
+            <span [class]="'status-pill ' + (selectedStaff.is_active ? 'status-active' : 'status-inactive')">
+              <span class="dot"></span>
+              {{ selectedStaff.is_active ? 'Đang công tác' : 'Tạm khóa' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Khối 1: Thông tin Cá nhân & Định danh Pháp lý (Grid 2 cột) -->
+      <div class="detail-card-section">
+        <div class="section-title">
+          <i class="pi pi-id-card text-primary"></i>
+          <span>1. Thông tin Cá nhân & Định danh Pháp lý</span>
+        </div>
+        <div class="detail-grid-2">
+          <div class="detail-item">
+            <span class="item-label">Mã cán bộ y tế</span>
+            <span class="item-val font-mono font-bold text-primary">{{ selectedStaff.employee_code || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Tài khoản đăng nhập</span>
+            <span class="item-val font-mono">&#64;{{ selectedStaff.username }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Họ và tên đầy đủ</span>
+            <span class="item-val font-semibold">{{ getUserFullName(selectedStaff) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Giới tính</span>
+            <span class="item-val">{{ getGenderLabel(selectedStaff.gender) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Ngày tháng năm sinh</span>
+            <span class="item-val">
+              <i class="pi pi-calendar text-xs text-slate-400 mr-1"></i>
+              {{ selectedStaff.date_of_birth ? (selectedStaff.date_of_birth | date: 'dd/MM/yyyy') : '—' }}
+              <span *ngIf="calculateAge(selectedStaff.date_of_birth) !== null" class="text-slate-500 font-normal">
+                ({{ calculateAge(selectedStaff.date_of_birth) }} tuổi)
+              </span>
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Số CCCD / Định danh (12 số)</span>
+            <span class="item-val font-mono font-semibold">{{ selectedStaff.citizen_id || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Số điện thoại liên hệ</span>
+            <span class="item-val">
+              <i class="pi pi-phone text-xs text-slate-400 mr-1"></i>
+              {{ selectedStaff.phone_number || '—' }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Email công vụ / Nhận OTP</span>
+            <span class="item-val text-primary font-mono text-sm">{{ selectedStaff.email }}</span>
+          </div>
+          <div class="detail-item span-2">
+            <span class="item-label">Địa chỉ thường trú / Nơi ở hiện tại</span>
+            <span class="item-val">
+              <i class="pi pi-map-marker text-xs text-slate-400 mr-1"></i>
+              {{ selectedStaff.address || '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Khối 2: Hồ sơ Chuyên môn & Hành nghề Khám chữa bệnh (Grid 2 cột) -->
+      <div class="detail-card-section">
+        <div class="section-title">
+          <i class="pi pi-briefcase text-primary"></i>
+          <span>2. Hồ sơ Chuyên môn & Hành nghề Khám chữa bệnh</span>
+        </div>
+        <div class="detail-grid-2">
+          <div class="detail-item">
+            <span class="item-label">Học hàm / Học vị / Chức danh</span>
+            <span class="item-val font-semibold">{{ selectedStaff.degree_title || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Số Chứng chỉ hành nghề (CCHN)</span>
+            <span class="cchn-badge font-mono">
+              <i class="pi pi-verified text-xs mr-1"></i>
+              {{ selectedStaff.license_number || '—' }}
+            </span>
+          </div>
+          <div class="detail-item span-2">
+            <span class="item-label">Chuyên khoa phụ trách</span>
+            <span class="item-val">{{ selectedStaff.specialization || '—' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Đơn vị / Khoa công tác</span>
+            <span class="item-val font-semibold text-slate-700">
+              <i class="pi pi-building text-xs text-slate-400 mr-1"></i>
+              {{ selectedStaff.department_name || getDepartmentName(selectedStaff.department) }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="item-label">Hoạt động trực tuyến gần nhất</span>
+            <span class="item-val font-mono text-xs">
+              {{ selectedStaff.last_seen ? (selectedStaff.last_seen | date: 'dd/MM/yyyy HH:mm:ss') : 'Chưa ghi nhận' }}
+            </span>
+          </div>
+          <div class="detail-item span-2">
+            <span class="item-label">Ngày tạo hồ sơ cán bộ</span>
+            <span class="item-val text-xs text-slate-500">
+              {{ selectedStaff.created_at | date: 'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="detail-modal-footer">
+        <div class="left-actions">
+          <button
+            *ngIf="isAdmin"
+            pButton
+            type="button"
+            icon="pi pi-pencil"
+            label="Chỉnh sửa hồ sơ"
+            class="p-button-primary p-button-sm"
+            (click)="editStaffFromDetail()"
+          ></button>
+          <button
+            *ngIf="isAdmin"
+            pButton
+            type="button"
+            icon="pi pi-shield"
+            label="Cấu hình Phân quyền"
+            class="p-button-outlined p-button-secondary p-button-sm"
+            (click)="openPermissionFromDetail()"
+          ></button>
+        </div>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-times"
+          label="Đóng"
+          class="p-button-text p-button-secondary p-button-sm"
+          (click)="closeDetailDialog()"
+        ></button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
 </div>

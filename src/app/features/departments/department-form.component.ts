@@ -6,6 +6,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
 import { DepartmentService } from '../../core/services/department.service';
@@ -14,7 +15,16 @@ import { Department } from '../../core/models';
 @Component({
   selector: 'app-department-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CardModule, ButtonModule, InputTextModule, InputTextareaModule, CheckboxModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    CardModule,
+    ButtonModule,
+    InputTextModule,
+    InputTextareaModule,
+    InputNumberModule,
+    CheckboxModule,
+  ],
   templateUrl: './department-form.component.html',
   styleUrls: ['./department-form.component.scss'],
 })
@@ -33,8 +43,12 @@ export class DepartmentFormComponent implements OnInit {
     private messageService: MessageService
   ) {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.maxLength(120)]],
       code: ['', [Validators.required, Validators.maxLength(30)]],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      head_doctor_name: [''],
+      hotline_phone: [''],
+      location_floor: [''],
+      max_machine_capacity: [20, [Validators.min(1), Validators.max(200)]],
       description: [''],
       is_active: [true],
     });
@@ -58,7 +72,16 @@ export class DepartmentFormComponent implements OnInit {
     this.loading = true;
     this.departmentService.getById(this.departmentId!).subscribe({
       next: (dept: Department) => {
-        this.form.patchValue(dept);
+        this.form.patchValue({
+          code: dept.code,
+          name: dept.name,
+          head_doctor_name: dept.head_doctor_name || '',
+          hotline_phone: dept.hotline_phone || '',
+          location_floor: dept.location_floor || '',
+          max_machine_capacity: dept.max_machine_capacity ?? 20,
+          description: dept.description || '',
+          is_active: dept.is_active,
+        });
         this.loading = false;
       },
       error: () => {
@@ -95,8 +118,13 @@ export class DepartmentFormComponent implements OnInit {
     const raw = this.form.value;
     const payload: Department = {
       ...raw,
-      name: (raw.name || '').trim(),
       code: (raw.code || '').trim().toUpperCase(),
+      name: (raw.name || '').trim(),
+      head_doctor_name: raw.head_doctor_name || null,
+      hotline_phone: raw.hotline_phone || null,
+      location_floor: raw.location_floor || null,
+      max_machine_capacity: raw.max_machine_capacity ? Number(raw.max_machine_capacity) : 20,
+      description: raw.description || '',
     };
 
     const request = this.editMode
@@ -105,6 +133,7 @@ export class DepartmentFormComponent implements OnInit {
 
     request.subscribe({
       next: () => {
+        this.saving = false;
         this.messageService.add({
           severity: 'success',
           summary: 'Thành công',

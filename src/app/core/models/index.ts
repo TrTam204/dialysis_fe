@@ -9,6 +9,10 @@ export interface Department {
   code: string;
   description?: string;
   is_active: boolean;
+  head_doctor_name?: string | null;
+  location_floor?: string | null;
+  hotline_phone?: string | null;
+  max_machine_capacity?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,8 +25,17 @@ export interface CustomUser {
   last_name?: string;
   phone_number?: string | null;
   department: number; // department ID
+  department_name?: string | null;
   role: 'ADMIN' | 'DOCTOR' | 'NURSE';
   is_active: boolean;
+  employee_code?: string | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | null;
+  date_of_birth?: string | null;
+  citizen_id?: string | null;
+  address?: string | null;
+  degree_title?: string | null;
+  license_number?: string | null;
+  specialization?: string | null;
   avatar_url?: string | null;
   last_seen?: string | null;
   created_at?: string;
@@ -50,6 +63,14 @@ export interface Patient {
   department_name?: string | null;
   preferred_shift?: ShiftType | null;
   treatment_pattern?: TreatmentPatternType | null;
+  citizen_id?: string | null;
+  health_insurance_number?: string | null;
+  permanent_address?: string | null;
+  blood_type?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_relationship?: string | null;
+  emergency_contact_phone?: string | null;
+  vascular_access_type?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -61,16 +82,26 @@ export interface DialysisMachine {
   maintenance_log?: string;
   last_maintenance_date?: string | null; // YYYY-MM-DD
   department: number; // department ID
+  department_name?: string | null;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface BloodSample {
   sample_id: string;
+  patient_name?: string | null;
+  created_by_name?: string | null;
   patient: string; // patient_id
   collection_date: string; // ISO 8601
   hemoglobin_level: number;
   potassium_level: number;
+  urea_level?: number | null;
+  creatinine_level?: number | null;
+  sodium_level?: number | null;
+  calcium_level?: number | null;
+  phosphorus_level?: number | null;
+  albumin_level?: number | null;
+  kt_v?: number | null;
   notes?: string;
   created_by: number; // user ID
   created_at?: string;
@@ -90,6 +121,11 @@ export interface DialysisSession {
   uf_target?: number | null;
   uf_actual?: number | null;
   clinical_notes?: string;
+  blood_flow_rate?: number | null;
+  dialysate_flow_rate?: number | null;
+  dialysate_temperature?: number | null;
+  dialyzer_type?: string | null;
+  anticoagulant_type?: string | null;
   pre_dialysis_bp?: string;
   during_dialysis_bp?: string;
   post_dialysis_bp?: string;

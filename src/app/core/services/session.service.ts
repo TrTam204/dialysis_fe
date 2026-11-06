@@ -24,7 +24,7 @@ export class SessionService {
     return this.http.post<DialysisSession>(`${this.apiBase}/sessions/`, data);
   }
 
-  update(sessionId: string, data: DialysisSession): Observable<DialysisSession> {
+  update(sessionId: string, data: DialysisSession | Partial<DialysisSession>): Observable<DialysisSession> {
     return this.http.put<DialysisSession>(`${this.apiBase}/sessions/${sessionId}/`, data);
   }
 
